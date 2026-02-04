@@ -12,9 +12,12 @@ echo "Installing dependencies (this may take a few minutes)..."
 npm install --no-audit --no-fund --production --loglevel info
 
 # 2. Install Puppeteer Browser
-echo "Installing Puppeteer browser..."
-# We use npx to ensure the browser is installed in the correct cache directory
-# The --progress flag ensures we see what's happening
-npx puppeteer browsers install chrome --progress
+echo "Installing Puppeteer browser (this is a 150MB+ download, extraction takes time)..."
+# Setting cache dir explicitly to ensure it sticks
+export PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer
+npx puppeteer browsers install chrome
+
+echo "Verifying installation..."
+ls -R /opt/render/.cache/puppeteer | head -n 20
 
 echo "Build Script Finished Successfully!"
