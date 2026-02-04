@@ -202,6 +202,8 @@ export default function MaterialsPage() {
                                 <TableHead>Category</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Supplier</TableHead>
+                                <TableHead className="text-center">Weight</TableHead>
+                                <TableHead className="text-center">Dimensions</TableHead>
                                 <TableHead className="text-center">Stock Level</TableHead>
                                 <TableHead>Unit Price</TableHead>
                                 <TableHead>Unit</TableHead>
@@ -254,6 +256,12 @@ export default function MaterialsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-sm italic">{m.supplier || "Unknown"}</TableCell>
+                                        <TableCell className="text-center text-sm font-medium">
+                                            {m.weight ? `${m.weight}kg` : "-"}
+                                        </TableCell>
+                                        <TableCell className="text-center text-sm font-medium">
+                                            {m.size?.length ? `${m.size.length}×${m.size.width}×${m.size.height}` : "-"}
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             <div className="inline-flex flex-col items-center">
                                                 <Badge variant={m.stockQuantity > 5 ? "outline" : "destructive"} className="px-3 rounded-lg font-bold">

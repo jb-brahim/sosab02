@@ -258,6 +258,8 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
       stockQuantity: m.stockQuantity || 0,
       category: m.category || 'Standard',
       supplier: m.supplier || 'Unknown',
+      weight: m.weight,
+      size: m.size,
       projectId: m.projectId ? m.projectId._id : null,
       projectName: m.projectId ? m.projectId.name : 'Unknown Project',
       totalIn: stat ? stat.totalIn : 0,
