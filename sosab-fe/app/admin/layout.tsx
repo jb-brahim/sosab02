@@ -3,6 +3,8 @@ import { AuthGuard } from "@/components/auth/auth-guard"
 import { AdminLayout } from "@/components/layouts/admin-layout"
 import { ErrorBoundary } from "@/components/error-boundary"
 
+export const dynamic = "force-dynamic"
+
 export default function AdminRootLayout({
   children,
 }: {
