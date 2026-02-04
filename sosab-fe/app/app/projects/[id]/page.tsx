@@ -290,9 +290,6 @@ export default function MobileProjectDetails() {
                             <CardHeader className="pb-2 flex flex-row items-center justify-between">
                                 <CardTitle className="text-sm font-medium">Materials Activity</CardTitle>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 px-2" onClick={() => setShowRegisterUsage(true)}>
-                                        - Use
-                                    </Button>
                                     <Button size="sm" variant="outline" onClick={() => router.push(`/app/scan?projectId=${id}&type=in`)}>+ Arrival</Button>
                                 </div>
                             </CardHeader>
