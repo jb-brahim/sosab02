@@ -29,6 +29,12 @@ interface Material {
     stockQuantity: number
     price: number
     category?: string
+    weight?: number
+    size?: {
+        length: number
+        width: number
+        height: number
+    }
     supplier?: string
     projectName?: string
     projectId?: string
