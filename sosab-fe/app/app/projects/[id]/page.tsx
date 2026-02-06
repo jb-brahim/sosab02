@@ -528,47 +528,196 @@ export default function MobileProjectDetails() {
             {showAddWorker && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
                     <Card className="w-full max-w-sm glass-card border-white/10">
-                        <CardHeader>
-                            <CardTitle>Add Worker</CardTitle>
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-lg">Add Worker</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Input placeholder="Full Name" value={createWorkerForm.name} onChange={e => setCreateWorkerForm({ ...createWorkerForm, name: e.target.value })} className="bg-background/50" />
-                            <Input placeholder="Role (e.g. Macon)" value={createWorkerForm.trade} onChange={e => setCreateWorkerForm({ ...createWorkerForm, trade: e.target.value })} className="bg-background/50" />
-                            <Input type="number" placeholder="Daily Salary (TND)" value={createWorkerForm.dailySalary} onChange={e => setCreateWorkerForm({ ...createWorkerForm, dailySalary: e.target.value })} className="bg-background/50" />
-                            <Input placeholder="Phone (Optional)" value={createWorkerForm.phone} onChange={e => setCreateWorkerForm({ ...createWorkerForm, phone: e.target.value })} className="bg-background/50" />
-                            {/* Subcontractor Logic omitted for brevity but should exist */}
-                            <div className="flex justify-end gap-2 pt-2">
-                                <Button variant="ghost" onClick={() => setShowAddWorker(false)}>Cancel</Button>
-                                <Button onClick={handleAddWorker}>Add</Button>
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Full Name</label>
+                                <Input
+                                    placeholder="e.g. Ali Ben Ali"
+                                    value={createWorkerForm.name}
+                                    onChange={e => setCreateWorkerForm({ ...createWorkerForm, name: e.target.value })}
+                                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Role / Trade</label>
+                                <Input
+                                    list="trade-options"
+                                    placeholder="Select or type..."
+                                    value={createWorkerForm.trade}
+                                    onChange={e => setCreateWorkerForm({ ...createWorkerForm, trade: e.target.value })}
+                                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                                />
+                                <datalist id="trade-options">
+                                    <option value="Ouvrier" />
+                                    <option value="Macon" />
+                                    <option value="Ferrailleur" />
+                                    <option value="Sous Traitant" />
+                                    <option value="Chef Chantier" />
+                                </datalist>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Daily Salary</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={createWorkerForm.dailySalary}
+                                        onChange={e => setCreateWorkerForm({ ...createWorkerForm, dailySalary: e.target.value })}
+                                        className="bg-background/50 border-white/10 focus:border-primary/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Phone</label>
+                                    <Input
+                                        placeholder="Optional"
+                                        value={createWorkerForm.phone}
+                                        onChange={e => setCreateWorkerForm({ ...createWorkerForm, phone: e.target.value })}
+                                        className="bg-background/50 border-white/10 focus:border-primary/50"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Supervisor Selection */}
+                            {createWorkerForm.trade !== 'Sous Traitant' && subcontractors.length > 0 && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Supervised By (Optional)</label>
+                                    <select
+                                        className="w-full p-2.5 rounded-md text-sm bg-background/50 border border-white/10 focus:border-primary/50 focus:outline-none"
+                                        value={createWorkerForm.supervisorId}
+                                        onChange={e => setCreateWorkerForm({ ...createWorkerForm, supervisorId: e.target.value })}
+                                    >
+                                        <option value="">-- Direct / No Supervisor --</option>
+                                        {subcontractors.map(sub => (
+                                            <option key={sub._id} value={sub._id}>{sub.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 pt-4">
+                                <Button variant="ghost" className="flex-1" onClick={() => setShowAddWorker(false)}>Cancel</Button>
+                                <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleAddWorker}>Add Worker</Button>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
             )}
 
-            {/* Delete Worker List Modal */}
+            {/* Manage Team Modal (List & Edit) */}
             {showDeleteWorkerList && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
-                    <Card className="w-full max-w-sm glass-card border-white/10 max-h-[80vh] flex flex-col">
-                        <CardHeader className="pb-2">
-                            <CardTitle>Team List</CardTitle>
+                    <Card className="w-full max-w-sm glass-card border-white/10 max-h-[85vh] flex flex-col">
+                        <CardHeader className="pb-4 border-b border-white/5">
+                            <CardTitle className="text-lg">{editingWorker ? 'Edit Worker' : 'Manage Team'}</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto space-y-2 p-2">
-                            {team.map(w => (
-                                <div key={w._id} className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/5">
-                                    <div>
-                                        <div className="font-bold text-sm">{w.name}</div>
-                                        <div className="text-[10px] text-muted-foreground">{w.trade}</div>
+
+                        <CardContent className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {editingWorker ? (
+                                <div className="space-y-4 animate-in">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Name</label>
+                                        <Input
+                                            value={editingWorker.name}
+                                            onChange={e => setEditingWorker({ ...editingWorker, name: e.target.value })}
+                                            className="bg-background/50 border-white/10"
+                                        />
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/20" onClick={() => handleDeleteWorker(w._id)}>
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Role</label>
+                                        <Input
+                                            list="trade-options-edit"
+                                            value={editingWorker.trade}
+                                            onChange={e => setEditingWorker({ ...editingWorker, trade: e.target.value })}
+                                            className="bg-background/50 border-white/10"
+                                        />
+                                        <datalist id="trade-options-edit">
+                                            <option value="Ouvrier" />
+                                            <option value="Macon" />
+                                            <option value="Ferrailleur" />
+                                            <option value="Sous Traitant" />
+                                        </datalist>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Salary</label>
+                                            <Input
+                                                type="number"
+                                                value={editingWorker.dailySalary}
+                                                onChange={e => setEditingWorker({ ...editingWorker, dailySalary: e.target.value })}
+                                                className="bg-background/50 border-white/10"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Phone</label>
+                                            <Input
+                                                value={editingWorker.phone || ''}
+                                                onChange={e => setEditingWorker({ ...editingWorker, phone: e.target.value })}
+                                                className="bg-background/50 border-white/10"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Supervisor Selection in Edit */}
+                                    {editingWorker.trade !== 'Sous Traitant' && subcontractors.length > 0 && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Supervised By</label>
+                                            <select
+                                                className="w-full p-2.5 rounded-md text-sm bg-background/50 border border-white/10 focus:border-primary/50 focus:outline-none"
+                                                value={editingWorker.supervisorId || ''}
+                                                onChange={e => setEditingWorker({ ...editingWorker, supervisorId: e.target.value })}
+                                            >
+                                                <option value="">-- Direct / No Supervisor --</option>
+                                                {subcontractors.filter(s => s._id !== editingWorker._id).map(sub => (
+                                                    <option key={sub._id} value={sub._id}>{sub.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2 pt-4">
+                                        <Button variant="ghost" className="flex-1" onClick={() => setEditingWorker(null)}>Cancel</Button>
+                                        <Button className="flex-1" onClick={handleUpdateWorker}>Save Changes</Button>
+                                    </div>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="space-y-2">
+                                    {team.map(w => (
+                                        <div key={w._id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                    {w.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-sm text-foreground">{w.name}</div>
+                                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{w.trade}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg" onClick={() => setEditingWorker({ ...w, phone: w.contact?.phone })}>
+                                                    {/* Pencil Icon */}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteWorker(w._id)}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {team.length === 0 && <p className="text-center text-muted-foreground text-xs py-10">No workers in team.</p>}
+                                </div>
+                            )}
                         </CardContent>
-                        <div className="p-4 pt-2">
-                            <Button className="w-full" variant="outline" onClick={() => setShowDeleteWorkerList(false)}>Close</Button>
-                        </div>
+
+                        {!editingWorker && (
+                            <div className="p-4 border-t border-white/5 bg-black/20">
+                                <Button className="w-full" variant="outline" onClick={() => setShowDeleteWorkerList(false)}>Close</Button>
+                            </div>
+                        )}
                     </Card>
                 </div>
             )}
