@@ -2,23 +2,17 @@
 
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { format } from "date-fns"
-import { Package, Download, FileText, ArrowUpRight, ArrowDownLeft, Box, Search } from "lucide-react"
-import { toast } from "sonner"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Package, Search, ArrowUpRight, ArrowDownLeft, Box, Filter } from "lucide-react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 export default function MaterialsPage() {
     const router = useRouter()
     const [materials, setMaterials] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
-    const [reportDates, setReportDates] = useState({ start: '', end: '' })
-    const [generatingReport, setGeneratingReport] = useState(false)
-    const [showReportDialog, setShowReportDialog] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
     // Load Materials Summary across all projects
@@ -40,108 +34,115 @@ export default function MaterialsPage() {
         fetchSummary()
     }, [])
 
-    const handleGenerateReport = async () => {
-        toast.error("Global reports are coming soon!")
-    }
+    const filteredMaterials = materials
+        .filter(item => item.supplier.toLowerCase().includes(searchQuery.toLowerCase()) || item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name))
 
     return (
-        <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Package className="w-8 h-8 text-primary" />
-                    Site Materials
-                </h1>
-                <p className="text-muted-foreground text-sm font-medium">Global arrival tracking across all your sites.</p>
-            </div>
+        <div className="min-h-screen bg-background relative overflow-hidden pb-24">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-            <div className="space-y-4">
+            <div className="p-4 space-y-6 relative z-10">
+                {/* Header */}
+                <div className="flex flex-col gap-2 pt-2 animate-in">
+                    <h1 className="font-display text-3xl font-bold flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+                            <Package className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                        Global Inventory
+                    </h1>
+                    <p className="text-muted-foreground text-sm font-medium ml-1">Track materials across all active sites.</p>
+                </div>
+
                 {/* Search Bar */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
+                <div className="relative animate-in delay-100">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <Search className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <input
                         type="text"
-                        placeholder="Search by supplier name..."
+                        placeholder="Search materials or suppliers..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-12 bg-card border-border/50 focus:border-primary/50 transition-colors"
+                        className="w-full h-12 pl-10 pr-4 rounded-xl bg-card/40 backdrop-blur-md border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all shadow-sm placeholder:text-muted-foreground/50"
                     />
+                    <div className="absolute inset-y-0 right-3 flex items-center">
+                        <div className="bg-white/5 p-1.5 rounded-md">
+                            <Filter className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                    </div>
                 </div>
 
-                {/* Materials List */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                        <label className="text-[10px] uppercase font-black text-muted-foreground/60 tracking-widest">Inventory & History</label>
-                        <span className="text-[10px] font-bold text-primary/70">
-                            {materials.filter(item =>
-                                item.supplier.toLowerCase().includes(searchQuery.toLowerCase())
-                            ).length} ITEMS
-                        </span>
+                {/* Stats Row */}
+                <div className="flex items-center justify-between px-1 animate-in delay-200">
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary glow-primary"></span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-foreground/80">Stock Items</span>
                     </div>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/10 shadow-none">
+                        {filteredMaterials.length} Results
+                    </Badge>
+                </div>
 
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-                            <div className="h-8 w-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                            <span className="text-xs font-bold uppercase tracking-widest">Loading Sites...</span>
-                        </div>
-                    ) : materials.filter(item =>
-                        item.supplier.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).length === 0 ? (
-                        <Card className="border-dashed border-2 py-10">
-                            <CardContent className="p-6 text-center text-muted-foreground">
-                                <Package className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                                <p className="font-medium">
-                                    {searchQuery ? `No materials found for supplier "${searchQuery}"` : "No materials recorded yet."}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="grid gap-3">
-                            {materials
-                                .filter(item => item.supplier.toLowerCase().includes(searchQuery.toLowerCase()))
-                                .sort((a, b) => a.name.localeCompare(b.name) || a.supplier.localeCompare(b.supplier))
-                                .map((item) => (
-                                    <Card
-                                        key={item.materialId}
-                                        className="overflow-hidden border-border/50 hover:border-primary/30 transition-all active:scale-[0.98] cursor-pointer group"
-                                        onClick={() => router.push(`/app/materials/${item.materialId}`)}
-                                    >
-                                        <div className="p-4 flex flex-col gap-3">
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
-                                                    <div className="font-display font-bold text-lg group-hover:text-primary transition-colors">{item.name}</div>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Badge variant="secondary" className="bg-muted text-[9px] uppercase font-bold text-muted-foreground border-none px-1.5 h-4">
-                                                            {item.projectName}
-                                                        </Badge>
-                                                        <Badge variant="outline" className="text-[9px] uppercase font-bold text-muted-foreground border-border/50 px-1.5 h-4">
-                                                            {item.supplier}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <ArrowUpRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
-                                            </div>
-
-                                            <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[9px] uppercase font-black text-success/60 tracking-tighter flex items-center gap-1">
-                                                        <ArrowDownLeft className="w-3 h-3" /> Received to date
-                                                    </span>
-                                                    <span className="text-xl font-display font-black text-success">
-                                                        {item.totalIn} <span className="text-[10px] font-bold opacity-60 ml-0.5">{item.unit}</span>
-                                                    </span>
-                                                </div>
-                                                <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
-                                                    <Package className="w-5 h-5 text-success opacity-40 shadow-sm" />
-                                                </div>
+                {/* Materials Grid */}
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground animate-pulse">
+                        <div className="h-8 w-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Loading Inventory...</span>
+                    </div>
+                ) : filteredMaterials.length === 0 ? (
+                    <div className="glass-card rounded-2xl border-dashed border-2 border-white/10 py-12 text-center animate-in delay-300">
+                        <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+                        <p className="text-muted-foreground font-medium">No materials found.</p>
+                        <p className="text-xs text-muted-foreground/50 mt-1">Try adjusting your search.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-3 animate-in delay-300">
+                        {filteredMaterials.map((item, index) => (
+                            <div
+                                key={item.materialId}
+                                className="glass-card rounded-xl p-0 overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-transform"
+                                onClick={() => router.push(`/app/materials/${item.materialId}`)}
+                                style={{ animationDelay: `${index * 50}ms` }}
+                            >
+                                <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ArrowUpRight className="w-4 h-4 text-primary" />
+                                </div>
+                                <div className="p-4 flex flex-col gap-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="space-y-1">
+                                            <div className="font-display font-bold text-lg leading-none group-hover:text-primary transition-colors">{item.name}</div>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <Badge variant="secondary" className="bg-white/5 text-[9px] uppercase font-bold text-muted-foreground border-white/5 px-1.5 h-5 hover:bg-white/10">
+                                                    {item.projectName}
+                                                </Badge>
+                                                <Badge variant="outline" className="text-[9px] uppercase font-bold text-muted-foreground border-white/10 px-1.5 h-5">
+                                                    {item.supplier}
+                                                </Badge>
                                             </div>
                                         </div>
-                                    </Card>
-                                ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                                    </div>
 
+                                    <div className="bg-black/20 rounded-lg p-2.5 flex items-center justify-between border border-white/5 group-hover:border-primary/20 transition-colors">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] uppercase font-black text-white/40 tracking-wider flex items-center gap-1">
+                                                <ArrowDownLeft className="w-3 h-3 text-green-500" /> TOTAL RECEIVED
+                                            </span>
+                                            <span className="text-lg font-display font-bold text-foreground">
+                                                {item.totalIn} <span className="text-[10px] opacity-50 ml-0.5">{item.unit}</span>
+                                            </span>
+                                        </div>
+                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <Box className="w-4 h-4 text-primary opacity-80" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
