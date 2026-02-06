@@ -89,9 +89,8 @@ export default function AdminReportsPage() {
     }
 
     const openReport = (pdfUrl: string) => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-        const backendBase = apiUrl.replace(/\/api\/?$/, '')
-        window.open(`${backendBase}${pdfUrl}`, '_blank')
+        const apiUrl = require('@/lib/api').BACKEND_URL;
+        window.open(`${apiUrl}${pdfUrl}`, '_blank')
     }
 
     return (

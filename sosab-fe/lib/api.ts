@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // Create an axios instance
+export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sosab02-3.onrender.com';
 const api = axios.create({
-    baseURL: `${process.env.NEXT_PUBLIC_API_URL || 'https://sosab02-3.onrender.com'}/api`,
+    baseURL: `${BACKEND_URL}/api`,
 });
 
 // Add a request interceptor to inject the token

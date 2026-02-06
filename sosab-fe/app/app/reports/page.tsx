@@ -44,10 +44,12 @@ export default function ReportsPage() {
     }, [])
 
     const openReport = (pdfUrl: string) => {
-        // Safe URL construction: Remove '/api' suffix if present in the base URL
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-        const backendBase = apiUrl.replace(/\/api\/?$/, '')
-        window.open(`${backendBase}${pdfUrl}`, '_blank')
+        // Safe URL construction using the shared backend constant
+        // Remove trailing slash if present, and remove /api suffix if present (though BACKEND_URL usually shouldn't have /api unless set that way, but safety first)
+        // Actually, in api.ts we distinguish BACKEND_URL (root) from baseURL (/api)
+        // So we just import BACKEND_URL.
+        const apiUrl = require('@/lib/api').BACKEND_URL;
+        window.open(`${apiUrl}${pdfUrl}`, '_blank')
     }
 
     return (

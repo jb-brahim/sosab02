@@ -79,9 +79,8 @@ export default function GenerateReportPage() {
                 toast.success(`${formData.type === 'attendance' ? 'Attendance' : 'Payment'} report generated successfully!`)
 
                 // Download the file
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-                const backendBase = apiUrl.replace(/\/api\/?$/, '')
-                const downloadUrl = `${backendBase}${res.data.data.pdfUrl}`
+                const apiUrl = require('@/lib/api').BACKEND_URL;
+                const downloadUrl = `${apiUrl}${res.data.data.pdfUrl}`
                 window.open(downloadUrl, '_blank')
 
                 // Redirect to reports page after a short delay
