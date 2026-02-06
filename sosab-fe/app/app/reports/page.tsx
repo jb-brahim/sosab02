@@ -44,8 +44,10 @@ export default function ReportsPage() {
     }, [])
 
     const openReport = (pdfUrl: string) => {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-        window.open(`${backendUrl}${pdfUrl}`, '_blank')
+        // Safe URL construction: Remove '/api' suffix if present in the base URL
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+        const backendBase = apiUrl.replace(/\/api\/?$/, '')
+        window.open(`${backendBase}${pdfUrl}`, '_blank')
     }
 
     return (
