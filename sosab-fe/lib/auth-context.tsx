@@ -50,8 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Normalize role if it exists
         if (parsed.role) {
-          parsed.role = parsed.role.toLowerCase() === "admin" ? "admin" :
-            parsed.role.toLowerCase().includes("manager") ? "pm" : "worker"
+          const r = parsed.role.toLowerCase();
+          parsed.role = r === "admin" ? "admin" :
+            (r.includes("manager") || r === "pm") ? "pm" : "worker"
         }
 
         setUser(parsed)
