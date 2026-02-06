@@ -544,20 +544,46 @@ export default function MobileProjectDetails() {
 
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Role / Trade</label>
-                                <Input
-                                    list="trade-options"
-                                    placeholder="Select or type..."
-                                    value={createWorkerForm.trade}
-                                    onChange={e => setCreateWorkerForm({ ...createWorkerForm, trade: e.target.value })}
-                                    className="bg-background/50 border-white/10 focus:border-primary/50"
-                                />
-                                <datalist id="trade-options">
-                                    <option value="Ouvrier" />
-                                    <option value="Macon" />
-                                    <option value="Ferrailleur" />
-                                    <option value="Sous Traitant" />
-                                    <option value="Chef Chantier" />
-                                </datalist>
+                                <div className="space-y-2">
+                                    <Select
+                                        value={['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade) ? createWorkerForm.trade : (createWorkerForm.trade ? 'Other' : '')}
+                                        onValueChange={(val) => setCreateWorkerForm({ ...createWorkerForm, trade: val === 'Other' ? '' : val })}
+                                    >
+                                        <SelectTrigger className="w-full bg-background/50 border-white/10 focus:ring-primary/50">
+                                            <SelectValue placeholder="Select Role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Ouvrier">Ouvrier</SelectItem>
+                                            <SelectItem value="Macon">Macon</SelectItem>
+                                            <SelectItem value="Ferrailleur">Ferrailleur</SelectItem>
+                                            <SelectItem value="Sous Traitant">Sous Traitant</SelectItem>
+                                            <SelectItem value="Chef Chantier">Chef Chantier</SelectItem>
+                                            <SelectItem value="Other">Other (Type Custom)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {(!['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade) && createWorkerForm.trade !== '') ||
+                                        (createWorkerForm.trade === '' && !['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade)) ? (
+                                        // Simple logic: If it's not a standard option, show input. 
+                                        // Wait, checking logic:
+                                        // If selected is 'Other', trade becomes '', so show Input.
+                                        // If selected is 'Macon', input hidden.
+                                        // Initial state '' -> Show Select placeholder. Input hidden? 
+                                        // Let's rely on a derived state or simple check.
+                                        // If the current trade value is NOT in the list, we assume it's custom (or empty starting custom).
+                                        // But we need to distinguish "Not Selected" vs "Custom".
+                                        // Let's use a helper state for the UI switcher or just checking inclusion.
+                                        !['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade) && (
+                                            <Input
+                                                placeholder="Type custom role..."
+                                                value={createWorkerForm.trade}
+                                                onChange={e => setCreateWorkerForm({ ...createWorkerForm, trade: e.target.value })}
+                                                className="bg-background/50 border-white/10 animate-in fade-in slide-in-from-top-1"
+                                                autoFocus
+                                            />
+                                        )
+                                    ) : null}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
