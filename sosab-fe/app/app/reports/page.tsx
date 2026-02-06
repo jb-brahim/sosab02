@@ -8,22 +8,35 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ReportsPage() {
     const [reports, setReports] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
 
-    const handleDeleteReport = async (reportId: string) => {
-        if (!confirm("Are you sure you want to delete this report?")) return
+    const [deleteId, setDeleteId] = useState<string | null>(null)
 
+    const handleDeleteReport = async () => {
+        if (!deleteId) return
         try {
-            await api.delete(`/reports/${reportId}`)
-            setReports(prev => prev.filter(r => r._id !== reportId))
+            await api.delete(`/reports/${deleteId}`)
+            setReports(prev => prev.filter(r => r._id !== deleteId))
             toast.success("Report deleted")
         } catch (error) {
             console.error("Failed to delete report", error)
             toast.error("Failed to delete report")
+        } finally {
+            setDeleteId(null)
         }
     }
 
@@ -117,7 +130,7 @@ export default function ReportsPage() {
                                 </Button>
                                 <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={(e) => {
                                     e.stopPropagation()
-                                    handleDeleteReport(report._id)
+                                    setDeleteId(report._id)
                                 }}>
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -126,6 +139,23 @@ export default function ReportsPage() {
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl">Delete Report?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the selected report file.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteReport} className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
