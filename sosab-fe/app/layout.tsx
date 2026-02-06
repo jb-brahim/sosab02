@@ -45,7 +45,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <AuthProvider>{children}</AuthProvider>
-          <Toaster />
+          <Toaster position="top-center" />
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
