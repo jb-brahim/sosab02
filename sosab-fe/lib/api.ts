@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance
 const api = axios.create({
-    baseURL: '/api', // Proxied via next.config.mjs
+    baseURL: `${process.env.NEXT_PUBLIC_API_URL || 'https://sosab02-3.onrender.com'}/api`,
 });
 
 // Add a request interceptor to inject the token
