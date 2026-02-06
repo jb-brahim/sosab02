@@ -1,41 +1,16 @@
-const fs = require('fs').promises;
-const path = require('path');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
-// Format number with Tunisian locale (space as thousand separator, comma as decimal)
-const formatTND = (amount) => {
-  return new Intl.NumberFormat('fr-TN', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3
-  }).format(amount);
-};
-
-// Format date in Tunisian format (DD/MM/YYYY)
-const formatDateTN = (date) => {
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-};
+// ... (keep helper functions)
 
 // Generate PDF from HTML using Puppeteer
 exports.generatePDF = async (htmlContent, outputPath) => {
   try {
-    // Validate inputs
-    if (!htmlContent || typeof htmlContent !== 'string') {
-      throw new Error('Invalid HTML content provided');
-    }
-
-    if (!outputPath) {
-      throw new Error('Output path is required');
-    }
+    // ... (keep validation)
 
     console.log('Starting PDF generation...');
     console.log('Output path:', outputPath);
 
     const browser = await puppeteer.launch({
-      executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
       headless: 'new',
       args: [
         '--no-sandbox',
