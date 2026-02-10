@@ -342,7 +342,7 @@ exports.transferMaterial = asyncHandler(async (req, res) => {
 // @route   POST /api/materials/direct-reception
 // @access  Private (Manager/Admin)
 exports.directReception = asyncHandler(async (req, res) => {
-  const { projectId, materialName, quantity, unit, deliveredBy, notes, price, category, supplier } = req.body;
+  const { projectId, materialName, quantity, unit, deliveredBy, notes, price, category, supplier, arrivalDate } = req.body;
 
   if (!projectId || !materialName || !quantity || !unit) {
     return res.status(400).json({ success: false, message: 'Please provide projectId, materialName, quantity and unit' });
@@ -376,7 +376,9 @@ exports.directReception = asyncHandler(async (req, res) => {
     uploadedAt: new Date()
   })) : [];
 
-  // 4. Create Material Log
+  // 4. Create Material Log with custom date if provided
+  const logDate = arrivalDate ? new Date(arrivalDate) : new Date();
+
   const log = await MaterialLog.create({
     materialId: material._id,
     loggedBy: req.user._id,
@@ -386,7 +388,7 @@ exports.directReception = asyncHandler(async (req, res) => {
     supplier: supplier || 'Unknown',
     photos,
     notes: notes || 'Direct arrival on site',
-    date: new Date()
+    date: logDate
   });
 
   res.status(200).json({

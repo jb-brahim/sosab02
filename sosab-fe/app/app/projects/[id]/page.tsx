@@ -11,10 +11,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, MapPin, Calendar, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft } from "lucide-react"
+import { ChevronLeft, MapPin, Calendar as CalendarIcon, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function MobileProjectDetails() {
     const { id } = useParams()
@@ -60,6 +72,8 @@ export default function MobileProjectDetails() {
 
     // Attendance State
     const [attendanceMap, setAttendanceMap] = useState<Record<string, any>>({})
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [showDatePicker, setShowDatePicker] = useState(false)
 
     useEffect(() => {
         const fetchProjectData = async () => {
@@ -100,11 +114,34 @@ export default function MobileProjectDetails() {
         if (id) fetchProjectData()
     }, [id])
 
+    // Fetch attendance for selected date
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            if (!id || !selectedDate) return
+            try {
+                const dateStr = format(selectedDate, 'yyyy-MM-dd')
+                const attRes = await api.get(`/attendance/project/${id}/date/${dateStr}`)
+                if (attRes.data?.success) {
+                    const map: Record<string, any> = {}
+                    attRes.data.data.forEach((rec: any) => {
+                        map[rec.workerId] = { present: rec.present, dayValue: rec.dayValue }
+                    })
+                    setAttendanceMap(map)
+                } else {
+                    setAttendanceMap({}) // Clear if no data
+                }
+            } catch (error) {
+                console.error("Failed to fetch attendance", error)
+                setAttendanceMap({})
+            }
+        }
+        fetchAttendance()
+    }, [id, selectedDate])
+
     const handleMarkAttendance = async (workerId: string, present: boolean, dayValue: number = 1) => {
         try {
-            // Send date as YYYY-MM-DD string to avoid timezone issues
-            const today = new Date();
-            const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            // Use selected date instead of today
+            const dateString = format(selectedDate, 'yyyy-MM-dd')
 
             await api.post('/attendance', { workerId, projectId: id, date: dateString, present, dayValue })
             toast.success(`Marked as ${present ? 'Present' : 'Absent'} (${dayValue}x)`)
@@ -208,18 +245,19 @@ export default function MobileProjectDetails() {
         }
     }
 
-    const handleDeleteWorker = async (workerId: string) => {
-        if (!confirm("Are you sure you want to remove this worker? This cannot be undone.")) return
+    const [deleteWorkerId, setDeleteWorkerId] = useState<string | null>(null)
 
+    const handleDeleteWorker = async () => {
+        if (!deleteWorkerId) return
         try {
-            await api.delete(`/workers/${workerId}`)
+            await api.delete(`/workers/${deleteWorkerId}`)
             toast.success("Worker Removed")
-
-            // Remove from local state immediately
-            setTeam(prev => prev.filter(w => w._id !== workerId))
+            setTeam(prev => prev.filter(w => w._id !== deleteWorkerId))
         } catch (error) {
             console.error("Failed to delete worker", error)
             toast.error("Failed to delete worker")
+        } finally {
+            setDeleteWorkerId(null)
         }
     }
 
@@ -448,9 +486,30 @@ export default function MobileProjectDetails() {
                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Mark today's presence</p>
                                 </div>
                             </div>
-                            <Badge variant="outline" className="bg-background/50 text-[10px] font-black uppercase tracking-widest px-2 py-1 border-white/5">
-                                {format(new Date(), 'MMM dd')}
-                            </Badge>
+                            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="bg-background/50 text-xs font-black uppercase tracking-widest px-3 py-2 h-auto border-white/5 hover:bg-background/80 hover:border-primary/30 transition-all"
+                                    >
+                                        <CalendarIcon className="w-3.5 h-3.5 mr-2" />
+                                        {format(selectedDate, 'MMM dd')}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => {
+                                            if (date) {
+                                                setSelectedDate(date)
+                                                setShowDatePicker(false)
+                                            }
+                                        }}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
@@ -462,47 +521,67 @@ export default function MobileProjectDetails() {
                                 return (
                                     <div key={worker._id}>
                                         {isSousTraitant ? (
-                                            <div className="glass-card rounded-2xl p-0 overflow-hidden mb-3">
+                                            <div className="bg-card/50 rounded-lg border border-border/40 overflow-hidden mb-2">
                                                 <div
-                                                    className="p-4 flex items-center justify-between cursor-pointer bg-white/5 hover:bg-white/10 transition-colors"
+                                                    className="px-3 py-2.5 flex items-center justify-between cursor-pointer hover:bg-accent/20 transition-colors"
                                                     onClick={() => setExpandedSub(expandedSub === worker._id ? null : worker._id)}
                                                 >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-xl bg-orange-500/20 text-orange-500 flex items-center justify-center border border-orange-500/20">
-                                                            <UsersIcon className="w-5 h-5" />
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="h-9 w-9 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                                                            <UsersIcon className="w-4 h-4 text-amber-600 dark:text-amber-500" />
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-bold text-sm">{worker.name}</h4>
-                                                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mt-0.5">Sub-Contractor</span>
+                                                            <h4 className="font-semibold text-sm text-foreground">{worker.name}</h4>
+                                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                <span>Subcontractor</span>
+                                                                <span>•</span>
+                                                                <span>{subWorkers.length} team member{subWorkers.length !== 1 ? 's' : ''}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <Badge className="bg-orange-500/10 text-orange-500 border-none">{subWorkers.length} Staff</Badge>
-                                                        {expandedSub === worker._id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-500 border-none text-xs font-semibold px-2 py-0.5">
+                                                            {subWorkers.length} Staff
+                                                        </Badge>
+                                                        {expandedSub === worker._id ?
+                                                            <ChevronUp className="w-4 h-4 text-muted-foreground" /> :
+                                                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                                        }
                                                     </div>
                                                 </div>
 
                                                 {/* Expanded Subcontractor List */}
                                                 {expandedSub === worker._id && (
-                                                    <div className="p-3 bg-black/20 border-t border-white/5 space-y-3">
-                                                        {/* Render Subcontractor himself first */}
-                                                        <WorkerAttendanceItem
-                                                            worker={worker}
-                                                            status={attendanceMap[worker._id]}
-                                                            onMark={handleMarkAttendance}
-                                                            setMap={setAttendanceMap}
-                                                            isLeader
-                                                        />
-                                                        <div className="pl-4 border-l-2 border-white/10 space-y-3 pt-1">
-                                                            {subWorkers.map(sw => (
+                                                    <div className="px-3 pb-2 pt-1 bg-accent/5 border-t border-border/30">
+                                                        <div className="space-y-2">
+                                                            {/* Render Subcontractor himself first */}
+                                                            <div className="pt-1">
+                                                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Team Leader</span>
                                                                 <WorkerAttendanceItem
-                                                                    key={sw._id}
-                                                                    worker={sw}
-                                                                    status={attendanceMap[sw._id]}
+                                                                    worker={worker}
+                                                                    status={attendanceMap[worker._id]}
                                                                     onMark={handleMarkAttendance}
                                                                     setMap={setAttendanceMap}
+                                                                    isLeader
                                                                 />
-                                                            ))}
+                                                            </div>
+
+                                                            {subWorkers.length > 0 && (
+                                                                <div className="pt-1">
+                                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Team Members</span>
+                                                                    <div className="space-y-1.5">
+                                                                        {subWorkers.map(sw => (
+                                                                            <WorkerAttendanceItem
+                                                                                key={sw._id}
+                                                                                worker={sw}
+                                                                                status={attendanceMap[sw._id]}
+                                                                                onMark={handleMarkAttendance}
+                                                                                setMap={setAttendanceMap}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -513,7 +592,7 @@ export default function MobileProjectDetails() {
                                                 status={attendanceMap[worker._id]}
                                                 onMark={handleMarkAttendance}
                                                 setMap={setAttendanceMap}
-                                                className="mb-3"
+                                                className="mb-1.5"
                                             />
                                         )}
                                     </div>
@@ -565,11 +644,11 @@ export default function MobileProjectDetails() {
 
                                     {(!['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade) && createWorkerForm.trade !== '') ||
                                         (createWorkerForm.trade === '' && !['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade)) ? (
-                                        // Simple logic: If it's not a standard option, show input. 
+                                        // Simple logic: If it's not a standard option, show input.
                                         // Wait, checking logic:
                                         // If selected is 'Other', trade becomes '', so show Input.
                                         // If selected is 'Macon', input hidden.
-                                        // Initial state '' -> Show Select placeholder. Input hidden? 
+                                        // Initial state '' -> Show Select placeholder. Input hidden?
                                         // Let's rely on a derived state or simple check.
                                         // If the current trade value is NOT in the list, we assume it's custom (or empty starting custom).
                                         // But we need to distinguish "Not Selected" vs "Custom".
@@ -729,7 +808,7 @@ export default function MobileProjectDetails() {
                                                     {/* Pencil Icon */}
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteWorker(w._id)}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => setDeleteWorkerId(w._id)}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>
@@ -749,46 +828,92 @@ export default function MobileProjectDetails() {
                 </div>
             )}
 
+
+            <AlertDialog open={!!deleteWorkerId} onOpenChange={(open) => !open && setDeleteWorkerId(null)}>
+                <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl">Remove Worker?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to remove this worker from the team? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteWorker} className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
 
 // Component for Worker Attendance Item
 function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLeader }: any) {
-    return (
-        <div className={`glass-card p-3 rounded-xl flex items-center justify-between border border-white/5 ${className} ${status?.present === true ? 'bg-green-500/5 border-green-500/20' : status?.present === false ? 'bg-red-500/5 border-red-500/20' : ''}`}>
-            <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border border-white/10">
-                    <AvatarFallback className="bg-primary/20 text-primary font-bold text-xs">
-                        {worker.name.charAt(0)}
-                    </AvatarFallback>
-                </Avatar>
-                <div>
-                    <div className="font-bold text-sm flex items-center gap-2">
-                        {worker.name}
-                        {isLeader && <Badge className="text-[9px] h-4 px-1 bg-primary/20 text-primary border-none">LEADER</Badge>}
-                    </div>
-                    <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide">{worker.trade}</div>
-                </div>
-            </div>
+    const isPresentMarked = status?.present === true
+    const isAbsentMarked = status?.present === false
 
-            <div className="flex items-center gap-2">
-                <input
-                    type="number" step="0.5" min="0" max="3"
-                    className="w-10 h-8 rounded-lg bg-black/20 border border-white/10 text-center text-xs font-bold focus:ring-1 focus:ring-primary/50 outline-none"
-                    value={status?.dayValue ?? 1}
-                    onChange={(e) => setMap((prev: any) => ({ ...prev, [worker._id]: { ...(prev[worker._id] || {}), dayValue: e.target.value } }))}
-                    onBlur={(e) => status?.present && onMark(worker._id, true, parseFloat(e.target.value || '1'))}
-                />
-                <div className="flex bg-black/20 rounded-lg p-0.5 border border-white/10">
+    return (
+        <div className={`bg-card/50 rounded-lg px-3 py-2 border transition-all ${className} ${isPresentMarked
+            ? 'border-green-500/30 bg-green-500/5'
+            : isAbsentMarked
+                ? 'border-red-500/30 bg-red-500/5'
+                : 'border-border/30 hover:border-border/50'
+            }`}>
+            <div className="flex items-center justify-between gap-3">
+                {/* Worker Info */}
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <Avatar className="h-9 w-9 flex-shrink-0">
+                        <AvatarFallback className="bg-primary/15 text-primary font-semibold text-xs">
+                            {worker.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-sm text-foreground truncate">{worker.name}</span>
+                            {isLeader && (
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-500 border-none font-bold flex-shrink-0">
+                                    LEADER
+                                </Badge>
+                            )}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">{worker.trade}</div>
+                    </div>
+                </div>
+
+                {/* Attendance Controls */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Day Value Column */}
+                    <div className="flex flex-col items-center">
+                        <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-0.5">DAYS</label>
+                        <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="3"
+                            className="w-12 h-8 rounded-md bg-background/80 border border-border/40 text-center text-sm font-semibold focus:ring-1 focus:ring-primary/30 focus:border-primary/50 outline-none"
+                            value={status?.dayValue ?? 1}
+                            onChange={(e) => setMap((prev: any) => ({ ...prev, [worker._id]: { ...(prev[worker._id] || {}), dayValue: e.target.value } }))}
+                            onBlur={(e) => status?.present && onMark(worker._id, true, parseFloat(e.target.value || '1'))}
+                        />
+                    </div>
+
+                    {/* Presence Buttons */}
                     <button
-                        className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${status?.present === true ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'text-muted-foreground hover:bg-white/5'}`}
+                        className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${isPresentMarked
+                            ? 'bg-green-500 text-white'
+                            : 'bg-background/80 border border-border/40 text-muted-foreground hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/40'
+                            }`}
                         onClick={() => onMark(worker._id, true, parseFloat(String(status?.dayValue || '1')))}
                     >
                         <CheckSquare className="w-4 h-4" />
                     </button>
                     <button
-                        className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${status?.present === false ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'text-muted-foreground hover:bg-white/5'}`}
+                        className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${isAbsentMarked
+                            ? 'bg-red-500 text-white'
+                            : 'bg-background/80 border border-border/40 text-muted-foreground hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/40'
+                            }`}
                         onClick={() => onMark(worker._id, false, 0)}
                     >
                         <AlertCircle className="w-4 h-4" />

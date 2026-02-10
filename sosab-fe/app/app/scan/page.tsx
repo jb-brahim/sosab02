@@ -6,9 +6,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Camera, Package, CheckCircle, Plus, X, Loader2 } from "lucide-react"
+import { Camera, Package, CheckCircle, Plus, X, Loader2, Calendar as CalendarIcon } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { format } from "date-fns"
 import { useRouter, useSearchParams } from "next/navigation"
 
 export default function ScanPage() {
@@ -29,6 +32,8 @@ export default function ScanPage() {
   const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -87,6 +92,7 @@ export default function ScanPage() {
       formData.append('quantity', quantity)
       formData.append('deliveredBy', deliveredBy)
       formData.append('supplier', supplierName)
+      formData.append('arrivalDate', format(selectedDate, 'yyyy-MM-dd'))
       formData.append('notes', notes)
 
       photos.forEach(photo => formData.append('photos', photo))
@@ -125,11 +131,37 @@ export default function ScanPage() {
 
   return (
     <div className="space-y-6 p-4 pb-24 max-w-md mx-auto">
-      <div className="pt-2">
-        <h1 className="font-display text-2xl font-bold">Material Arrival</h1>
-        <p className="text-sm text-muted-foreground font-medium">
-          {currentProject ? `Site: ${currentProject.name}` : "Log material delivery"}
-        </p>
+      <div className="pt-2 flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <h1 className="font-display text-2xl font-bold">Material Arrival</h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            {currentProject ? `Site: ${currentProject.name}` : "Log material delivery"}
+          </p>
+        </div>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="bg-background/50 text-xs font-black uppercase tracking-widest px-3 py-2 h-auto border-border/40 hover:bg-background/80 hover:border-primary/30 transition-all flex-shrink-0"
+            >
+              <CalendarIcon className="w-3.5 h-3.5 mr-2" />
+              {format(selectedDate, 'MMM dd')}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => {
+                if (date) {
+                  setSelectedDate(date)
+                  setDatePickerOpen(false)
+                }
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="space-y-4">
