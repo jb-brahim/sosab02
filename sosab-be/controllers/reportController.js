@@ -333,7 +333,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
       });
 
       // Calculate total from the dynamic range
-      totalDays = dailyAttendance.reduce((sum, val) => sum + val, 0);
+      const totalDays = dailyAttendance.reduce((sum, val) => sum + val, 0);
 
       attendanceGrid.push({
         name: worker.name,

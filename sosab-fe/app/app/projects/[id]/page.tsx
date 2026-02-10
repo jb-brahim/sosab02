@@ -356,7 +356,7 @@ export default function MobileProjectDetails() {
                                 </Button>
                             </div>
                             <div className="p-0">
-                                <div className="max-h-48 overflow-y-auto custom-scrollbar gpu">
+                                <div className="max-h-48 overflow-y-auto custom-scrollbar gpu" style={{ contentVisibility: 'auto' } as any}>
                                     {materialLogs.length === 0 ? (
                                         <div className="p-6 text-center text-muted-foreground text-xs">No recent activity.</div>
                                     ) : (
@@ -513,7 +513,7 @@ export default function MobileProjectDetails() {
                         </div>
 
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
-                        <div className="space-y-4 pb-12">
+                        <div className="space-y-4 pb-12" style={{ contentVisibility: 'auto' } as any}>
                             {team.filter(w => !w.supervisorId).map((worker) => {
                                 const isSousTraitant = worker.trade === 'Sous Traitant';
                                 const subWorkers = team.filter(sw => sw.supervisorId === worker._id);
@@ -791,7 +791,7 @@ export default function MobileProjectDetails() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-2" style={{ contentVisibility: 'auto' } as any}>
                                     {team.map(w => (
                                         <div key={w._id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors group">
                                             <div className="flex items-center gap-3">

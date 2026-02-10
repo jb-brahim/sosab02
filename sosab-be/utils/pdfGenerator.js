@@ -1,12 +1,25 @@
 const puppeteer = require('puppeteer');
 
-// ... (keep helper functions)
+// Helper functions for formatting
+const formatTND = (num) => {
+  return new Intl.NumberFormat('fr-TN', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
+  }).format(num || 0);
+};
+
+const formatDateTN = (date) => {
+  return new Date(date).toLocaleDateString('fr-TN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
 
 // Generate PDF from HTML using Puppeteer
 exports.generatePDF = async (htmlContent, outputPath) => {
   try {
-    // ... (keep validation)
-
     console.log('Starting PDF generation...');
     console.log('Output path:', outputPath);
 

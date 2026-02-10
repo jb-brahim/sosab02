@@ -262,6 +262,7 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
       size: m.size,
       projectId: m.projectId ? m.projectId._id : null,
       projectName: m.projectId ? m.projectId.name : 'Unknown Project',
+      createdAt: m.createdAt,
       totalIn: stat ? stat.totalIn : 0,
       totalOut: stat ? stat.totalOut : 0
     };

@@ -36,7 +36,7 @@ export default function MaterialsPage() {
 
     const filteredMaterials = materials
         .filter(item => item.supplier.toLowerCase().includes(searchQuery.toLowerCase()) || item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return (
         <div className="min-h-screen bg-background relative overflow-hidden pb-24 gpu">
@@ -98,7 +98,7 @@ export default function MaterialsPage() {
                         <p className="text-xs text-muted-foreground/50 mt-1">Try adjusting your search.</p>
                     </div>
                 ) : (
-                    <div className="grid gap-3 animate-in delay-300">
+                    <div className="grid gap-3 animate-in delay-300" style={{ contentVisibility: 'auto' } as any}>
                         {filteredMaterials.map((item, index) => (
                             <div
                                 key={item.materialId}

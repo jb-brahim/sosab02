@@ -138,8 +138,9 @@
 /* Custom utility classes */
 @layer utilities {
   .gpu {
-    transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
     will-change: transform, opacity;
+    contain: paint;
   }
 
   .glass {
@@ -147,7 +148,7 @@
   }
 
   .glass-card {
-    @apply bg-card/60 border border-white/5 shadow-lg transition duration-200 hover:bg-card/80 hover:border-primary/20 hover:shadow-primary/5 backdrop-blur-sm;
+    @apply bg-card/85 border border-white/5 shadow-md transition duration-200 hover:bg-card/95 hover:border-primary/20 hover:shadow-primary/5;
   }
 
   .glow-primary {
@@ -170,6 +171,7 @@
     animation: animate-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     opacity: 0;
     will-change: transform, opacity;
+    transform: translate3d(0, 10px, 0);
   }
 
   .delay-100 {
@@ -188,11 +190,11 @@
 @keyframes animate-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 10px, 0);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }

@@ -113,7 +113,7 @@ export default function MobileHome() {
               <p className="text-muted-foreground text-sm">No active operations assigned.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4" style={{ contentVisibility: 'auto' } as any}>
               {projects.map((project, index) => (
                 <Link href={`/app/projects/${project._id}`} key={project._id} className="block group gpu will-change-transform">
                   <div
