@@ -39,9 +39,9 @@ export default function MaterialsPage() {
         .sort((a, b) => a.name.localeCompare(b.name))
 
     return (
-        <div className="min-h-screen bg-background relative overflow-hidden pb-24">
+        <div className="min-h-screen bg-background relative overflow-hidden pb-24 gpu">
             {/* Decorative Background Elements */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/2 rounded-full blur-2xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
             <div className="p-4 space-y-6 relative z-10">
                 {/* Header */}
@@ -102,7 +102,7 @@ export default function MaterialsPage() {
                         {filteredMaterials.map((item, index) => (
                             <div
                                 key={item.materialId}
-                                className="glass-card rounded-xl p-0 overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-transform"
+                                className="glass-card rounded-xl p-0 overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-transform gpu will-change-transform"
                                 onClick={() => router.push(`/app/materials/${item.materialId}`)}
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >

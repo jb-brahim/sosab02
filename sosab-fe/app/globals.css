@@ -126,22 +126,28 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 /* Custom utility classes */
 @layer utilities {
+  .gpu {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+
   .glass {
-    @apply backdrop-blur-xl bg-background/60 border border-white/10 shadow-2xl;
+    @apply bg-background/80 border border-white/10 shadow-2xl backdrop-blur-md;
   }
 
   .glass-card {
-    @apply backdrop-blur-md bg-card/40 border border-white/5 shadow-lg transition-all duration-300 hover:bg-card/50 hover:border-primary/20 hover:shadow-primary/5;
+    @apply bg-card/60 border border-white/5 shadow-lg transition-[background-color, border-color, box-shadow] duration-200 hover:bg-card/80 hover:border-primary/20 hover:shadow-primary/5 backdrop-blur-sm;
   }
 
   .glow-primary {
@@ -161,9 +167,9 @@
   }
 
   .animate-in {
-    animation: animate-in 0.5s ease-out forwards;
+    animation: animate-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     opacity: 0;
-    transform: translateY(10px);
+    will-change: transform, opacity;
   }
 
   .delay-100 {

@@ -56,10 +56,10 @@ export default function MobileHome() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-24">
+    <div className="min-h-screen bg-background relative overflow-hidden pb-24 gpu">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/2 rounded-full blur-2xl pointer-events-none" />
 
       <div className="p-4 space-y-8 relative z-10">
         {/* Hero Section */}
@@ -115,7 +115,7 @@ export default function MobileHome() {
           ) : (
             <div className="space-y-4">
               {projects.map((project, index) => (
-                <Link href={`/app/projects/${project._id}`} key={project._id} className="block group">
+                <Link href={`/app/projects/${project._id}`} key={project._id} className="block group gpu will-change-transform">
                   <div
                     className="glass-card rounded-2xl p-0 overflow-hidden relative transition-all duration-300 active:scale-[0.98] group-hover:border-primary/30"
                     style={{ animationDelay: `${(index + 3) * 100}ms` }}

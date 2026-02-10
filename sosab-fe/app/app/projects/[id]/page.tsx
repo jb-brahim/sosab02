@@ -300,12 +300,12 @@ export default function MobileProjectDetails() {
     if (!project) return null
 
     return (
-        <div className="min-h-screen bg-background relative overflow-hidden pb-20">
+        <div className="min-h-screen bg-background relative overflow-hidden pb-20 gpu">
             {/* Decorative Background Elements - matching dashboard */}
             <div className="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
 
             {/* Header */}
-            <div className="sticky top-0 z-20 flex items-center gap-4 border-b border-white/5 bg-background/60 p-4 backdrop-blur-xl transition-all">
+            <div className="sticky top-0 z-20 flex items-center gap-4 border-b border-white/5 bg-background/80 p-4 backdrop-blur-md transition-all">
                 <Button variant="ghost" size="icon" onClick={() => router.push("/app")} className="hover:bg-primary/20 hover:text-primary rounded-xl">
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -356,7 +356,7 @@ export default function MobileProjectDetails() {
                                 </Button>
                             </div>
                             <div className="p-0">
-                                <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                <div className="max-h-48 overflow-y-auto custom-scrollbar gpu">
                                     {materialLogs.length === 0 ? (
                                         <div className="p-6 text-center text-muted-foreground text-xs">No recent activity.</div>
                                     ) : (
