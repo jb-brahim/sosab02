@@ -147,7 +147,7 @@
   }
 
   .glass-card {
-    @apply bg-card/60 border border-white/5 shadow-lg transition-[background-color, border-color, box-shadow] duration-200 hover:bg-card/80 hover:border-primary/20 hover:shadow-primary/5 backdrop-blur-sm;
+    @apply bg-card/60 border border-white/5 shadow-lg transition duration-200 hover:bg-card/80 hover:border-primary/20 hover:shadow-primary/5 backdrop-blur-sm;
   }
 
   .glow-primary {
