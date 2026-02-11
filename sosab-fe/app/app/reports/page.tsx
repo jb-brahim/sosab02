@@ -3,11 +3,21 @@
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
-import { FileText, Download, Calendar, ArrowLeft, Trash2 } from "lucide-react"
+import { FileText, Download, Calendar, ArrowLeft, Trash2, Search, Filter, Package, AlertCircle, HardHat, Image as ImageIcon } from "lucide-react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,11 +51,13 @@ export default function ReportsPage() {
     }
 
     useEffect(() => {
-        const fetchReports = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/reports')
-                if (res.data.success) {
-                    setReports(res.data.data)
+                setLoading(true)
+                const reportsRes = await api.get('/reports')
+                if (reportsRes.data.success) {
+                    // Filter out activity reports as they are now in their own page
+                    setReports(reportsRes.data.data.filter((r: any) => r.type !== 'activity'))
                 }
             } catch (error) {
                 console.error("Failed to load reports", error)
@@ -53,14 +65,10 @@ export default function ReportsPage() {
                 setLoading(false)
             }
         }
-        fetchReports()
+        fetchData()
     }, [])
 
     const openReport = (pdfUrl: string) => {
-        // Safe URL construction using the shared backend constant
-        // Remove trailing slash if present, and remove /api suffix if present (though BACKEND_URL usually shouldn't have /api unless set that way, but safety first)
-        // Actually, in api.ts we distinguish BACKEND_URL (root) from baseURL (/api)
-        // So we just import BACKEND_URL.
         const apiUrl = require('@/lib/api').BACKEND_URL;
         window.open(`${apiUrl}${pdfUrl}`, '_blank')
     }
@@ -74,9 +82,9 @@ export default function ReportsPage() {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <FileText className="w-6 h-6 text-primary" />
-                        Reports
+                        Technical Reports
                     </h1>
-                    <p className="text-muted-foreground text-xs">Manage and generate reports.</p>
+                    <p className="text-muted-foreground text-xs">Manage and generate technical & financial reports.</p>
                 </div>
                 <div className="ml-auto">
                     <Button size="sm" onClick={() => router.push('/app/reports/generate')}>
@@ -85,60 +93,71 @@ export default function ReportsPage() {
                 </div>
             </div>
 
-
-
-            {loading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
-            ) : reports.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground bg-muted/20 rounded-lg">
-                    <FileText className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                    <p>No reports found.</p>
-                </div>
-            ) : (
-                <div className="grid gap-3">
-                    {reports.map((report) => (
-                        <Card key={report._id} className="active:scale-[0.99] transition-transform cursor-pointer" onClick={() => openReport(report.pdfUrl)}>
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div className="flex items-start gap-3">
-                                    <div className="bg-red-100 text-red-600 p-2 rounded-lg">
-                                        <FileText className="w-5 h-5" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h3 className="font-semibold text-sm">
-                                            {report.projectId?.name || 'Unknown Project'} - {report.type.toUpperCase()}
-                                        </h3>
-                                        <div className="flex flex-col text-xs text-muted-foreground">
-                                            {report.week && report.week !== 'CUSTOM' ? (
-                                                <span className="flex items-center gap-1">
-                                                    Week: {report.week}
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {format(new Date(report.startDate), 'dd/MM')} - {format(new Date(report.endDate), 'dd/MM/yy')}
-                                                </span>
-                                            )}
-                                            <span className="opacity-70 mt-1">Generated: {format(new Date(report.createdAt), 'dd MMM HH:mm')}</span>
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {loading ? (
+                    <div className="text-center py-12 text-muted-foreground animate-pulse font-medium">Loading reports...</div>
+                ) : reports.length === 0 ? (
+                    <div className="text-center py-20 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border/30">
+                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                        <p className="font-medium text-lg">No reports found.</p>
+                        <p className="text-xs opacity-60">Generate a new technical report to see it here.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {reports.map((report) => (
+                            <Card key={report._id} className="group overflow-hidden border-border/40 hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-md" onClick={() => openReport(report.pdfUrl)}>
+                                <CardContent className="p-0">
+                                    <div className="p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-red-500/10 text-red-500 rounded-xl group-hover:bg-red-500/20 transition-colors">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h3 className="font-bold text-sm tracking-tight text-foreground/90">
+                                                    {report.projectId?.name || 'Unknown Project'}
+                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 py-0 rounded-md bg-muted/30">
+                                                        {report.type}
+                                                    </Badge>
+                                                    <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">
+                                                        {report.week && report.week !== 'CUSTOM' ? `Week ${report.week}` : 'Custom Range'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-primary/5 hover:text-primary" onClick={(e) => {
+                                                e.stopPropagation()
+                                                openReport(report.pdfUrl)
+                                            }}>
+                                                <Download className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" onClick={(e) => {
+                                                e.stopPropagation()
+                                                setDeleteId(report._id)
+                                            }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </div>
-                                </div>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground mr-1" onClick={(e) => {
-                                    e.stopPropagation()
-                                    openReport(report.pdfUrl)
-                                }}>
-                                    <Download className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={(e) => {
-                                    e.stopPropagation()
-                                    setDeleteId(report._id)
-                                }}>
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
+                                    <div className="px-4 py-2 bg-muted/20 border-t border-border/20 flex justify-between items-center text-[10px]">
+                                        <span className="text-muted-foreground font-medium flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {format(new Date(report.createdAt), 'dd MMM yyyy, HH:mm')}
+                                        </span>
+                                        {!report.week || report.week === 'CUSTOM' ? (
+                                            <span className="font-black opacity-40">
+                                                {format(new Date(report.startDate), 'dd MMM')} - {format(new Date(report.endDate), 'dd MMM')}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">

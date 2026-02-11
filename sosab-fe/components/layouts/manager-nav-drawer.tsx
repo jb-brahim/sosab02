@@ -8,6 +8,7 @@ import {
     FolderKanban,
     Package,
     FileBarChart,
+    ClipboardList,
     LogOut,
     User,
     HardHat,
@@ -31,6 +32,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 const managerNavItems = [
     { href: "/app", icon: FolderKanban, label: "Projects" },
     { href: "/app/materials", icon: Package, label: "Materials" },
+    { href: "/app/daily-reports", icon: ClipboardList, label: "Daily Reports" },
     { href: "/app/reports", icon: FileBarChart, label: "Reports" },
 ]
 

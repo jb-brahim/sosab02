@@ -108,7 +108,6 @@ export default function ProjectsPage() {
                                     <TableHead>Project Name</TableHead>
                                     <TableHead>Location</TableHead>
                                     <TableHead>Manager</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead>Budget</TableHead>
                                     <TableHead>Timeline</TableHead>
                                 </TableRow>
@@ -130,11 +129,6 @@ export default function ProjectsPage() {
                                             <TableCell className="font-medium">{project.name}</TableCell>
                                             <TableCell className="text-muted-foreground">{project.location}</TableCell>
                                             <TableCell>{project.manager?.name || "Unassigned"}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={statusColors[project.status] || "bg-muted"}>
-                                                    {project.status}
-                                                </Badge>
-                                            </TableCell>
                                             <TableCell>{project.budget?.toLocaleString()} TND</TableCell>
                                             <TableCell className="text-sm text-muted-foreground">
                                                 {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}

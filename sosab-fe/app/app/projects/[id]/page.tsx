@@ -44,8 +44,12 @@ export default function MobileProjectDetails() {
     const [reportForm, setReportForm] = useState({
         workCompleted: '',
         issues: '',
+        materialsUsed: [] as { materialId: string, quantity: number, name?: string }[],
         photos: null as FileList | null
     })
+    const [tempMaterial, setTempMaterial] = useState({ id: '', quantity: '' })
+    const [materialSearch, setMaterialSearch] = useState('')
+    const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false)
     const [submittingReport, setSubmittingReport] = useState(false)
 
     const [showRegisterUsage, setShowRegisterUsage] = useState(false)
@@ -166,7 +170,8 @@ export default function MobileProjectDetails() {
             formData.append('projectId', id as string)
             formData.append('workCompleted', reportForm.workCompleted)
             formData.append('issues', reportForm.issues)
-            formData.append('date', new Date().toISOString())
+            formData.append('materialsUsed', JSON.stringify(reportForm.materialsUsed.map(m => ({ materialId: m.materialId, quantity: m.quantity }))))
+            formData.append('date', selectedDate.toISOString())
 
             if (reportForm.photos) {
                 Array.from(reportForm.photos).forEach(file => {
@@ -180,7 +185,7 @@ export default function MobileProjectDetails() {
             })
 
             toast.success("Daily Report Sent!")
-            setReportForm({ workCompleted: '', issues: '', photos: null })
+            setReportForm({ workCompleted: '', issues: '', materialsUsed: [], photos: null })
         } catch (error) {
             console.error(error)
             toast.error("Failed to send report")
@@ -312,11 +317,6 @@ export default function MobileProjectDetails() {
                 <div>
                     <h1 className="text-lg font-display font-bold tracking-tight">{project.name}</h1>
                 </div>
-                <Badge
-                    className={`ml-auto border border-white/10 ${project.status === 'Active' ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-muted text-muted-foreground'}`}
-                >
-                    {project.status}
-                </Badge>
             </div>
 
             <div className="p-4 relative z-10">
@@ -421,12 +421,47 @@ export default function MobileProjectDetails() {
 
                     {/* REPORT PROBLEM TAB */}
                     <TabsContent value="report" className="space-y-4 mt-6 animate-in">
-                        <div className="glass-card rounded-2xl p-5 border-l-4 border-l-primary/50">
-                            <div className="mb-4">
-                                <h3 className="font-display text-lg font-bold">Daily Report</h3>
-                                <p className="text-xs text-muted-foreground">Submit daily progress or report site issues.</p>
+                        <div className="flex items-center justify-between mb-4 glass p-3 rounded-2xl border border-primary/10">
+                            <div className="flex items-center gap-3">
+                                {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                                )}
+                                <div>
+                                    <h3 className="font-display font-bold text-sm tracking-tight text-foreground">
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'Daily Report' : 'Archive Report'}
+                                    </h3>
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "Submit daily progress" : "View or edit past report"}
+                                    </p>
+                                </div>
                             </div>
+                            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="bg-background/50 text-xs font-black uppercase tracking-widest px-3 py-2 h-auto border-white/5 hover:bg-background/80 hover:border-primary/30 transition-all"
+                                    >
+                                        <CalendarIcon className="w-3.5 h-3.5 mr-2" />
+                                        {format(selectedDate, 'MMM dd')}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => {
+                                            if (date) {
+                                                setSelectedDate(date)
+                                                setShowDatePicker(false)
+                                            }
+                                        }}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
 
+                        <div className="glass-card rounded-2xl p-5 border-l-4 border-l-primary/50">
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -438,6 +473,110 @@ export default function MobileProjectDetails() {
                                         value={reportForm.workCompleted}
                                         onChange={e => setReportForm({ ...reportForm, workCompleted: e.target.value })}
                                     />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                        <HardHat className="w-3 h-3 text-amber-500" /> Materials Used
+                                    </label>
+
+                                    <div className="flex gap-2 relative">
+                                        <div className="flex-[2] relative">
+                                            <Input
+                                                placeholder="Search Material..."
+                                                className="bg-background/50 border-border/50 text-sm"
+                                                value={materialSearch}
+                                                onChange={e => {
+                                                    setMaterialSearch(e.target.value)
+                                                    setShowMaterialSuggestions(e.target.value.length >= 3)
+                                                }}
+                                                onFocus={() => {
+                                                    if (materialSearch.length >= 3) setShowMaterialSuggestions(true)
+                                                }}
+                                            />
+                                            {showMaterialSuggestions && (
+                                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border/50 rounded-xl shadow-xl max-h-[200px] overflow-y-auto glass animate-in fade-in slide-in-from-top-1">
+                                                    {projectMaterials
+                                                        .filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase()))
+                                                        .map(m => (
+                                                            <button
+                                                                key={m._id}
+                                                                className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 transition-colors flex justify-between items-center border-b border-border/10 last:border-0"
+                                                                onClick={() => {
+                                                                    setTempMaterial(prev => ({ ...prev, id: m._id }))
+                                                                    setMaterialSearch(m.name)
+                                                                    setShowMaterialSuggestions(false)
+                                                                }}
+                                                            >
+                                                                <span className="font-medium">{m.name}</span>
+                                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                                                                    {m.stockQuantity} {m.unit}
+                                                                </span>
+                                                            </button>
+                                                        ))
+                                                    }
+                                                    {projectMaterials.filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase())).length === 0 && (
+                                                        <div className="px-4 py-3 text-xs text-muted-foreground text-center">
+                                                            No materials found
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            placeholder="Qty"
+                                            className="flex-1 bg-background/50 border-border/50"
+                                            value={tempMaterial.quantity}
+                                            onChange={e => setTempMaterial(prev => ({ ...prev, quantity: e.target.value }))}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                                            onClick={() => {
+                                                if (!tempMaterial.id || !tempMaterial.quantity) {
+                                                    toast.error("Please select a material and enter quantity")
+                                                    return;
+                                                }
+                                                const mat = projectMaterials.find(m => m._id === tempMaterial.id);
+                                                setReportForm(prev => ({
+                                                    ...prev,
+                                                    materialsUsed: [...prev.materialsUsed, {
+                                                        materialId: tempMaterial.id,
+                                                        quantity: Number(tempMaterial.quantity),
+                                                        name: mat?.name
+                                                    }]
+                                                }));
+                                                setTempMaterial({ id: '', quantity: '' });
+                                                setMaterialSearch('');
+                                            }}
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
+
+                                    {reportForm.materialsUsed.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 p-3 bg-white/5 rounded-xl border border-white/5">
+                                            {reportForm.materialsUsed.map((m, idx) => (
+                                                <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20 py-1 pl-3 pr-1 flex items-center gap-2">
+                                                    {m.name}: {m.quantity}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-4 w-4 rounded-full hover:bg-red-500/20 hover:text-red-500"
+                                                        onClick={() => {
+                                                            setReportForm((prev: any) => ({
+                                                                ...prev,
+                                                                materialsUsed: prev.materialsUsed.filter((_: any, i: number) => i !== idx)
+                                                            }));
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-2.5 w-2.5" />
+                                                    </Button>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -480,10 +619,16 @@ export default function MobileProjectDetails() {
                     <TabsContent value="attendance" className="space-y-4 mt-6 animate-in">
                         <div className="flex items-center justify-between mb-4 glass p-3 rounded-2xl border border-primary/10">
                             <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                )}
                                 <div>
-                                    <h3 className="font-display font-bold text-sm tracking-tight text-foreground">Live Attendance</h3>
-                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Mark today's presence</p>
+                                    <h3 className="font-display font-bold text-sm tracking-tight text-foreground">
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'Live Attendance' : 'Attendance Records'}
+                                    </h3>
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "Mark today's presence" : "View or edit past presence"}
+                                    </p>
                                 </div>
                             </div>
                             <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>

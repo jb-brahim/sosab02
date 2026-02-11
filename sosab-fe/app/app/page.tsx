@@ -125,12 +125,6 @@ export default function MobileHome() {
 
                     <div className="p-5 pl-7">
                       <div className="flex justify-between items-start mb-3">
-                        <Badge
-                          variant="outline"
-                          className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5"
-                        >
-                          {project.status || 'Active'}
-                        </Badge>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                       </div>
 

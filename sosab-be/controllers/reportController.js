@@ -264,32 +264,34 @@ exports.generateReport = asyncHandler(async (req, res) => {
     htmlContent = generateMaterialReportHTML(reportData);
 
   } else if (type === 'activity') {
-    // Generate activity report - ACCURATE for any range
-    // We can fetch DailyReports in range to build activity list?
-    // Existing logic was dummy data. Let's make it real using DailyReports?
-    // Or keep existing simple logic.
-
-    // Let's improve it: Fetch Daily Reports in range
+    // Generate activity report - fetched from real DailyReports
     const dailyReports = await require('../models/DailyReport').find({
       projectId,
       date: { $gte: start, $lte: end }
-    }).sort({ date: 1 });
+    }).populate('materialsUsed.materialId', 'name unit')
+      .sort({ date: 1 });
 
     const activities = dailyReports.map(dr => ({
-      title: `Rapport Journalier / التقرير اليومي`,
-      description: `Progression: ${dr.progress}%, Ouvriers: ${dr.workersPresent}.\nNotes: ${dr.notes || ''}\nIssues: ${dr.issues || ''}`,
+      workCompleted: dr.workCompleted,
+      issues: dr.issues,
+      materialsUsed: dr.materialsUsed,
+      workersPresent: dr.workersPresent,
       date: dr.date
     }));
 
     if (activities.length === 0) {
       activities.push({
-        title: 'Aucune activité / لا يوجد نشاط',
-        description: 'Aucun rapport journalier trouvé pour cette période.',
+        workCompleted: 'Aucun rapport journalier trouvé pour cette période.',
         date: new Date()
       });
     }
 
-    reportData = { project, headerLabel: dateLabel, activities };
+    reportData = {
+      project,
+      headerLabel: dateLabel,
+      activities,
+      generatedBy: req.user.name
+    };
     htmlContent = generateActivityReportHTML(reportData);
 
   } else if (type === 'attendance') {

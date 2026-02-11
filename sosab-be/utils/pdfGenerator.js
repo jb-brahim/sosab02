@@ -326,65 +326,249 @@ exports.generateMaterialReportHTML = (data) => {
   `;
 };
 
-// Generate activity report HTML
+// Generate strictly French activity report HTML
 exports.generateActivityReportHTML = (data) => {
-  const { project, week, activities } = data;
+  const { project, headerLabel, activities } = data;
 
   return `
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Rapport d'Activités / تقرير الأنشطة - ${project.name}</title>
+  <title>Rapport d'Activités - ${project.name}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563EB; padding-bottom: 20px; }
-    .header h1 { color: #333; margin: 0; font-size: 24px; }
-    .header h2 { color: #2563EB; margin: 10px 0; font-size: 20px; }
-    .header p { color: #666; margin: 5px 0; }
-    .bilingual { display: flex; justify-content: space-between; align-items: center; }
-    .bilingual .ar { direction: rtl; text-align: right; }
-    .bilingual .fr { direction: ltr; text-align: left; }
-    .activity { margin: 15px 0; padding: 15px; border-left: 4px solid #2563EB; background-color: #F9FAFB; border-radius: 5px; }
-    .activity h3 { color: #2563EB; margin-top: 0; }
-    .activity p { color: #374151; line-height: 1.6; }
-    .activity small { color: #6B7280; }
-    .footer { margin-top: 30px; text-align: center; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      margin: 0; 
+      padding: 40px; 
+      color: #0f172a; 
+      background: #fff; 
+      line-height: 1.6; 
+    }
+    
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 40px; 
+      border-bottom: 2px solid #e1e7ef; 
+      padding-bottom: 20px; 
+    }
+    
+    .brand h1 { 
+      margin: 0; 
+      font-size: 24px; 
+      font-weight: 800; 
+      color: #0f172a; 
+      letter-spacing: -0.5px; 
+    }
+    
+    .brand p { 
+      margin: 2px 0 0 0; 
+      color: #64748b; 
+      font-size: 13px; 
+      font-weight: 500; 
+    }
+    
+    .report-badge {
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .title-section { 
+      margin-bottom: 40px; 
+    }
+    
+    .title-section h2 { 
+      margin: 0; 
+      font-size: 28px; 
+      font-weight: 800; 
+      color: #0f172a; 
+      letter-spacing: -1px;
+    }
+    
+    .meta-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 30px; 
+      margin-top: 20px;
+    }
+    
+    .meta-item label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .meta-item span {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .log-entry { 
+      margin-bottom: 35px; 
+      page-break-inside: avoid; 
+    }
+    
+    .log-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding-bottom: 12px; 
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 15px;
+    }
+    
+    .log-date { 
+      font-weight: 800; 
+      font-size: 18px; 
+      color: #0f172a;
+    }
+    
+    .log-workers { 
+      font-size: 12px; 
+      font-weight: 700; 
+      color: #2563eb;
+      background: #eff6ff; 
+      padding: 4px 10px; 
+      border-radius: 20px; 
+    }
+    
+    .content-box {
+      margin-bottom: 20px;
+    }
+    
+    .content-box label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    
+    .work-text {
+      font-size: 14px;
+      color: #1e293b;
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #f1f5f9;
+      white-space: pre-wrap;
+    }
+    
+    .materials-section {
+      margin-top: 15px;
+    }
+    
+    .materials-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .material-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+    
+    .material-qty {
+      color: #2563eb;
+      font-weight: 800;
+      margin-left: 6px;
+    }
+
+    .footer { 
+      margin-top: 60px; 
+      text-align: center; 
+      color: #94a3b8; 
+      font-size: 11px; 
+      border-top: 1px solid #f1f5f9; 
+      padding-top: 20px; 
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>SOSAB - Système de Gestion de Construction</h1>
-    <h1 style="direction: rtl;">نظام إدارة البناء SOSAB</h1>
-    <h2>Rapport d'Activités Hebdomadaire</h2>
-    <h2 style="direction: rtl;">تقرير الأنشطة الأسبوعي</h2>
-    <div class="bilingual">
-      <div class="fr">
-        <p><strong>Projet:</strong> ${project.name}</p>
-        <p><strong>Lieu:</strong> ${project.location || 'Non spécifié'}</p>
-        <p><strong>Semaine:</strong> ${week}</p>
-        <p><strong>Date de génération:</strong> ${formatDateTN(new Date())}</p>
+    <div class="brand">
+      <h1>SOSAB CONSTRUCTION</h1>
+      <p>Suivi de Chantier & Infrastructures</p>
+    </div>
+    <div class="report-badge">Rapport d'Activité</div>
+  </div>
+
+  <div class="title-section">
+    <h2>Compte Rendu d'Activités</h2>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <label>Projet</label>
+        <span>${project.name}</span>
       </div>
-      <div class="ar">
-        <p><strong>المشروع:</strong> ${project.name}</p>
-        <p><strong>الموقع:</strong> ${project.location || 'غير محدد'}</p>
-        <p><strong>الأسبوع:</strong> ${week}</p>
-        <p><strong>تاريخ الإنشاء:</strong> ${formatDateTN(new Date())}</p>
+      <div class="meta-item">
+        <label>Période</label>
+        <span>${headerLabel}</span>
+      </div>
+      <div class="meta-item">
+        <label>Localisation</label>
+        <span>${project.location || 'Tunisie'}</span>
+      </div>
+      <div class="meta-item">
+        <label>Responsable</label>
+        <span>${data.generatedBy || 'Chef de Projet'}</span>
       </div>
     </div>
   </div>
-  
-  ${activities.map(activity => `
-    <div class="activity">
-      <h3>${activity.title} / ${activity.title}</h3>
-      <p>${activity.description}</p>
-      <p><small>Date / التاريخ: ${typeof activity.date === 'string' ? activity.date : formatDateTN(activity.date)}</small></p>
+
+  ${activities.map(log => `
+    <div class="log-entry">
+      <div class="log-header">
+        <div class="log-date">${formatDateTN(log.date)}</div>
+        <div class="log-workers">${log.workersPresent || 0} OUVRIERS</div>
+      </div>
+      
+      <div class="content-box">
+        <label>Travaux Réalisés</label>
+        <div class="work-text">${log.workCompleted || "Aucune activité enregistrée."}</div>
+      </div>
+      
+      ${log.materialsUsed && log.materialsUsed.length > 0 ? `
+        <div class="materials-section">
+          <label>Matériaux Utilisés</label>
+          <div class="materials-list">
+            ${log.materialsUsed.map(m => `
+              <div class="material-item">
+                ${m.materialId?.name || m.name}
+                <span class="material-qty">${m.quantity} ${m.materialId?.unit || ''}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
     </div>
   `).join('')}
-  
+
   <div class="footer">
-    <p>Ce rapport a été généré automatiquement par le système SOSAB</p>
-    <p style="direction: rtl;">تم إنشاء هذا التقرير تلقائياً بواسطة نظام SOSAB</p>
+    <p>Ce document est généré par le système SOSAB CRM le ${formatDateTN(new Date())}</p>
+    <p>SOSAB - Excellence dans la Construction - Page 1/1</p>
   </div>
 </body>
 </html>
