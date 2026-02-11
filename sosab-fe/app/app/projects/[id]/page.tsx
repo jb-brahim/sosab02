@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useLanguage } from "@/lib/language-context"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -31,6 +32,7 @@ import {
 export default function MobileProjectDetails() {
     const { id } = useParams()
     const router = useRouter()
+    const { t } = useLanguage()
     const searchParams = useSearchParams()
     const activeTab = searchParams.get('tab') || 'overview'
 
@@ -148,7 +150,7 @@ export default function MobileProjectDetails() {
             const dateString = format(selectedDate, 'yyyy-MM-dd')
 
             await api.post('/attendance', { workerId, projectId: id, date: dateString, present, dayValue })
-            toast.success(`Marked as ${present ? 'Present' : 'Absent'} (${dayValue}x)`)
+            toast.success(`${t("projects.marked_as")} ${present ? t("projects.present") : t("projects.absent")} (${dayValue}x)`)
 
             // Update local state to hide buttons immediately
             setAttendanceMap(prev => ({
@@ -184,7 +186,7 @@ export default function MobileProjectDetails() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
 
-            toast.success("Daily Report Sent!")
+            toast.success(t("projects.report_sent") || "Daily Report Sent!")
             setReportForm({ workCompleted: '', issues: '', materialsUsed: [], photos: null })
         } catch (error) {
             console.error(error)
@@ -298,7 +300,7 @@ export default function MobileProjectDetails() {
         <div className="flex h-screen items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4 animate-pulse">
                 <Spinner />
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Loading Project...</p>
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t("projects.loading_project") || "Loading Project..."}</p>
             </div>
         </div>
     )
@@ -322,9 +324,9 @@ export default function MobileProjectDetails() {
             <div className="p-4 relative z-10">
                 <Tabs defaultValue={activeTab} onValueChange={(val) => router.replace(`/app/projects/${id}?tab=${val}`, { scroll: false })} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 bg-card/40 backdrop-blur-md border border-white/5 p-1 rounded-xl h-auto">
-                        <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">Overview</TabsTrigger>
-                        <TabsTrigger value="report" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">Report</TabsTrigger>
-                        <TabsTrigger value="attendance" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">Attendance</TabsTrigger>
+                        <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">{t("projects.overview")}</TabsTrigger>
+                        <TabsTrigger value="report" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">{t("projects.report")}</TabsTrigger>
+                        <TabsTrigger value="attendance" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs py-2 data-[state=active]:shadow-none focus:ring-0">{t("projects.attendance")}</TabsTrigger>
                     </TabsList>
 
                     {/* OVERVIEW TAB */}
@@ -335,12 +337,12 @@ export default function MobileProjectDetails() {
                             <div className="glass-card rounded-xl p-4 flex flex-col items-center justify-center gap-1 text-center group">
                                 <UsersIcon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors mb-1" />
                                 <span className="text-2xl font-display font-bold">{team.length}</span>
-                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">On Site</span>
+                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{t("projects.on_site")}</span>
                             </div>
                             <div className="glass-card rounded-xl p-4 flex flex-col items-center justify-center gap-1 text-center group">
                                 <Clock className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors mb-1" />
-                                <span className="text-xs font-display font-bold mt-2">{materialLogs.length} logs</span>
-                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Activity</span>
+                                <span className="text-xs font-display font-bold mt-2">{materialLogs.length} {t("projects.activity")}</span>
+                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{t("projects.activity_label") || "Activity"}</span>
                             </div>
                         </div>
 
@@ -358,17 +360,17 @@ export default function MobileProjectDetails() {
                             <div className="p-0">
                                 <div className="max-h-48 overflow-y-auto custom-scrollbar gpu" style={{ contentVisibility: 'auto' } as any}>
                                     {materialLogs.length === 0 ? (
-                                        <div className="p-6 text-center text-muted-foreground text-xs">No recent activity.</div>
+                                        <div className="p-6 text-center text-muted-foreground text-xs">{t("projects.no_recent_activity")}</div>
                                     ) : (
                                         materialLogs.map((log: any, i) => (
                                             <div key={log._id} className={`flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'bg-transparent' : 'bg-black/20'}`}>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">{log.materialId?.name || 'Material'}</span>
+                                                    <span className="font-medium text-sm">{log.materialId?.name || t("common.material") || 'Material'}</span>
                                                     <span className="text-[10px] text-muted-foreground">{format(new Date(log.createdAt), 'MMM dd, HH:mm')}</span>
                                                 </div>
                                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${log.type === 'IN' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                                                     {log.type === 'IN' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                                    {log.quantity} {log.materialId?.unit || log.unit}
+                                                    {log.quantity} {log.materialId?.unit || log.unit || t("projects.unit")}
                                                 </div>
                                             </div>
                                         ))
@@ -381,11 +383,11 @@ export default function MobileProjectDetails() {
                         <div className="glass-card rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                                    <HardHat className="w-4 h-4 text-primary" /> Team
+                                    <HardHat className="w-4 h-4 text-primary" /> {t("projects.team")}
                                 </h3>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setShowDeleteWorkerList(true)}>Members</Button>
-                                    <Button size="sm" className="h-7 text-xs bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20 shadow-none" onClick={() => setShowAddWorker(true)}>+ Add</Button>
+                                    <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setShowDeleteWorkerList(true)}>{t("projects.members")}</Button>
+                                    <Button size="sm" className="h-7 text-xs bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20 shadow-none" onClick={() => setShowAddWorker(true)}>{t("projects.add_worker")}</Button>
                                 </div>
                             </div>
                             <div className="bg-background/40 rounded-xl p-3 border border-white/5 flex items-center justify-between">
@@ -403,14 +405,14 @@ export default function MobileProjectDetails() {
                                         )}
                                     </div>
                                 </div>
-                                <span className="text-xs text-muted-foreground font-medium">{team.length > 0 ? 'Active Crew' : 'No Crew'}</span>
+                                <span className="text-xs text-muted-foreground font-medium">{team.length > 0 ? t("projects.active_crew") : t("projects.no_crew")}</span>
                             </div>
                         </div>
 
                         {/* Details Card */}
                         <div className="glass-card rounded-2xl p-5">
                             <h3 className="text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-primary" /> Location
+                                <MapPin className="w-4 h-4 text-primary" /> {t("projects.location_label")}
                             </h3>
                             <p className="text-sm text-foreground/80 leading-relaxed font-medium mb-1">{project.location}</p>
                             <p className="text-xs text-muted-foreground">{project.description}</p>
@@ -428,10 +430,10 @@ export default function MobileProjectDetails() {
                                 )}
                                 <div>
                                     <h3 className="font-display font-bold text-sm tracking-tight text-foreground">
-                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'Daily Report' : 'Archive Report'}
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? t("projects.daily_report") : t("projects.archive_report")}
                                     </h3>
                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "Submit daily progress" : "View or edit past report"}
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? t("projects.submit_progress") : t("projects.view_past_report")}
                                     </p>
                                 </div>
                             </div>
@@ -465,11 +467,11 @@ export default function MobileProjectDetails() {
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                        <CheckSquare className="w-3 h-3 text-green-500" /> Work Completed
+                                        <CheckSquare className="w-3 h-3 text-green-500" /> {t("projects.work_completed")}
                                     </label>
                                     <textarea
                                         className="w-full min-h-[100px] p-3 rounded-xl bg-background/50 border border-border/50 text-sm focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40 resize-none"
-                                        placeholder="Detailed summary of work done today..."
+                                        placeholder={t("projects.work_placeholder") || "Detailed summary of work done today..."}
                                         value={reportForm.workCompleted}
                                         onChange={e => setReportForm({ ...reportForm, workCompleted: e.target.value })}
                                     />
@@ -477,13 +479,13 @@ export default function MobileProjectDetails() {
 
                                 <div className="space-y-3">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                        <HardHat className="w-3 h-3 text-amber-500" /> Materials Used
+                                        <HardHat className="w-3 h-3 text-amber-500" /> {t("projects.materials_used")}
                                     </label>
 
                                     <div className="flex gap-2 relative">
                                         <div className="flex-[2] relative">
                                             <Input
-                                                placeholder="Search Material..."
+                                                placeholder={t("projects.search_material")}
                                                 className="bg-background/50 border-border/50 text-sm"
                                                 value={materialSearch}
                                                 onChange={e => {
@@ -580,23 +582,23 @@ export default function MobileProjectDetails() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                        <AlertCircle className="w-3 h-3 text-red-500" /> Issues / Delays
+                                        <AlertCircle className="w-3 h-3 text-red-500" /> {t("projects.issues_delays")}
                                     </label>
                                     <textarea
                                         className="w-full min-h-[80px] p-3 rounded-xl bg-background/50 border border-red-500/20 text-sm focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 transition-all placeholder:text-muted-foreground/40 resize-none"
-                                        placeholder="Accidents, missing materials, weather delays..."
+                                        placeholder={t("projects.issues_placeholder") || "Accidents, missing materials, weather delays..."}
                                         value={reportForm.issues}
                                         onChange={e => setReportForm({ ...reportForm, issues: e.target.value })}
                                     />
                                 </div>
                                 <div className="pt-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
-                                        Photos
+                                        {t("projects.photos") || "Photos"}
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <label className="flex items-center justify-center h-10 px-4 rounded-lg bg-secondary/20 hover:bg-secondary/30 text-secondary-foreground text-xs font-bold cursor-pointer transition-colors border border-secondary/20">
                                             <UploadIcon className="w-3 h-3 mr-2" />
-                                            {reportForm.photos ? `${reportForm.photos.length} files` : 'Upload Images'}
+                                            {reportForm.photos ? `${reportForm.photos.length} ${t("projects.files") || "files"}` : t("projects.upload_images")}
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -609,7 +611,7 @@ export default function MobileProjectDetails() {
                                 </div>
                                 <Button className="w-full h-11 mt-2 text-sm font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={handleSubmitReport} disabled={submittingReport}>
                                     {submittingReport ? <Spinner className="w-4 h-4 mr-2" /> : <SendIcon className="w-4 h-4 mr-2" />}
-                                    {submittingReport ? 'Sending...' : 'SUBMIT REPORT'}
+                                    {submittingReport ? t("projects.sending") : t("projects.submit_report")}
                                 </Button>
                             </div>
                         </div>
@@ -624,10 +626,10 @@ export default function MobileProjectDetails() {
                                 )}
                                 <div>
                                     <h3 className="font-display font-bold text-sm tracking-tight text-foreground">
-                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'Live Attendance' : 'Attendance Records'}
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? t("projects.live_attendance") : t("projects.attendance_records")}
                                     </h3>
                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? "Mark today's presence" : "View or edit past presence"}
+                                        {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? t("projects.mark_today") : t("projects.view_edit_past")}
                                     </p>
                                 </div>
                             </div>
@@ -678,15 +680,15 @@ export default function MobileProjectDetails() {
                                                         <div>
                                                             <h4 className="font-semibold text-sm text-foreground">{worker.name}</h4>
                                                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                                <span>Subcontractor</span>
+                                                                <span>{t("projects.subcontractor")}</span>
                                                                 <span>•</span>
-                                                                <span>{subWorkers.length} team member{subWorkers.length !== 1 ? 's' : ''}</span>
+                                                                <span>{subWorkers.length} {subWorkers.length !== 1 ? t("projects.members_plural") : t("projects.member")}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-500 border-none text-xs font-semibold px-2 py-0.5">
-                                                            {subWorkers.length} Staff
+                                                            {subWorkers.length} {t("projects.staff")}
                                                         </Badge>
                                                         {expandedSub === worker._id ?
                                                             <ChevronUp className="w-4 h-4 text-muted-foreground" /> :
@@ -701,7 +703,7 @@ export default function MobileProjectDetails() {
                                                         <div className="space-y-2">
                                                             {/* Render Subcontractor himself first */}
                                                             <div className="pt-1">
-                                                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Team Leader</span>
+                                                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("projects.team_leader")}</span>
                                                                 <WorkerAttendanceItem
                                                                     worker={worker}
                                                                     status={attendanceMap[worker._id]}
@@ -713,7 +715,7 @@ export default function MobileProjectDetails() {
 
                                                             {subWorkers.length > 0 && (
                                                                 <div className="pt-1">
-                                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Team Members</span>
+                                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("projects.team_members")}</span>
                                                                     <div className="space-y-1.5">
                                                                         {subWorkers.map(sw => (
                                                                             <WorkerAttendanceItem
@@ -754,11 +756,11 @@ export default function MobileProjectDetails() {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
                     <Card className="w-full max-w-sm glass-card border-white/10">
                         <CardHeader className="pb-4">
-                            <CardTitle className="text-lg">Add Worker</CardTitle>
+                            <CardTitle className="text-lg">{t("projects.add_worker_title")}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Full Name</label>
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{t("projects.full_name")}</label>
                                 <Input
                                     placeholder="e.g. Ali Ben Ali"
                                     value={createWorkerForm.name}
@@ -768,14 +770,14 @@ export default function MobileProjectDetails() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Role / Trade</label>
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{t("projects.role_trade")}</label>
                                 <div className="space-y-2">
                                     <Select
                                         value={['Ouvrier', 'Macon', 'Ferrailleur', 'Sous Traitant', 'Chef Chantier'].includes(createWorkerForm.trade) ? createWorkerForm.trade : (createWorkerForm.trade ? 'Other' : '')}
                                         onValueChange={(val) => setCreateWorkerForm({ ...createWorkerForm, trade: val === 'Other' ? '' : val })}
                                     >
                                         <SelectTrigger className="w-full bg-background/50 border-white/10 focus:ring-primary/50">
-                                            <SelectValue placeholder="Select Role" />
+                                            <SelectValue placeholder={t("projects.select_role")} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Ouvrier">Ouvrier</SelectItem>
@@ -783,7 +785,7 @@ export default function MobileProjectDetails() {
                                             <SelectItem value="Ferrailleur">Ferrailleur</SelectItem>
                                             <SelectItem value="Sous Traitant">Sous Traitant</SelectItem>
                                             <SelectItem value="Chef Chantier">Chef Chantier</SelectItem>
-                                            <SelectItem value="Other">Other (Type Custom)</SelectItem>
+                                            <SelectItem value="Other">{t("projects.custom_role")}</SelectItem>
                                         </SelectContent>
                                     </Select>
 
@@ -996,6 +998,7 @@ export default function MobileProjectDetails() {
 
 // Component for Worker Attendance Item
 function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLeader }: any) {
+    const { t } = useLanguage()
     const isPresentMarked = status?.present === true
     const isAbsentMarked = status?.present === false
 
@@ -1019,7 +1022,7 @@ function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLea
                             <span className="font-semibold text-sm text-foreground truncate">{worker.name}</span>
                             {isLeader && (
                                 <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-500 border-none font-bold flex-shrink-0">
-                                    LEADER
+                                    {t("projects.leader")}
                                 </Badge>
                             )}
                         </div>
@@ -1031,7 +1034,7 @@ function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLea
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Day Value Column */}
                     <div className="flex flex-col items-center">
-                        <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-0.5">DAYS</label>
+                        <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-0.5">{t("projects.days")}</label>
                         <input
                             type="number"
                             step="0.5"

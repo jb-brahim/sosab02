@@ -9,17 +9,19 @@ import { HardHat, ChevronRight, MapPin, FileText } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useLanguage } from "@/lib/language-context"
 
 export default function MobileHome() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 18) return "Good afternoon"
-    return "Good evening"
+    if (hour < 12) return t("common.good_morning")
+    if (hour < 18) return t("common.good_afternoon")
+    return t("common.good_evening")
   }
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function MobileHome() {
           <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
             <HardHat className="h-6 w-6 text-primary animate-spin" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Loading System...</p>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t("common.loading_system")}</p>
         </div>
       </div>
     )
@@ -67,7 +69,7 @@ export default function MobileHome() {
           <div>
             <p className="text-sm text-muted-foreground font-medium mb-0.5 uppercase tracking-wide opacity-80">{getGreeting()},</p>
             <h1 className="font-display text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              {user?.name?.split(" ")[0] || "Manager"}
+              {user?.name?.split(" ")[0] || t("common.manager")}
             </h1>
           </div>
           <div className="glass h-14 w-14 flex items-center justify-center rounded-2xl shadow-xl shadow-black/5 ring-1 ring-white/10">
@@ -81,20 +83,20 @@ export default function MobileHome() {
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <FileText className="w-12 h-12" />
             </div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider z-10">Active Projects</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider z-10">{t("dashboard.active_projects")}</span>
             <div className="flex items-end gap-2 z-10">
               <span className="text-4xl font-bold font-display text-foreground">{projects.length}</span>
-              <span className="text-xs text-primary mb-1.5 font-medium">+ New</span>
+              <span className="text-xs text-primary mb-1.5 font-medium">{t("dashboard.new")}</span>
             </div>
           </div>
           <div className="glass-card rounded-xl p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <MapPin className="w-12 h-12" />
             </div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider z-10">Total Sites</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider z-10">{t("dashboard.total_sites")}</span>
             <div className="flex items-end gap-2 z-10">
               <span className="text-4xl font-bold font-display text-foreground">{projects.length}</span>
-              <span className="text-xs text-muted-foreground mb-1.5">Locations</span>
+              <span className="text-xs text-muted-foreground mb-1.5">{t("dashboard.locations")}</span>
             </div>
           </div>
         </div>
@@ -104,13 +106,13 @@ export default function MobileHome() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary glow-primary"></span>
-              Current Operations
+              {t("dashboard.current_operations")}
             </h2>
           </div>
 
           {projects.length === 0 ? (
             <div className="text-center py-12 glass rounded-2xl border-dashed">
-              <p className="text-muted-foreground text-sm">No active operations assigned.</p>
+              <p className="text-muted-foreground text-sm">{t("dashboard.no_active_ops")}</p>
             </div>
           ) : (
             <div className="space-y-4" style={{ contentVisibility: 'auto' } as any}>

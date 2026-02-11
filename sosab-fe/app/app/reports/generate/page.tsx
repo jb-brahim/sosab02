@@ -11,8 +11,10 @@ import { FileText, Download, Calendar, ArrowLeft, FileSpreadsheet } from "lucide
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useLanguage } from "@/lib/language-context"
 
 export default function GenerateReportPage() {
+    const { t } = useLanguage()
     const router = useRouter()
     const [projects, setProjects] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -36,7 +38,7 @@ export default function GenerateReportPage() {
                 }
             } catch (error) {
                 console.error("Failed to load projects", error)
-                toast.error("Failed to load projects")
+                toast.error(t("reports.failed_to_load_projects"))
             } finally {
                 setLoading(false)
             }
@@ -47,11 +49,11 @@ export default function GenerateReportPage() {
     const handleGenerate = async () => {
         // Validation
         if (!formData.projectId) {
-            toast.error("Please select a project")
+            toast.error(t("reports.select_project"))
             return
         }
         if (!formData.startDate || !formData.endDate) {
-            toast.error("Please select start and end dates")
+            toast.error(t("reports.select_dates"))
             return
         }
 
@@ -62,12 +64,12 @@ export default function GenerateReportPage() {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
         if (diffDays > 31) {
-            toast.error("Date range cannot exceed 31 days")
+            toast.error(t("reports.date_range_error"))
             return
         }
 
         if (start > end) {
-            toast.error("Start date must be before end date")
+            toast.error(t("reports.date_order_error"))
             return
         }
 
@@ -76,7 +78,7 @@ export default function GenerateReportPage() {
             const res = await api.post('/reports/generate', formData)
 
             if (res.data.success) {
-                toast.success(`${formData.type === 'attendance' ? 'Attendance' : 'Payment'} report generated successfully!`)
+                toast.success(`${formData.type === 'attendance' ? t("reports.attendance_grid") : t("reports.payment_summary")} ${t("materials.arrival_success")}`)
 
                 // Download the file
                 const apiUrl = require('@/lib/api').BACKEND_URL;
@@ -90,7 +92,7 @@ export default function GenerateReportPage() {
             }
         } catch (error: any) {
             console.error("Failed to generate report", error)
-            toast.error(error.response?.data?.message || "Failed to generate report")
+            toast.error(error.response?.data?.message || t("reports.failed_to_generate_report"))
         } finally {
             setGenerating(false)
         }
@@ -105,9 +107,9 @@ export default function GenerateReportPage() {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <FileText className="w-6 h-6 text-primary" />
-                        Generate Report
+                        {t("reports.generate_new")}
                     </h1>
-                    <p className="text-muted-foreground text-xs">Create attendance or payment reports</p>
+                    <p className="text-muted-foreground text-xs">{t("reports.create_reports_desc")}</p>
                 </div>
             </div>
 
@@ -115,13 +117,13 @@ export default function GenerateReportPage() {
                 <CardContent className="p-6 space-y-6">
                     {/* Project Selection */}
                     <div className="space-y-2">
-                        <Label htmlFor="project">Project</Label>
+                        <Label htmlFor="project">{t("materials.site_label")}</Label>
                         <Select
                             value={formData.projectId}
                             onValueChange={(value) => setFormData({ ...formData, projectId: value })}
                         >
                             <SelectTrigger id="project">
-                                <SelectValue placeholder="Select a project" />
+                                <SelectValue placeholder={t("reports.select_project")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {projects.map((project) => (
@@ -135,7 +137,7 @@ export default function GenerateReportPage() {
 
                     {/* Report Type */}
                     <div className="space-y-2">
-                        <Label>Report Type</Label>
+                        <Label>{t("reports.status_label")}</Label>
                         <RadioGroup
                             value={formData.type}
                             onValueChange={(value) => setFormData({ ...formData, type: value })}
@@ -143,13 +145,13 @@ export default function GenerateReportPage() {
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="attendance" id="attendance" />
                                 <Label htmlFor="attendance" className="font-normal cursor-pointer">
-                                    Attendance Report (0/1 Grid)
+                                    {t("reports.attendance_grid")}
                                 </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="payment" id="payment" />
                                 <Label htmlFor="payment" className="font-normal cursor-pointer">
-                                    Payment Summary Report
+                                    {t("reports.payment_summary")}
                                 </Label>
                             </div>
                         </RadioGroup>
@@ -158,7 +160,7 @@ export default function GenerateReportPage() {
                     {/* Date Range */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="startDate">Start Date</Label>
+                            <Label htmlFor="startDate">{t("reports.from")}</Label>
                             <Input
                                 id="startDate"
                                 type="date"
@@ -167,7 +169,7 @@ export default function GenerateReportPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="endDate">End Date</Label>
+                            <Label htmlFor="endDate">{t("reports.to")}</Label>
                             <Input
                                 id="endDate"
                                 type="date"
@@ -179,7 +181,7 @@ export default function GenerateReportPage() {
 
                     {/* Format Selection */}
                     <div className="space-y-2">
-                        <Label>Export Format</Label>
+                        <Label>{t("reports.export_format")}</Label>
                         <RadioGroup
                             value={formData.format}
                             onValueChange={(value) => setFormData({ ...formData, format: value })}
@@ -188,14 +190,14 @@ export default function GenerateReportPage() {
                                 <RadioGroupItem value="pdf" id="pdf" />
                                 <Label htmlFor="pdf" className="font-normal cursor-pointer flex items-center gap-2">
                                     <FileText className="w-4 h-4" />
-                                    PDF (Printable)
+                                    {t("reports.pdf_printable")}
                                 </Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="excel" id="excel" />
                                 <Label htmlFor="excel" className="font-normal cursor-pointer flex items-center gap-2">
                                     <FileSpreadsheet className="w-4 h-4" />
-                                    Excel (Editable)
+                                    {t("reports.excel_editable")}
                                 </Label>
                             </div>
                         </RadioGroup>
@@ -211,12 +213,12 @@ export default function GenerateReportPage() {
                         {generating ? (
                             <>
                                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                Generating...
+                                {t("materials.generating")}
                             </>
                         ) : (
                             <>
                                 <Download className="w-4 h-4 mr-2" />
-                                Generate Report
+                                {t("reports.generate")}
                             </>
                         )}
                     </Button>

@@ -5,18 +5,22 @@ import { useAuthStore } from "@/lib/auth-store"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { User, Settings, Bell, HelpCircle, FileText, LogOut, ChevronRight } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
-const menuItems = [
-  { icon: User, label: "Profile", href: "/app/profile" },
-  { icon: Settings, label: "Settings", href: "/app/settings" },
-  { icon: Bell, label: "Notifications", href: "/app/notifications" },
-  { icon: FileText, label: "Reports", href: "/app/reports" },
-  { icon: HelpCircle, label: "Help & Support", href: "/app/help" },
+const menuItems = (t: (key: string) => string) => [
+  { icon: User, label: t("settings.profile"), href: "/app/profile" },
+  { icon: Settings, label: t("common.settings"), href: "/app/settings" },
+  { icon: Bell, label: t("settings.notifications_title"), href: "/app/notifications" },
+  { icon: FileText, label: t("nav.reports"), href: "/app/reports" },
+  { icon: HelpCircle, label: t("settings.help_support"), href: "/app/help" },
 ]
 
 export default function MenuPage() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
+  const { t } = useLanguage()
+
+  const items = menuItems(t)
 
   const handleLogout = () => {
     logout()
@@ -36,14 +40,14 @@ export default function MenuPage() {
           <div>
             <h2 className="font-display text-xl font-bold">{user?.name}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
-            <p className="text-xs capitalize text-primary">{user?.role}</p>
+            <p className="text-xs capitalize text-primary">{user?.role || t("common.manager")}</p>
           </div>
         </CardContent>
       </Card>
 
       {/* Menu Items */}
       <div className="space-y-2">
-        {menuItems.map((item) => (
+        {items.map((item) => (
           <Card
             key={item.label}
             className="border-border bg-card transition-all active:scale-[0.99] cursor-pointer"
@@ -64,14 +68,14 @@ export default function MenuPage() {
 
       {/* Logout */}
       <Card
-        className="border-destructive/30 bg-destructive/5 transition-all active:scale-[0.99]"
+        className="border-destructive/30 bg-destructive/5 transition-all active:scale-[0.99] cursor-pointer"
         onClick={handleLogout}
       >
         <CardContent className="flex items-center gap-3 p-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/20">
             <LogOut className="h-5 w-5 text-destructive" />
           </div>
-          <span className="font-medium text-destructive">Logout</span>
+          <span className="font-medium text-destructive">{t("common.logout")}</span>
         </CardContent>
       </Card>
     </div>

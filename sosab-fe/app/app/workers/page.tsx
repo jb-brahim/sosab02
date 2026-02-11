@@ -9,16 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, UserPlus, CheckCircle, Clock, XCircle, Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { useLanguage } from "@/lib/language-context"
 
 const statusConfig: any = {
-  present: { icon: CheckCircle, color: "text-success", bg: "bg-success/20", label: "Present" },
-  late: { icon: Clock, color: "text-primary", bg: "bg-primary/20", label: "Late" },
-  absent: { icon: XCircle, color: "text-destructive", bg: "bg-destructive/20", label: "Absent" },
+  present: { icon: CheckCircle, color: "text-success", bg: "bg-success/20", labelKey: "projects.present" },
+  late: { icon: Clock, color: "text-primary", bg: "bg-primary/20", labelKey: "common.late" },
+  absent: { icon: XCircle, color: "text-destructive", bg: "bg-destructive/20", labelKey: "projects.absent" },
   // Default fallback
-  unknown: { icon: UserPlus, color: "text-muted-foreground", bg: "bg-muted", label: "Unknown" }
+  unknown: { icon: UserPlus, color: "text-muted-foreground", bg: "bg-muted", labelKey: "common.unassigned" }
 }
 
 export default function WorkersPage() {
+  const { t } = useLanguage()
   const [workers, setWorkers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -62,10 +64,10 @@ export default function WorkersPage() {
   return (
     <div className="space-y-6 p-4 pb-24">
       <div className="flex items-center justify-between pt-2">
-        <h1 className="font-display text-2xl font-bold">Workers</h1>
+        <h1 className="font-display text-2xl font-bold">{t("nav.workers")}</h1>
         <Button size="sm" className="bg-primary text-primary-foreground">
           <UserPlus className="mr-2 h-4 w-4" />
-          Add
+          {t("common.add")}
         </Button>
       </div>
 
@@ -74,19 +76,19 @@ export default function WorkersPage() {
         <Card className="border-success/30 bg-success/5">
           <CardContent className="p-3 text-center">
             <p className="font-display text-xl font-bold text-success">{stats.present}</p>
-            <p className="text-xs text-muted-foreground">Present</p>
+            <p className="text-xs text-muted-foreground">{t("projects.present")}</p>
           </CardContent>
         </Card>
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-3 text-center">
             <p className="font-display text-xl font-bold text-primary">{stats.late}</p>
-            <p className="text-xs text-muted-foreground">Late</p>
+            <p className="text-xs text-muted-foreground">{t("common.late")}</p>
           </CardContent>
         </Card>
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-3 text-center">
             <p className="font-display text-xl font-bold text-destructive">{stats.absent}</p>
-            <p className="text-xs text-muted-foreground">Absent</p>
+            <p className="text-xs text-muted-foreground">{t("projects.absent")}</p>
           </CardContent>
         </Card>
       </div>
@@ -95,7 +97,7 @@ export default function WorkersPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search workers..."
+          placeholder={t("materials.search_workers") || "Search workers..."}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="bg-input pl-9"
@@ -105,7 +107,7 @@ export default function WorkersPage() {
       {/* Worker List */}
       <div className="space-y-3">
         {filteredWorkers.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No workers found.</div>
+          <div className="text-center py-8 text-muted-foreground">{t("materials.no_workers")}</div>
         ) : (
           filteredWorkers.map((worker) => {
             // Determine status (mock logic if field missing)
@@ -127,12 +129,12 @@ export default function WorkersPage() {
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-medium">{worker.name}</p>
-                    <p className="text-sm text-muted-foreground">{worker.trade || worker.role || 'Worker'}</p>
+                    <p className="text-sm text-muted-foreground">{worker.trade || worker.role || t("common.member")}</p>
                   </div>
                   <div className="text-right">
                     <Badge variant="outline" className={`${status.bg} ${status.color} border-transparent`}>
                       <StatusIcon className="mr-1 h-3 w-3" />
-                      {status.label}
+                      {t(status.labelKey)}
                     </Badge>
                   </div>
                 </CardContent>

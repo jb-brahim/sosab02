@@ -40,8 +40,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useLanguage } from "@/lib/language-context"
 
 export default function DailyReportsPage() {
+    const { t } = useLanguage()
     const [activityReports, setActivityReports] = useState<any[]>([])
     const [projects, setProjects] = useState<any[]>([])
     const [loadingReports, setLoadingReports] = useState(false)
@@ -101,7 +103,7 @@ export default function DailyReportsPage() {
             })
 
             if (res.data.success) {
-                toast.success("Activity report generated successfully!")
+                toast.success(t("materials.arrival_success"))
                 const apiUrl = require('@/lib/api').BACKEND_URL
                 window.open(`${apiUrl}${res.data.data.pdfUrl}`, '_blank')
                 fetchReports()
@@ -119,10 +121,10 @@ export default function DailyReportsPage() {
         try {
             await api.delete(`/reports/${deleteId}`)
             setActivityReports(prev => prev.filter(r => r._id !== deleteId))
-            toast.success("Report deleted")
+            toast.success(t("reports.deleted"))
         } catch (error) {
             console.error("Failed to delete report", error)
-            toast.error("Failed to delete report")
+            toast.error(t("reports.delete_failed"))
         } finally {
             setDeleteId(null)
         }
@@ -142,9 +144,9 @@ export default function DailyReportsPage() {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <ClipboardList className="w-6 h-6 text-primary" />
-                        Daily Reports
+                        {t("nav.daily_reports")}
                     </h1>
-                    <p className="text-muted-foreground text-xs">Track and export daily project activities.</p>
+                    <p className="text-muted-foreground text-xs">{t("reports.daily_reports_desc")}</p>
                 </div>
             </div>
 
@@ -153,16 +155,16 @@ export default function DailyReportsPage() {
                 <CardContent className="p-4 space-y-4">
                     <div className="flex flex-col md:flex-row md:items-end gap-4">
                         <div className="flex-1 space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Project</label>
+                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t("materials.site_label")}</label>
                             <Select
                                 value={filters.projectId}
                                 onValueChange={v => setFilters(f => ({ ...f, projectId: v }))}
                             >
                                 <SelectTrigger className="bg-background rounded-xl border-border/50">
-                                    <SelectValue placeholder="Select Project" />
+                                    <SelectValue placeholder={t("materials.site_label")} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Projects</SelectItem>
+                                    <SelectItem value="all">{t("reports.all_projects")}</SelectItem>
                                     {projects.map(p => (
                                         <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
                                     ))}
@@ -171,7 +173,7 @@ export default function DailyReportsPage() {
                         </div>
                         <div className="flex-[2] grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">From</label>
+                                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t("reports.from")}</label>
                                 <div className="relative">
                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                     <Input
@@ -183,7 +185,7 @@ export default function DailyReportsPage() {
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">To</label>
+                                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t("reports.to")}</label>
                                 <div className="relative">
                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                     <Input
@@ -206,7 +208,7 @@ export default function DailyReportsPage() {
                                 ) : (
                                     <>
                                         <Download className="w-4 h-4 mr-2" />
-                                        Generate
+                                        {t("reports.generate")}
                                     </>
                                 )}
                             </Button>
@@ -219,19 +221,19 @@ export default function DailyReportsPage() {
             <div className="space-y-4 max-w-2xl">
                 <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
                     <FileText className="w-4 h-4" />
-                    Activity PDFs
+                    {t("reports.activity_pdfs")}
                 </h2>
 
                 {loadingReports ? (
                     <div className="text-center py-12 animate-pulse text-muted-foreground bg-muted/10 rounded-2xl border border-border/30">
                         <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-                        <p className="font-medium text-sm">Loading reports...</p>
+                        <p className="font-medium text-sm">{t("reports.loading_reports")}</p>
                     </div>
                 ) : activityReports.length === 0 ? (
                     <div className="p-12 text-center bg-muted/20 rounded-2xl border border-dashed text-muted-foreground border-border/30">
                         <FileText className="w-12 h-12 mx-auto mb-4 opacity-10" />
-                        <p className="font-medium">No PDFs generated yet.</p>
-                        <p className="text-xs opacity-60 mt-1">Select a project and click Generate to create a report.</p>
+                        <p className="font-medium">{t("reports.no_pdfs")}</p>
+                        <p className="text-xs opacity-60 mt-1">{t("reports.select_project_generate")}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,7 +249,7 @@ export default function DailyReportsPage() {
                                             <FileText className="w-6 h-6" />
                                         </div>
                                         <div className="space-y-0.5">
-                                            <h3 className="font-bold text-sm tracking-tight">{report.projectId?.name || 'Project'}</h3>
+                                            <h3 className="font-bold text-sm tracking-tight">{report.projectId?.name || t("common.unknown_project")}</h3>
                                             <p className="text-xs text-muted-foreground font-medium">
                                                 {format(new Date(report.createdAt), 'dd MMM yyyy, HH:mm')}
                                             </p>
@@ -274,15 +276,15 @@ export default function DailyReportsPage() {
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("reports.delete_title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the selected activity report.
+                            {t("reports.delete_daily_desc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl h-12">{t("common.cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeleteReport} className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
+                            {t("common.delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -4,6 +4,7 @@ import { Inter, Oswald, Geist_Mono } from "next/font/google"
 import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { LanguageProvider } from "@/lib/language-context"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -44,8 +45,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <AuthProvider>{children}</AuthProvider>
-          <Toaster position="top-center" />
+          <LanguageProvider>
+            <AuthProvider>{children}</AuthProvider>
+            <Toaster position="top-center" />
+          </LanguageProvider>
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{

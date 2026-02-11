@@ -8,17 +8,19 @@ import { cn } from "@/lib/utils"
 import { Home, Package, Plus, ClipboardList, Menu } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { ManagerNavDrawer } from "./manager-nav-drawer"
+import { useLanguage } from "@/lib/language-context"
 
 const navItems = [
-  { href: "/app", icon: Home, label: "Home" },
-  { href: "/app/materials", icon: Package, label: "Materials" },
-  { href: "/app/scan", icon: Plus, label: "Scan", isAction: true },
-  { href: "/app/menu", icon: Menu, label: "Menu" },
+  { href: "/app", icon: Home, labelKey: "nav.home" },
+  { href: "/app/materials", icon: Package, labelKey: "nav.materials" },
+  { href: "/app/scan", icon: Plus, labelKey: "nav.scan", isAction: true },
+  { href: "/app/menu", icon: Menu, labelKey: "nav.menu" },
 ]
 
 export function MobileLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user } = useAuth()
+  const { t } = useLanguage()
   const isPM = user?.role === "pm"
 
   return (
@@ -60,7 +62,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium">{t(item.labelKey as any)}</span>
                 </Link>
               )
             })}

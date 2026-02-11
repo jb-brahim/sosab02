@@ -13,10 +13,12 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useLanguage } from "@/lib/language-context"
 
 export default function ScanPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useLanguage()
 
   const [projects, setProjects] = useState<any[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
@@ -79,9 +81,9 @@ export default function ScanPage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedProjectId) return toast.error("Project context missing")
-    if (!materialName) return toast.error("Please enter material name")
-    if (!quantity) return toast.error("Please enter quantity")
+    if (!selectedProjectId) return toast.error(t("materials.project_missing"))
+    if (!materialName) return toast.error(t("materials.enter_material_name"))
+    if (!quantity) return toast.error(t("materials.enter_quantity"))
 
     try {
       setSubmitting(true)
@@ -120,8 +122,8 @@ export default function ScanPage() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/20">
             <CheckCircle className="h-10 w-10 text-success" />
           </div>
-          <h2 className="font-display text-2xl font-bold">Arrival Recorded!</h2>
-          <p className="text-muted-foreground font-medium">Information has been saved to the project.</p>
+          <h2 className="font-display text-2xl font-bold">{t("materials.arrival_success")}</h2>
+          <p className="text-muted-foreground font-medium">{t("materials.arrival_saved")}</p>
         </div>
       </div>
     )
@@ -133,9 +135,9 @@ export default function ScanPage() {
     <div className="space-y-6 p-4 pb-24 max-w-md mx-auto">
       <div className="pt-2 flex items-start justify-between gap-3">
         <div className="flex-1">
-          <h1 className="font-display text-2xl font-bold">Material Arrival</h1>
+          <h1 className="font-display text-2xl font-bold">{t("materials.arrival_title")}</h1>
           <p className="text-sm text-muted-foreground font-medium">
-            {currentProject ? `Site: ${currentProject.name}` : "Log material delivery"}
+            {currentProject ? `${t("materials.site_label")}: ${currentProject.name}` : t("materials.log_delivery")}
           </p>
         </div>
         <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -170,12 +172,12 @@ export default function ScanPage() {
             {/* Material Manual Entry */}
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-                <Package className="w-3 h-3" /> Material & Unit
+                <Package className="w-3 h-3" /> {t("materials.material_unit")}
               </Label>
               <div className="grid grid-cols-4 gap-2">
                 <Input
                   className="col-span-3 bg-background h-11 border-border/50 transition-all focus:border-success/50"
-                  placeholder="Material Name (e.g. Cement)"
+                  placeholder={t("materials.material_name_placeholder") || "Material Name (e.g. Cement)"}
                   value={materialName}
                   onChange={e => setMaterialName(e.target.value)}
                 />
@@ -195,7 +197,7 @@ export default function ScanPage() {
             {/* Quantity */}
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-                <Plus className="w-3 h-3" /> Quantity Received
+                <Plus className="w-3 h-3" /> {t("materials.qty_received")}
               </Label>
               <Input
                 type="number"
@@ -212,19 +214,19 @@ export default function ScanPage() {
         <Card className="border-border bg-card shadow-sm">
           <CardContent className="p-4 grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Chauffeur (Livreur)</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.driver_label")}</Label>
               <Input
                 className="bg-background h-11 border-border/50 text-sm"
-                placeholder="Driver Name"
+                placeholder={t("materials.driver_placeholder")}
                 value={deliveredBy}
                 onChange={(e) => setDeliveredBy(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Fournisseur (Supplier)</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.supplier_label")}</Label>
               <Input
                 className="bg-background h-11 border-border/50 text-sm"
-                placeholder="Supplier Name"
+                placeholder={t("materials.supplier_placeholder")}
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
               />
@@ -236,10 +238,10 @@ export default function ScanPage() {
         <Card className="border-border bg-card shadow-sm">
           <CardContent className="p-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Notes</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.notes_label")}</Label>
               <Input
                 className="bg-background h-11 border-border/50 text-sm"
-                placeholder="Additional details..."
+                placeholder={t("materials.notes_placeholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -247,7 +249,7 @@ export default function ScanPage() {
 
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground flex justify-between">
-                Photos Evidence
+                {t("materials.photo_evidence")}
                 <span>{photos.length}/10</span>
               </Label>
               <div className="grid grid-cols-4 gap-2">
@@ -268,7 +270,7 @@ export default function ScanPage() {
                     className="aspect-square border-2 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition-all hover:border-success/50"
                   >
                     <Camera className="w-6 h-6 mb-1 opacity-40" />
-                    <span className="text-[8px] font-bold">ADD PHOTO</span>
+                    <span className="text-[8px] font-bold">{t("materials.add_photo")}</span>
                   </button>
                 )}
               </div>
@@ -284,7 +286,7 @@ export default function ScanPage() {
           onClick={handleSubmit}
         >
           {submitting ? <Loader2 className="w-6 h-6 animate-spin mr-2" /> : <CheckCircle className="w-6 h-6 mr-2" />}
-          CONFIRM ARRIVAL
+          {t("materials.confirm_arrival")}
         </Button>
       </div>
     </div>

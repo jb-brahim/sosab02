@@ -28,18 +28,23 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAuth } from "@/lib/auth-context"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { useLanguage } from "@/lib/language-context"
 
-const managerNavItems = [
-    { href: "/app", icon: FolderKanban, label: "Projects" },
-    { href: "/app/materials", icon: Package, label: "Materials" },
-    { href: "/app/daily-reports", icon: ClipboardList, label: "Daily Reports" },
-    { href: "/app/reports", icon: FileBarChart, label: "Reports" },
+const managerNavItems = (t: (key: string) => string) => [
+    { href: "/app", icon: FolderKanban, label: t("nav.projects") },
+    { href: "/app/materials", icon: Package, label: t("nav.materials") },
+    { href: "/app/daily-reports", icon: ClipboardList, label: t("nav.daily_reports") },
+    { href: "/app/reports", icon: FileBarChart, label: t("nav.reports") },
 ]
 
 export function ManagerNavDrawer() {
     const pathname = usePathname()
     const router = useRouter()
     const { user, logout } = useAuth()
+    const { t } = useLanguage()
+
+    const navItems = managerNavItems(t)
 
     const handleLogout = () => {
         logout()
@@ -65,8 +70,8 @@ export function ManagerNavDrawer() {
                                         <HardHat className="h-6 w-6 text-primary-foreground" />
                                     </div>
                                     <div className="text-left">
-                                        <SheetTitle className="font-display text-xl font-bold tracking-tight">SOSAB</SheetTitle>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Manager Portal</p>
+                                        <SheetTitle className="font-display text-xl font-bold tracking-tight">{t("common.sosab")}</SheetTitle>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">{t("common.manager_portal")}</p>
                                     </div>
                                 </div>
                             </SheetHeader>
@@ -88,7 +93,7 @@ export function ManagerNavDrawer() {
 
                             {/* Navigation Links */}
                             <nav className="flex-1 px-4 py-8 space-y-2">
-                                {managerNavItems.map((item) => {
+                                {navItems.map((item) => {
                                     const isActive = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href))
                                     return (
                                         <SheetClose asChild key={item.href}>
@@ -117,7 +122,7 @@ export function ManagerNavDrawer() {
                                         className="flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-all"
                                     >
                                         <Settings className="h-5 w-5" />
-                                        <span>Settings</span>
+                                        <span>{t("common.settings")}</span>
                                     </Link>
                                 </SheetClose>
                                 <Button
@@ -126,7 +131,7 @@ export function ManagerNavDrawer() {
                                     onClick={handleLogout}
                                 >
                                     <LogOut className="h-5 w-5" />
-                                    <span>Logout</span>
+                                    <span>{t("common.logout")}</span>
                                 </Button>
                             </div>
                         </div>
@@ -138,15 +143,12 @@ export function ManagerNavDrawer() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
                         <HardHat className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <span className="font-display text-lg font-bold">SOSAB</span>
+                    <span className="font-display text-lg font-bold">{t("common.sosab")}</span>
                 </div>
 
-                {/* Right: Notifications/Avatar */}
+                {/* Right: Language/Theme/Avatar */}
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="relative group">
-                        <Bell className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-foreground" />
-                        <span className="absolute right-2.5 top-2.5 flex h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
-                    </Button>
+                    <LanguageSwitcher />
                     <ThemeToggle />
                     <Avatar className="h-8 w-8 ring-2 ring-primary/10">
                         <AvatarFallback className="bg-muted text-[10px] font-bold">

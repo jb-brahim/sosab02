@@ -19,8 +19,10 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/lib/language-context"
 
 export default function MaterialDetailsPage() {
+    const { t } = useLanguage()
     const params = useParams()
     const router = useRouter()
     const [logs, setLogs] = useState<any[]>([])
@@ -42,7 +44,7 @@ export default function MaterialDetailsPage() {
                 }
             } catch (error) {
                 console.error("Failed to load logs", error)
-                toast.error("Failed to load history")
+                toast.error(t("materials.failed_to_load_history"))
             } finally {
                 setLoading(false)
             }
@@ -54,7 +56,7 @@ export default function MaterialDetailsPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading History...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">{t("materials.loading_history")}</p>
             </div>
         )
     }
@@ -63,13 +65,13 @@ export default function MaterialDetailsPage() {
         return (
             <div className="p-4 space-y-4 max-w-md mx-auto">
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-2">
-                    <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                    <ChevronLeft className="w-4 h-4 mr-1" /> {t("common.cancel")}
                 </Button>
                 <Card className="border-dashed border-2 py-20 text-center">
                     <CardContent>
                         <Package className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                        <h2 className="font-bold text-lg">No history found</h2>
-                        <p className="text-muted-foreground">We couldn't find any arrival records for this item.</p>
+                        <h2 className="font-bold text-lg">{t("materials.no_history")}</h2>
+                        <p className="text-muted-foreground">{t("materials.no_history_desc")}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -80,14 +82,14 @@ export default function MaterialDetailsPage() {
         <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
             <div className="space-y-4">
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-4 h-8 text-muted-foreground hover:text-primary">
-                    <ChevronLeft className="w-4 h-4 mr-1" /> Back to Inventory
+                    <ChevronLeft className="w-4 h-4 mr-1" /> {t("materials.back_to_inventory")}
                 </Button>
 
                 <div className="space-y-1">
                     <h1 className="text-3xl font-display font-black tracking-tight">{material?.name}</h1>
                     <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] font-bold uppercase py-0">{material?.unit}</Badge>
-                        <span className="text-muted-foreground text-sm font-medium">Arrival Journal</span>
+                        <span className="text-muted-foreground text-sm font-medium">{t("materials.arrival_journal")}</span>
                     </div>
                 </div>
 
@@ -95,7 +97,7 @@ export default function MaterialDetailsPage() {
                 <Card className="bg-success/5 border-success/20 overflow-hidden shadow-sm">
                     <CardContent className="p-5 flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <div className="text-[10px] uppercase font-black text-success/60 tracking-wider">Total Lifetime Volume</div>
+                            <div className="text-[10px] uppercase font-black text-success/60 tracking-wider">{t("materials.total_lifetime_volume")}</div>
                             <div className="text-3xl font-display font-black text-success">
                                 {summary?.totalIn} <span className="text-xs font-bold uppercase opacity-60 ml-0.5">{material?.unit}</span>
                             </div>
@@ -109,8 +111,8 @@ export default function MaterialDetailsPage() {
                 {/* Timeline of Arrivals */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                        <label className="text-[10px] uppercase font-black text-muted-foreground/60 tracking-widest">Delivery Timeline</label>
-                        <span className="text-[10px] font-bold text-muted-foreground/40">{logs.length} ENTRIES</span>
+                        <label className="text-[10px] uppercase font-black text-muted-foreground/60 tracking-widest">{t("materials.delivery_timeline")}</label>
+                        <span className="text-[10px] font-bold text-muted-foreground/40">{logs.length} {t("materials.entries_plural")}</span>
                     </div>
 
                     <div className="space-y-4 relative before:absolute before:inset-0 before:left-[19px] before:w-px before:bg-border/50">
@@ -143,13 +145,13 @@ export default function MaterialDetailsPage() {
                                         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-dashed">
                                             <div className="space-y-1">
                                                 <div className="text-[9px] uppercase font-black text-muted-foreground/50 flex items-center gap-1">
-                                                    <Truck className="w-2.5 h-2.5" /> Chauffeur
+                                                    <Truck className="w-2.5 h-2.5" /> {t("materials.driver_label")}
                                                 </div>
                                                 <div className="text-[11px] font-bold truncate">{log.deliveredBy || 'N/A'}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-[9px] uppercase font-black text-muted-foreground/50 flex items-center gap-1">
-                                                    <Store className="w-2.5 h-2.5" /> Supplier
+                                                    <Store className="w-2.5 h-2.5" /> {t("materials.supplier_label")}
                                                 </div>
                                                 <div className="text-[11px] font-bold truncate">{log.supplier || 'N/A'}</div>
                                             </div>
@@ -157,7 +159,7 @@ export default function MaterialDetailsPage() {
 
                                         {log.notes && (
                                             <div className="p-2.5 bg-muted/40 rounded-lg text-[11px] font-medium leading-relaxed text-muted-foreground border border-border/10">
-                                                <span className="uppercase text-[9px] font-black opacity-40 block mb-0.5 tracking-tighter">Notes</span>
+                                                <span className="uppercase text-[9px] font-black opacity-40 block mb-0.5 tracking-tighter">{t("materials.notes_label")}</span>
                                                 {log.notes}
                                             </div>
                                         )}

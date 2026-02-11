@@ -11,8 +11,10 @@ import { Loader2, Printer, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
+import { useLanguage } from "@/lib/language-context"
 
 export default function SalaryReportPage() {
+    const { t } = useLanguage()
     const { user } = useAuth()
     const router = useRouter()
 
@@ -59,7 +61,7 @@ export default function SalaryReportPage() {
                 }
             } catch (error) {
                 console.error("Failed to fetch salary report", error)
-                toast.error("Failed to load report")
+                toast.error(t("reports.delete_failed"))
             } finally {
                 setLoading(false)
             }
@@ -79,17 +81,17 @@ export default function SalaryReportPage() {
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="text-xl font-bold">Weekly Salary Report</h1>
+                <h1 className="text-xl font-bold">{t("reports.weekly_salary_report")}</h1>
             </div>
 
             {/* Controls */}
             <div className="grid gap-4 mb-6 print:hidden">
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Project</label>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("materials.site_label")}</label>
                         <Select value={selectedProject} onValueChange={setSelectedProject}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select Project" />
+                                <SelectValue placeholder={t("materials.site_label")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {projects.map((p) => (
@@ -99,7 +101,7 @@ export default function SalaryReportPage() {
                         </Select>
                     </div>
                     <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Week</label>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("reports.week")}</label>
                         <Input
                             type="week"
                             value={selectedWeek}
@@ -122,10 +124,10 @@ export default function SalaryReportPage() {
                             <div className="flex items-center justify-center gap-2 mb-1">
                                 <h2 className="text-lg font-bold uppercase tracking-wider">{reportData.project.name}</h2>
                             </div>
-                            <p className="text-sm text-muted-foreground">Week {reportData.week}</p>
+                            <p className="text-sm text-muted-foreground">{t("reports.week")} {reportData.week}</p>
                         </CardHeader>
                         <CardContent className="text-center">
-                            <span className="text-xs text-muted-foreground uppercase">Total Payout</span>
+                            <span className="text-xs text-muted-foreground uppercase">{t("reports.total_payout")}</span>
                             <div className="text-4xl font-bold text-primary mt-1">
                                 ${reportData.totalSalary.toLocaleString()}
                             </div>
@@ -134,10 +136,10 @@ export default function SalaryReportPage() {
 
                     {/* Worker Breakdown */}
                     <div className="space-y-3">
-                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider ml-1">Breakdown</h3>
+                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider ml-1">{t("reports.breakdown")}</h3>
                         {reportData.data.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                                No records found for this week.
+                                {t("reports.no_salary_records")}
                             </div>
                         ) : (
                             reportData.data.map((item: any) => (
@@ -147,11 +149,11 @@ export default function SalaryReportPage() {
                                             <p className="font-medium">{item.worker.name}</p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                                 <span className="bg-secondary px-1.5 py-0.5 rounded">
-                                                    {item.salary.breakdown.daysWorked} days
+                                                    {item.salary.breakdown.daysWorked} {t("reports.days_worked")}
                                                 </span>
                                                 {item.salary.breakdown.overtime > 0 && (
                                                     <span className="text-orange-500">
-                                                        +{item.salary.breakdown.overtimeHours}h OT
+                                                        +{item.salary.breakdown.overtimeHours}h {t("reports.ot")}
                                                     </span>
                                                 )}
                                             </div>
@@ -159,7 +161,7 @@ export default function SalaryReportPage() {
                                         <div className="text-right">
                                             <p className="font-bold">${item.salary.totalSalary.toLocaleString()}</p>
                                             <p className="text-[10px] text-muted-foreground">
-                                                Base: ${item.salary.breakdown.baseSalary}
+                                                {t("reports.base_salary_label")}: ${item.salary.breakdown.baseSalary}
                                             </p>
                                         </div>
                                     </CardContent>
@@ -171,11 +173,11 @@ export default function SalaryReportPage() {
                     {/* Print Button */}
                     <Button className="w-full print:hidden" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4" />
-                        Print / Save PDF
+                        {t("reports.print_pdf")}
                     </Button>
                 </div>
             ) : (
-                <div className="text-center py-12 text-muted-foreground">Select a project and week to view report.</div>
+                <div className="text-center py-12 text-muted-foreground">{t("reports.select_project_week")}</div>
             )}
 
             {/* hidden print styles */}

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/lib/language-context"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -33,6 +34,7 @@ export default function ReportsPage() {
     const [reports, setReports] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
+    const { t } = useLanguage()
 
     const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -41,10 +43,10 @@ export default function ReportsPage() {
         try {
             await api.delete(`/reports/${deleteId}`)
             setReports(prev => prev.filter(r => r._id !== deleteId))
-            toast.success("Report deleted")
+            toast.success(t("reports.deleted"))
         } catch (error) {
             console.error("Failed to delete report", error)
-            toast.error("Failed to delete report")
+            toast.error(t("reports.delete_failed"))
         } finally {
             setDeleteId(null)
         }
@@ -82,25 +84,25 @@ export default function ReportsPage() {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <FileText className="w-6 h-6 text-primary" />
-                        Technical Reports
+                        {t("reports.title")}
                     </h1>
-                    <p className="text-muted-foreground text-xs">Manage and generate technical & financial reports.</p>
+                    <p className="text-muted-foreground text-xs">{t("reports.description")}</p>
                 </div>
                 <div className="ml-auto">
                     <Button size="sm" onClick={() => router.push('/app/reports/generate')}>
-                        + New
+                        {t("reports.new_report")}
                     </Button>
                 </div>
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {loading ? (
-                    <div className="text-center py-12 text-muted-foreground animate-pulse font-medium">Loading reports...</div>
+                    <div className="text-center py-12 text-muted-foreground animate-pulse font-medium">{t("reports.loading_reports")}</div>
                 ) : reports.length === 0 ? (
                     <div className="text-center py-20 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border/30">
                         <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                        <p className="font-medium text-lg">No reports found.</p>
-                        <p className="text-xs opacity-60">Generate a new technical report to see it here.</p>
+                        <p className="font-medium text-lg">{t("reports.no_reports")}</p>
+                        <p className="text-xs opacity-60">{t("reports.generate_new")}</p>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
@@ -114,14 +116,14 @@ export default function ReportsPage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <h3 className="font-bold text-sm tracking-tight text-foreground/90">
-                                                    {report.projectId?.name || 'Unknown Project'}
+                                                    {report.projectId?.name || t("common.unknown_project")}
                                                 </h3>
                                                 <div className="flex items-center gap-2">
                                                     <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 py-0 rounded-md bg-muted/30">
                                                         {report.type}
                                                     </Badge>
                                                     <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">
-                                                        {report.week && report.week !== 'CUSTOM' ? `Week ${report.week}` : 'Custom Range'}
+                                                        {report.week && report.week !== 'CUSTOM' ? `${t("reports.week")} ${report.week}` : t("reports.custom_range")}
                                                     </span>
                                                 </div>
                                             </div>
@@ -162,15 +164,15 @@ export default function ReportsPage() {
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="font-display text-xl">Delete Report?</AlertDialogTitle>
+                        <AlertDialogTitle className="font-display text-xl">{t("reports.delete_title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the selected report file.
+                            {t("reports.delete_description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl h-12">{t("common.cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeleteReport} className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
+                            {t("common.delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

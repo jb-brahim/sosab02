@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Package, Search, ArrowUpRight, ArrowDownLeft, Box, Filter } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useLanguage } from "@/lib/language-context"
 
 export default function MaterialsPage() {
     const router = useRouter()
+    const { t } = useLanguage()
     const [materials, setMaterials] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
@@ -50,9 +52,9 @@ export default function MaterialsPage() {
                         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
                             <Package className="w-5 h-5 text-primary-foreground" />
                         </div>
-                        Global Inventory
+                        {t("materials.global_inventory")}
                     </h1>
-                    <p className="text-muted-foreground text-sm font-medium ml-1">Track materials across all active sites.</p>
+                    <p className="text-muted-foreground text-sm font-medium ml-1">{t("materials.track_materials")}</p>
                 </div>
 
                 {/* Search Bar */}
@@ -62,7 +64,7 @@ export default function MaterialsPage() {
                     </div>
                     <input
                         type="text"
-                        placeholder="Search materials or suppliers..."
+                        placeholder={t("materials.search_placeholder") || "Search materials or suppliers..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full h-12 pl-10 pr-4 rounded-xl bg-card/40 backdrop-blur-md border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all shadow-sm placeholder:text-muted-foreground/50"
@@ -78,10 +80,10 @@ export default function MaterialsPage() {
                 <div className="flex items-center justify-between px-1 animate-in delay-200">
                     <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary glow-primary"></span>
-                        <span className="text-xs font-bold uppercase tracking-widest text-foreground/80">Stock Items</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-foreground/80">{t("materials.stock_items")}</span>
                     </div>
                     <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/10 shadow-none">
-                        {filteredMaterials.length} Results
+                        {filteredMaterials.length} {t("materials.results")}
                     </Badge>
                 </div>
 
@@ -89,13 +91,13 @@ export default function MaterialsPage() {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground animate-pulse">
                         <div className="h-8 w-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Loading Inventory...</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">{t("materials.loading_inventory")}</span>
                     </div>
                 ) : filteredMaterials.length === 0 ? (
                     <div className="glass-card rounded-2xl border-dashed border-2 border-white/10 py-12 text-center animate-in delay-300">
                         <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-                        <p className="text-muted-foreground font-medium">No materials found.</p>
-                        <p className="text-xs text-muted-foreground/50 mt-1">Try adjusting your search.</p>
+                        <p className="text-muted-foreground font-medium">{t("materials.no_materials")}</p>
+                        <p className="text-xs text-muted-foreground/50 mt-1">{t("materials.adjust_search")}</p>
                     </div>
                 ) : (
                     <div className="grid gap-3 animate-in delay-300" style={{ contentVisibility: 'auto' } as any}>
@@ -127,7 +129,7 @@ export default function MaterialsPage() {
                                     <div className="bg-black/20 rounded-lg p-2.5 flex items-center justify-between border border-white/5 group-hover:border-primary/20 transition-colors">
                                         <div className="flex flex-col">
                                             <span className="text-[9px] uppercase font-black text-white/40 tracking-wider flex items-center gap-1">
-                                                <ArrowDownLeft className="w-3 h-3 text-green-500" /> TOTAL RECEIVED
+                                                <ArrowDownLeft className="w-3 h-3 text-green-500" /> {t("materials.total_received")}
                                             </span>
                                             <span className="text-lg font-display font-bold text-foreground">
                                                 {item.totalIn} <span className="text-[10px] opacity-50 ml-0.5">{item.unit}</span>

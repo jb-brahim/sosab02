@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Clock, MapPin, Filter } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 const tasks = [
   {
@@ -41,19 +42,21 @@ const tasks = [
   },
 ]
 
-const priorityConfig = {
-  high: { color: "text-destructive", bg: "bg-destructive/20", border: "border-destructive/30" },
-  medium: { color: "text-primary", bg: "bg-primary/20", border: "border-primary/30" },
-  low: { color: "text-secondary", bg: "bg-secondary/20", border: "border-secondary/30" },
+const priorityConfig: Record<string, { color: string; bg: string; border: string; labelKey: string }> = {
+  high: { color: "text-destructive", bg: "bg-destructive/20", border: "border-destructive/30", labelKey: "common.high" },
+  medium: { color: "text-primary", bg: "bg-primary/20", border: "border-primary/30", labelKey: "common.medium" },
+  low: { color: "text-secondary", bg: "bg-secondary/20", border: "border-secondary/30", labelKey: "common.low" },
 }
 
 export default function TasksPage() {
+  const { t } = useLanguage()
+
   return (
     <div className="space-y-6 p-4">
       <div className="flex items-center justify-between pt-2">
         <div>
-          <h1 className="font-display text-2xl font-bold">Tasks</h1>
-          <p className="text-sm text-muted-foreground">4 tasks for today</p>
+          <h1 className="font-display text-2xl font-bold">{t("nav.tasks")}</h1>
+          <p className="text-sm text-muted-foreground">4 {t("materials.tasks_for_today")}</p>
         </div>
         <Button variant="outline" size="icon">
           <Filter className="h-4 w-4" />
@@ -79,7 +82,7 @@ export default function TasksPage() {
                     <p className={`font-medium ${task.completed ? "line-through" : ""}`}>{task.title}</p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className={`${priority.bg} ${priority.color} ${priority.border}`}>
-                        {task.priority}
+                        {t(priority.labelKey)}
                       </Badge>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3" />
