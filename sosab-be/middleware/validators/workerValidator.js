@@ -62,9 +62,9 @@ const validateWorkerCreate = [
         }),
 
     body('contact.phone')
-        .optional()
+        .optional({ checkFalsy: true })
         .trim()
-        .matches(/^[\d\s\-\+\(\)]+$/)
+        .matches(/^[\d\s\-\+\(\)]*$/)
         .withMessage('Invalid phone number format. Use only digits, spaces, hyphens, plus signs, and parentheses'),
 
     body('contact.address')
@@ -142,9 +142,9 @@ const validateWorkerUpdate = [
         }),
 
     body('contact.phone')
-        .optional()
+        .optional({ checkFalsy: true })
         .trim()
-        .matches(/^[\d\s\-\+\(\)]+$/)
+        .matches(/^[\d\s\-\+\(\)]*$/)
         .withMessage('Invalid phone number format'),
 
     body('contact.address')
