@@ -275,7 +275,7 @@ export default function MobileProjectDetails() {
         if (!editingWorker.dailySalary) return toast.error("Salary is required")
 
         try {
-            await api.put(`/workers/${editingWorker._id}`, {
+            await api.patch(`/workers/${editingWorker._id}`, {
                 name: editingWorker.name,
                 trade: editingWorker.trade,
                 dailySalary: Number(editingWorker.dailySalary),
