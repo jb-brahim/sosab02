@@ -595,57 +595,51 @@ exports.generateAttendanceReportHTML = (data) => {
     th { background-color: #1e293b; color: white; font-weight: bold; font-size: 9px; }
     .worker-name { text-align: left; padding-left: 8px; font-weight: 600; }
     .total-col { background-color: #fef3c7; font-weight: bold; }
+    .page-break { page-break-after: always; }
+    .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 5px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>POINTAGE CHANTIER: ${project.name}</h1>
-    <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
-  </div>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>QUALIF</th>
-        <th>NOM ET PRENOM</th>
-        ${(data.rangeLabels || Array.from({ length: 31 }, (_, i) => i + 1)).map(d => `<th>${d}</th>`).join('')}
-        <th>TOTAL</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${data.groups.map(group => `
-        ${group.subcontractor ? `
-          <tr style="background-color: #e2e8f0; font-weight: bold;">
-            <td colspan="${(data.rangeLabels || []).length + 3}" style="text-align: left; padding-left: 10px;">
-              SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})
-            </td>
-          </tr>
-        ` : `
-          <tr style="background-color: #f1f5f9; font-weight: bold;">
-            <td colspan="${(data.rangeLabels || []).length + 3}" style="text-align: left; padding-left: 10px;">
-              EQUIPE DIRECTE
-            </td>
-          </tr>
-        `}
-        ${group.workers.map(worker => `
+  ${data.groups.map(group => `
+    <div class="page-break">
+      <div class="header">
+        <h1>POINTAGE CHANTIER: ${project.name}</h1>
+        <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
+        <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 14px;">
+          ${group.subcontractor ? `SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})` : 'EQUIPE DIRECTE'}
+        </h3>
+      </div>
+      
+      <table>
+        <thead>
           <tr>
-            <td>${worker.qualification || 'Fer'}</td>
-            <td class="worker-name">${worker.name}</td>
-            ${worker.dailyAttendance.map(val => `<td>${val}</td>`).join('')}
-            <td class="total-col">${worker.totalDays}</td>
+            <th>QUALIF</th>
+            <th>NOM ET PRENOM</th>
+            ${(data.rangeLabels || Array.from({ length: 31 }, (_, i) => i + 1)).map(d => `<th>${d}</th>`).join('')}
+            <th>TOTAL</th>
           </tr>
-        `).join('')}
-      `).join('')}
-    </tbody>
-  </table>
-  
-  <div class="footer">
-    <div>SIG: CHEF CHANTIER</div>
-    <div>SIG: POINTEUR</div>
-    <div>SIG: GERANT</div>
-  </div>
+        </thead>
+        <tbody>
+          ${group.workers.map(worker => `
+            <tr>
+              <td>${worker.qualification || 'Fer'}</td>
+              <td class="worker-name">${worker.name}</td>
+              ${worker.dailyAttendance.map(val => `<td>${val}</td>`).join('')}
+              <td class="total-col">${worker.totalDays}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div>SIG: CHEF CHANTIER</div>
+        <div>SIG: POINTEUR</div>
+        <div>SIG: GERANT</div>
+      </div>
+    </div>
+  `).join('')}
 </body>
 </html>
   `;
@@ -676,74 +670,92 @@ exports.generatePaymentReportHTML = (data) => {
     .total-row { font-weight: bold; font-size: 13px; background-color: #f8f9fa; }
     .total-row td { padding: 15px; }
     .grand-total { background-color: #d4edda; font-size: 16px; font-weight: 800; color: #166534; }
+    .page-break { page-break-after: always; }
+    .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 40px; display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>POINTAGE CHANTIER: ${project.name}</h1>
-    <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
-  </div>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>QUALIF</th>
-        <th>NOM ET PRENOM</th>
-        <th class="period-col">${headerLabel}<br>(Période)</th>
-        <th>TAUX du J</th>
-        <th>TOTAL / DT</th>
-        <th class="balance-col">NET A PAYER</th>
-        <th>SIGNATURE</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${data.groups.map(group => `
-        ${group.subcontractor ? `
-          <tr style="background-color: #e2e8f0; font-weight: bold;">
-            <td colspan="7" style="text-align: left; padding-left: 10px;">
-              SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})
-            </td>
-          </tr>
-        ` : `
-          <tr style="background-color: #f1f5f9; font-weight: bold;">
-            <td colspan="7" style="text-align: left; padding-left: 10px;">
-              EQUIPE DIRECTE
-            </td>
-          </tr>
-        `}
-        ${group.workers.map(worker => `
+  ${data.groups.map(group => `
+    <div class="page-break">
+      <div class="header">
+        <h1>POINTAGE CHANTIER: ${project.name}</h1>
+        <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
+        <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 16px;">
+          ${group.subcontractor ? `SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})` : 'EQUIPE DIRECTE'}
+        </h3>
+      </div>
+      
+      <table>
+        <thead>
           <tr>
-            <td>${worker.qualification || 'Fer'}</td>
-            <td class="worker-name">${worker.name}</td>
-            <td class="period-col">${worker.daysWorked}</td>
-            <td class="currency">${formatTND(worker.dailyRate)}</td>
-            <td class="currency">${formatTND(worker.totalAmount)}</td>
-            <td class="balance-col currency">${formatTND(worker.balance)}</td>
+            <th>QUALIF</th>
+            <th>NOM ET PRENOM</th>
+            <th class="period-col">${headerLabel}<br>(Période)</th>
+            <th>TAUX du J</th>
+            <th>TOTAL / DT</th>
+            <th class="balance-col">NET A PAYER</th>
+            <th>SIGNATURE</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${group.workers.map(worker => `
+            <tr>
+              <td>${worker.qualification || 'Fer'}</td>
+              <td class="worker-name">${worker.name}</td>
+              <td class="period-col">${worker.daysWorked}</td>
+              <td class="currency">${formatTND(worker.dailyRate)}</td>
+              <td class="currency">${formatTND(worker.totalAmount)}</td>
+              <td class="balance-col currency">${formatTND(worker.balance)}</td>
+              <td></td>
+            </tr>
+          `).join('')}
+          <tr class="total-row">
+            <td colspan="5" style="text-align: right; padding-right: 20px;">Total Group (${group.subcontractor ? group.subcontractor.name : 'Direct'}):</td>
+            <td class="grand-total">${formatTND(group.totalPayment)}</td>
             <td></td>
           </tr>
-        `).join('')}
-        ${group.subcontractor ? `
-          <tr style="background-color: #f8fafc; font-style: italic;">
-            <td colspan="5" style="text-align: right; padding-right: 15px;">Total Group (${group.subcontractor.name}):</td>
-            <td class="currency">${formatTND(group.totalPayment)}</td>
-            <td></td>
-          </tr>
-        ` : ''}
-      `).join('')}
-      <tr class="total-row">
-        <td colspan="5" style="text-align: right; padding-right: 20px;">Total de paiement: ${headerLabel}</td>
-        <td class="grand-total">${formatTND(totalPayment)}</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div>SIG: CHEF CHANTIER</div>
+        <div>SIG: GERANT</div>
+      </div>
+    </div>
+  `).join('')}
   
-  <div class="footer">
-    <div>SIG: CHEF CHANTIER</div>
-    <div>SIG: GERANT</div>
-  </div>
+  ${data.groups.length > 1 ? `
+    <div class="page-break">
+      <div class="header">
+        <h1>RESUME GLOBAL DE PAIEMENT</h1>
+        <h2>PROJET: ${project.name} - ${headerLabel}</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>GROUPE / SOUS-TRAITANT</th>
+            <th>TOTAL NET A PAYER</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.groups.map(g => `
+            <tr>
+              <td style="text-align: left; padding-left: 20px; font-weight: bold;">
+                ${g.subcontractor ? g.subcontractor.name : 'EQUIPE DIRECTE'}
+              </td>
+              <td class="currency" style="font-size: 14px;">${formatTND(g.totalPayment)}</td>
+            </tr>
+          `).join('')}
+          <tr class="total-row" style="background: #d4edda;">
+            <td style="text-align: right; padding-right: 20px; font-size: 16px;">TOTAL GENERAL</td>
+            <td class="grand-total" style="font-size: 20px;">${formatTND(data.totalPayment)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  ` : ''}
 </body>
 </html>
   `;
