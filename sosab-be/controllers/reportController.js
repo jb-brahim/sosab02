@@ -335,43 +335,65 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // Labels for columns (e.g. 1, 2, 3... or 30, 31, 1...)
     const rangeLabels = daysInRange.map(d => d.getDate());
 
-    for (const worker of workers) {
-      const attendanceRecords = await Attendance.find({
-        workerId: worker._id,
-        date: { $gte: start, $lte: end }
-      }).sort({ date: 1 });
+    const groups = [];
+    const subcontractors = workers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
+    const directWorkers = workers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
 
-      // Deduplicate records to handle multiple entries per day
-      const uniqueRecords = new Map();
-      attendanceRecords.forEach(record => {
-        if (record.present) {
-          // Normalize to local date to avoid UTC shift
-          const d = new Date(record.date);
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          uniqueRecords.set(dateStr, record.dayValue || 1);
-        }
-      });
+    const processWorkers = async (workerList) => {
+      const grid = [];
+      for (const worker of workerList) {
+        const attendanceRecords = await Attendance.find({
+          workerId: worker._id,
+          date: { $gte: start, $lte: end }
+        }).sort({ date: 1 });
 
-      // Map dynamic days to attendance values
-      const dailyAttendance = daysInRange.map(dayDate => {
-        // Normalize to local date to avoid UTC shift
-        const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
-        return uniqueRecords.get(dateStr) || 0;
-      });
+        const uniqueRecords = new Map();
+        attendanceRecords.forEach(record => {
+          if (record.present) {
+            const d = new Date(record.date);
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            uniqueRecords.set(dateStr, record.dayValue || 1);
+          }
+        });
 
-      // Calculate total from the dynamic range
-      const totalDays = dailyAttendance.reduce((sum, val) => sum + val, 0);
+        const dailyAttendance = daysInRange.map(dayDate => {
+          const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+          return uniqueRecords.get(dateStr) || 0;
+        });
 
-      attendanceGrid.push({
-        name: worker.name,
-        qualification: worker.trade || 'Fer',
-        dailyRate: worker.dailySalary || 0,
-        dailyAttendance,
-        totalDays
+        const totalDays = dailyAttendance.reduce((sum, val) => sum + val, 0);
+
+        grid.push({
+          name: worker.name,
+          qualification: worker.trade || 'Worker',
+          dailyRate: worker.dailySalary || 0,
+          dailyAttendance,
+          totalDays
+        });
+      }
+      return grid;
+    };
+
+    // Add Direct Workers Group
+    if (directWorkers.length > 0) {
+      groups.push({
+        subcontractor: null,
+        workers: await processWorkers(directWorkers)
       });
     }
 
-    reportData = { project, headerLabel: dateLabel, attendanceGrid, rangeLabels };
+    // Add groups for each subcontractor
+    for (const sub of subcontractors) {
+      const subTeam = workers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
+      // Process subcontractor himself + his team
+      const allSubWorkers = [sub, ...subTeam];
+      groups.push({
+        subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+        workers: await processWorkers(allSubWorkers)
+      });
+    }
+
+    reportData = { project, headerLabel: dateLabel, groups, rangeLabels };
 
     if (format === 'excel') {
       // Generate Excel
@@ -406,44 +428,71 @@ exports.generateReport = asyncHandler(async (req, res) => {
     const workerPayments = [];
     let totalPayment = 0;
 
-    for (const worker of workers) {
-      const attendanceRecords = await Attendance.find({
-        workerId: worker._id,
-        date: { $gte: start, $lte: end },
-        present: true
+    const groups = [];
+    const subcontractors = workers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
+    const directWorkers = workers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
+    let grandTotalPayment = 0;
+
+    const processPayments = async (workerList) => {
+      const payments = [];
+      let groupTotal = 0;
+      for (const worker of workerList) {
+        const attendanceRecords = await Attendance.find({
+          workerId: worker._id,
+          date: { $gte: start, $lte: end },
+          present: true
+        });
+
+        const uniqueDays = new Map();
+        attendanceRecords.forEach(record => {
+          const d = new Date(record.date);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          uniqueDays.set(dateStr, record.dayValue || 1);
+        });
+
+        const daysWorked = Array.from(uniqueDays.values()).reduce((sum, val) => sum + val, 0);
+        const dailyRate = worker.dailySalary || 0;
+        const totalAmount = daysWorked * dailyRate;
+        const balance = totalAmount; // TODO: PaymentsMade
+
+        payments.push({
+          name: worker.name,
+          qualification: worker.trade || 'Worker',
+          daysWorked,
+          totalDays: daysWorked,
+          dailyRate,
+          totalAmount,
+          paymentsMade: 0,
+          balance
+        });
+        groupTotal += balance;
+      }
+      return { payments, groupTotal };
+    };
+
+    if (directWorkers.length > 0) {
+      const { payments, groupTotal } = await processPayments(directWorkers);
+      groups.push({
+        subcontractor: null,
+        workers: payments,
+        totalPayment: groupTotal
       });
-
-      // Deduplicate records by day to avoid duplicate counting
-      const uniqueDays = new Map();
-      attendanceRecords.forEach(record => {
-        // Normalize to local date to avoid UTC shift
-        const d = new Date(record.date);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        uniqueDays.set(dateStr, record.dayValue || 1);
-      });
-
-      const daysWorked = Array.from(uniqueDays.values()).reduce((sum, val) => sum + val, 0);
-
-      const dailyRate = worker.dailySalary || 0;
-      const totalAmount = daysWorked * dailyRate;
-      const paymentsMade = 0; // TODO: Implement payment tracking
-      const balance = totalAmount - paymentsMade;
-
-      workerPayments.push({
-        name: worker.name,
-        qualification: worker.trade || 'Worker',
-        daysWorked,
-        totalDays: daysWorked,
-        dailyRate,
-        totalAmount,
-        paymentsMade,
-        balance
-      });
-
-      totalPayment += balance;
+      grandTotalPayment += groupTotal;
     }
 
-    reportData = { project, headerLabel: dateLabel, workers: workerPayments, totalPayment };
+    for (const sub of subcontractors) {
+      const subTeam = workers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
+      const allSubWorkers = [sub, ...subTeam];
+      const { payments, groupTotal } = await processPayments(allSubWorkers);
+      groups.push({
+        subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+        workers: payments,
+        totalPayment: groupTotal
+      });
+      grandTotalPayment += groupTotal;
+    }
+
+    reportData = { project, headerLabel: dateLabel, groups, totalPayment: grandTotalPayment };
 
     if (format === 'excel') {
       // Generate Excel

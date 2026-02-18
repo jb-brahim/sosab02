@@ -22,6 +22,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { useLanguage } from "@/lib/language-context"
 
 interface Project {
     _id: string
@@ -41,6 +42,8 @@ interface Worker {
         phone?: string
         address?: string
     }
+    isSubcontractor?: boolean
+    supervisorId?: string | null
 }
 
 interface EditWorkerDialogProps {
@@ -51,8 +54,10 @@ interface EditWorkerDialogProps {
 }
 
 export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }: EditWorkerDialogProps) {
+    const { t } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [projects, setProjects] = useState<Project[]>([])
+    const [availableSupervisors, setAvailableSupervisors] = useState<any[]>([])
 
     // Form states
     const [name, setName] = useState("")
@@ -60,6 +65,8 @@ export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }
     const [projectId, setProjectId] = useState("")
     const [dailySalary, setDailySalary] = useState("")
     const [phone, setPhone] = useState("")
+    const [isSubcontractor, setIsSubcontractor] = useState(false)
+    const [supervisorId, setSupervisorId] = useState("")
 
     // UI state for custom service input
     const [isCustomService, setIsCustomService] = useState(false)
@@ -75,6 +82,30 @@ export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }
             toast.error("Failed to load projects")
         }
     }
+
+    const fetchSupervisors = async (pId: string) => {
+        if (!pId) {
+            setAvailableSupervisors([])
+            return
+        }
+        try {
+            const res = await api.get(`/workers/${pId}`)
+            if (res.data.success) {
+                // Filter only subcontractors, and exclude the current worker being edited
+                setAvailableSupervisors(res.data.data.filter((w: any) => (w.isSubcontractor || w.trade === 'Sous Traitant') && w._id !== worker?._id))
+            }
+        } catch (error) {
+            console.error("Failed to load potential supervisors", error)
+        }
+    }
+
+    useEffect(() => {
+        if (open && projectId) {
+            fetchSupervisors(projectId)
+        } else if (!projectId) {
+            setAvailableSupervisors([])
+        }
+    }, [open, projectId, worker?._id])
 
     useEffect(() => {
         if (open) {
@@ -107,6 +138,8 @@ export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }
             setProjectId((worker.projectId as any)?._id || "")
             setDailySalary(worker.dailySalary?.toString() || "")
             setPhone(worker.contact?.phone || "")
+            setIsSubcontractor(worker.isSubcontractor || false)
+            setSupervisorId(worker.supervisorId || "")
         }
     }, [worker, open])
 
@@ -123,7 +156,9 @@ export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }
                 dailySalary: Number(dailySalary),
                 contact: {
                     phone
-                }
+                },
+                isSubcontractor,
+                supervisorId: supervisorId && supervisorId !== 'none' ? supervisorId : null
             }
 
             // Only send projectId if it's set, to allow updating it.
@@ -255,6 +290,37 @@ export function EditWorkerDialog({ worker, open, onOpenChange, onWorkerUpdated }
                             className="col-span-3"
                         />
                     </div>
+                    <div className="flex items-center gap-2 px-1 py-1">
+                        <input
+                            type="checkbox"
+                            id="isSubcontractor-edit"
+                            checked={isSubcontractor}
+                            onChange={(e) => setIsSubcontractor(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="isSubcontractor-edit" className="text-sm font-medium cursor-pointer">
+                            {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                        </Label>
+                    </div>
+
+                    {!isSubcontractor && availableSupervisors.length > 0 && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="supervisor-edit" className="text-right text-xs">
+                                {t("projects.supervised_by") || "Supervised By"}
+                            </Label>
+                            <Select value={supervisorId || "none"} onValueChange={setSupervisorId}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder={t("projects.direct_supervised") || "Direct / No Supervisor"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">{t("projects.direct_supervised") || "Direct / No Supervisor"}</SelectItem>
+                                    {availableSupervisors.map((s) => (
+                                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

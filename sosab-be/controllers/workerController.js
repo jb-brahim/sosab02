@@ -8,7 +8,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 // @route   POST /api/workers
 // @access  Private/Admin or Project Manager
 exports.addWorker = asyncHandler(async (req, res) => {
-  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, supervisorId } = req.body;
+  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, supervisorId, isSubcontractor } = req.body;
 
   // Verify project exists
   const project = await Project.findById(projectId);
@@ -35,7 +35,8 @@ exports.addWorker = asyncHandler(async (req, res) => {
     documents: documents || [],
     contact: contact || {},
     assignedTasks: assignedTasks || [],
-    supervisorId: supervisorId || null
+    supervisorId: supervisorId || null,
+    isSubcontractor: isSubcontractor || (trade === 'Sous Traitant')
   });
 
   // Notify Admins if added by Manager
@@ -130,7 +131,7 @@ exports.getAllWorkers = asyncHandler(async (req, res) => {
 // @route   PATCH /api/workers/:id
 // @access  Private/Admin or Project Manager
 exports.updateWorker = asyncHandler(async (req, res) => {
-  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, active, supervisorId } = req.body;
+  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, active, supervisorId, isSubcontractor } = req.body;
 
   const worker = await Worker.findById(req.params.id).populate('projectId');
 
@@ -158,6 +159,7 @@ exports.updateWorker = asyncHandler(async (req, res) => {
   if (assignedTasks) worker.assignedTasks = assignedTasks;
   if (active !== undefined) worker.active = active;
   if (supervisorId !== undefined) worker.supervisorId = supervisorId;
+  if (isSubcontractor !== undefined) worker.isSubcontractor = isSubcontractor;
   worker.updatedAt = new Date();
 
   await worker.save();

@@ -23,6 +23,7 @@ import {
 import { Plus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { useLanguage } from "@/lib/language-context"
 
 interface Project {
     _id: string
@@ -34,6 +35,7 @@ interface CreateWorkerDialogProps {
 }
 
 export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps) {
+    const { t } = useLanguage()
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [projects, setProjects] = useState<Project[]>([])
@@ -44,6 +46,9 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
     const [projectId, setProjectId] = useState("")
     const [dailySalary, setDailySalary] = useState("")
     const [phone, setPhone] = useState("")
+    const [isSubcontractor, setIsSubcontractor] = useState(false)
+    const [supervisorId, setSupervisorId] = useState("")
+    const [availableSupervisors, setAvailableSupervisors] = useState<any[]>([])
 
     // UI state for custom service input
     const [isCustomService, setIsCustomService] = useState(false)
@@ -59,6 +64,28 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
             toast.error("Failed to load projects")
         }
     }
+
+    const fetchSupervisors = async (pId: string) => {
+        if (!pId) {
+            setAvailableSupervisors([])
+            return
+        }
+        try {
+            const res = await api.get(`/workers/${pId}`)
+            if (res.data.success) {
+                // Filter only subcontractors
+                setAvailableSupervisors(res.data.data.filter((w: any) => w.isSubcontractor || w.trade === 'Sous Traitant'))
+            }
+        } catch (error) {
+            console.error("Failed to load potential supervisors", error)
+        }
+    }
+
+    useEffect(() => {
+        if (projectId) {
+            fetchSupervisors(projectId)
+        }
+    }, [projectId])
 
     useEffect(() => {
         if (open) {
@@ -82,7 +109,9 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
                 dailySalary: Number(dailySalary),
                 contact: {
                     phone
-                }
+                },
+                isSubcontractor,
+                supervisorId: supervisorId || null
             })
 
             if (res.data.success) {
@@ -104,6 +133,8 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
         setProjectId("")
         setDailySalary("")
         setPhone("")
+        setIsSubcontractor(false)
+        setSupervisorId("")
         setIsCustomService(false)
     }
 
@@ -218,6 +249,37 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
                             placeholder="+1 234..."
                         />
                     </div>
+                    <div className="flex items-center gap-2 px-1 py-1">
+                        <input
+                            type="checkbox"
+                            id="isSubcontractor"
+                            checked={isSubcontractor}
+                            onChange={(e) => setIsSubcontractor(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="isSubcontractor" className="text-sm font-medium cursor-pointer">
+                            {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                        </Label>
+                    </div>
+
+                    {!isSubcontractor && availableSupervisors.length > 0 && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="supervisor" className="text-right text-xs">
+                                {t("projects.supervised_by") || "Supervised By"}
+                            </Label>
+                            <Select value={supervisorId} onValueChange={setSupervisorId}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder={t("projects.direct_supervised") || "Direct / No Supervisor"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">{t("projects.direct_supervised") || "Direct / No Supervisor"}</SelectItem>
+                                    {availableSupervisors.map((s) => (
+                                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -226,6 +288,6 @@ export function CreateWorkerDialog({ onWorkerCreated }: CreateWorkerDialogProps)
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

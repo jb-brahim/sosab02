@@ -615,13 +615,28 @@ exports.generateAttendanceReportHTML = (data) => {
       </tr>
     </thead>
     <tbody>
-      ${attendanceGrid.map(worker => `
-        <tr>
-          <td>${worker.qualification || 'Fer'}</td>
-          <td class="worker-name">${worker.name}</td>
-          ${worker.dailyAttendance.map(val => `<td>${val}</td>`).join('')}
-          <td class="total-col">${worker.totalDays}</td>
-        </tr>
+      ${data.groups.map(group => `
+        ${group.subcontractor ? `
+          <tr style="background-color: #e2e8f0; font-weight: bold;">
+            <td colspan="${(data.rangeLabels || []).length + 3}" style="text-align: left; padding-left: 10px;">
+              SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})
+            </td>
+          </tr>
+        ` : `
+          <tr style="background-color: #f1f5f9; font-weight: bold;">
+            <td colspan="${(data.rangeLabels || []).length + 3}" style="text-align: left; padding-left: 10px;">
+              EQUIPE DIRECTE
+            </td>
+          </tr>
+        `}
+        ${group.workers.map(worker => `
+          <tr>
+            <td>${worker.qualification || 'Fer'}</td>
+            <td class="worker-name">${worker.name}</td>
+            ${worker.dailyAttendance.map(val => `<td>${val}</td>`).join('')}
+            <td class="total-col">${worker.totalDays}</td>
+          </tr>
+        `).join('')}
       `).join('')}
     </tbody>
   </table>
@@ -684,16 +699,38 @@ exports.generatePaymentReportHTML = (data) => {
       </tr>
     </thead>
     <tbody>
-      ${workers.map(worker => `
-        <tr>
-          <td>${worker.qualification || 'Fer'}</td>
-          <td class="worker-name">${worker.name}</td>
-          <td class="period-col">${worker.daysWorked}</td>
-          <td class="currency">${formatTND(worker.dailyRate)}</td>
-          <td class="currency">${formatTND(worker.totalAmount)}</td>
-          <td class="balance-col currency">${formatTND(worker.balance)}</td>
-          <td></td>
-        </tr>
+      ${data.groups.map(group => `
+        ${group.subcontractor ? `
+          <tr style="background-color: #e2e8f0; font-weight: bold;">
+            <td colspan="7" style="text-align: left; padding-left: 10px;">
+              SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})
+            </td>
+          </tr>
+        ` : `
+          <tr style="background-color: #f1f5f9; font-weight: bold;">
+            <td colspan="7" style="text-align: left; padding-left: 10px;">
+              EQUIPE DIRECTE
+            </td>
+          </tr>
+        `}
+        ${group.workers.map(worker => `
+          <tr>
+            <td>${worker.qualification || 'Fer'}</td>
+            <td class="worker-name">${worker.name}</td>
+            <td class="period-col">${worker.daysWorked}</td>
+            <td class="currency">${formatTND(worker.dailyRate)}</td>
+            <td class="currency">${formatTND(worker.totalAmount)}</td>
+            <td class="balance-col currency">${formatTND(worker.balance)}</td>
+            <td></td>
+          </tr>
+        `).join('')}
+        ${group.subcontractor ? `
+          <tr style="background-color: #f8fafc; font-style: italic;">
+            <td colspan="5" style="text-align: right; padding-right: 15px;">Total Group (${group.subcontractor.name}):</td>
+            <td class="currency">${formatTND(group.totalPayment)}</td>
+            <td></td>
+          </tr>
+        ` : ''}
       `).join('')}
       <tr class="total-row">
         <td colspan="5" style="text-align: right; padding-right: 20px;">Total de paiement: ${headerLabel}</td>

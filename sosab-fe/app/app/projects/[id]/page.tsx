@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -75,7 +76,8 @@ export default function MobileProjectDetails() {
         trade: '',
         phone: '',
         dailySalary: '',
-        supervisorId: ''
+        supervisorId: '',
+        isSubcontractor: false
     })
 
     // Derived state: Get list of Sous Traitants for dropdown
@@ -266,12 +268,13 @@ export default function MobileProjectDetails() {
                 dailySalary: Number(createWorkerForm.dailySalary),
                 projectId: id,
                 contact: { phone: createWorkerForm.phone },
-                supervisorId: createWorkerForm.supervisorId || null
+                supervisorId: createWorkerForm.supervisorId || null,
+                isSubcontractor: createWorkerForm.isSubcontractor
             })
 
             toast.success("Worker Created & Added!")
             setShowAddWorker(false)
-            setCreateWorkerForm({ name: '', trade: '', phone: '', dailySalary: '', supervisorId: '' })
+            setCreateWorkerForm({ name: '', trade: '', phone: '', dailySalary: '', supervisorId: '', isSubcontractor: false })
 
             // Refresh team list
             const teamRes = await api.get(`/projects/${id}/team`)
@@ -311,7 +314,8 @@ export default function MobileProjectDetails() {
                 trade: editingWorker.trade,
                 dailySalary: Number(editingWorker.dailySalary),
                 contact: { phone: editingWorker.phone },
-                supervisorId: editingWorker.supervisorId || null
+                supervisorId: editingWorker.supervisorId || null,
+                isSubcontractor: editingWorker.isSubcontractor
             })
 
             toast.success("Worker Updated")
@@ -698,7 +702,7 @@ export default function MobileProjectDetails() {
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
                         <div className="space-y-4 pb-12" style={{ contentVisibility: 'auto' } as any}>
                             {team.filter(w => !w.supervisorId).map((worker) => {
-                                const isSousTraitant = worker.trade === 'Sous Traitant';
+                                const isSousTraitant = worker.isSubcontractor || worker.trade === 'Sous Traitant';
                                 const subWorkers = team.filter(sw => sw.supervisorId === worker._id);
 
                                 return (
@@ -871,6 +875,19 @@ export default function MobileProjectDetails() {
                                 </div>
                             </div>
 
+                            <div className="flex items-center gap-2 px-1 py-1">
+                                <input
+                                    type="checkbox"
+                                    id="isSubcontractor-manager"
+                                    checked={createWorkerForm.isSubcontractor}
+                                    onChange={(e) => setCreateWorkerForm({ ...createWorkerForm, isSubcontractor: e.target.checked })}
+                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <Label htmlFor="isSubcontractor-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
+                                    {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                                </Label>
+                            </div>
+
                             {/* Supervisor Selection */}
                             {createWorkerForm.trade !== 'Sous Traitant' && subcontractors.length > 0 && (
                                 <div className="space-y-2">
@@ -949,6 +966,19 @@ export default function MobileProjectDetails() {
                                                 className="bg-background/50 border-white/10"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 px-1 py-1">
+                                        <input
+                                            type="checkbox"
+                                            id="isSubcontractor-edit-manager"
+                                            checked={editingWorker.isSubcontractor}
+                                            onChange={(e) => setEditingWorker({ ...editingWorker, isSubcontractor: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <Label htmlFor="isSubcontractor-edit-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
+                                            {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                                        </Label>
                                     </div>
 
                                     {/* Supervisor Selection in Edit */}

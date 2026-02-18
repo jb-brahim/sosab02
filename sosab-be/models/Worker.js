@@ -29,6 +29,10 @@ const workerSchema = new mongoose.Schema({
     ref: 'Worker',
     default: null
   },
+  isSubcontractor: {
+    type: Boolean,
+    default: false
+  },
   documents: [{
     name: String,
     url: String,
