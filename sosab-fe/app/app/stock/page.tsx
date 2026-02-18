@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Warehouse, Package, ArrowDownLeft, ArrowUpRight, Loader2 } from "lucide-react"
-import api from "@/lib/api"
+import { Warehouse, Package, ArrowDownLeft, ArrowUpRight, Loader2, FileSpreadsheet, Download as DownloadIcon } from "lucide-react"
+import api, { BACKEND_URL } from "@/lib/api"
 import { toast } from "sonner"
 import { useLanguage } from "@/lib/language-context"
 
@@ -21,6 +21,7 @@ export default function StockPage() {
     const [materials, setMaterials] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [loadingProjects, setLoadingProjects] = useState(true)
+    const [isExporting, setIsExporting] = useState(false)
 
     // Redirect non-managers
     useEffect(() => {
@@ -68,6 +69,38 @@ export default function StockPage() {
         fetchMaterials()
     }, [selectedProjectId])
 
+    const handleExportExcel = async () => {
+        if (!selectedProjectId) return
+
+        try {
+            setIsExporting(true)
+
+            // Generate report for current month by default
+            const now = new Date()
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+
+            const res = await api.post('/reports/generate', {
+                projectId: selectedProjectId,
+                type: 'material',
+                startDate: startOfMonth,
+                endDate: endOfMonth,
+                format: 'excel'
+            })
+
+            if (res.data.success) {
+                toast.success(t("materials.arrival_success") || "Excel generated!")
+                const downloadUrl = `${BACKEND_URL}${res.data.data.pdfUrl}`
+                window.open(downloadUrl, '_blank')
+            }
+        } catch (error: any) {
+            console.error("Export failed", error)
+            toast.error(error.response?.data?.message || "Export failed")
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
     const selectedProject = projects.find(p => p._id === selectedProjectId)
 
     return (
@@ -114,6 +147,25 @@ export default function StockPage() {
                         </Select>
                     )}
                 </div>
+
+                {/* Export Button */}
+                {selectedProjectId && (
+                    <Button
+                        onClick={handleExportExcel}
+                        disabled={isExporting || loading}
+                        variant="outline"
+                        className="w-full glass-card border-primary/20 hover:bg-primary/5 text-primary rounded-2xl h-12 flex items-center justify-center gap-2"
+                    >
+                        {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileSpreadsheet className="w-4 h-4" />
+                        )}
+                        <span className="font-bold uppercase tracking-wider text-xs">
+                            {t("stock.excel_export") || "Export Excel"}
+                        </span>
+                    </Button>
+                )}
 
                 {/* Stock Table */}
                 {selectedProjectId && (

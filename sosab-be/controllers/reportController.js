@@ -7,7 +7,7 @@ const Material = require('../models/Material');
 const Attendance = require('../models/Attendance');
 const asyncHandler = require('../middleware/asyncHandler');
 const { generatePDF, generateSalaryReportHTML, generateMaterialReportHTML, generateActivityReportHTML, generateAttendanceReportHTML, generatePaymentReportHTML } = require('../utils/pdfGenerator');
-const { generateAttendanceExcel, generatePaymentExcel } = require('../utils/excelGenerator');
+const { generateAttendanceExcel, generatePaymentExcel, generateMaterialExcel } = require('../utils/excelGenerator');
 const { getWeekDates, getWeekString } = require('../utils/weekHelper');
 const path = require('path');
 const fs = require('fs').promises;
@@ -261,7 +261,32 @@ exports.generateReport = asyncHandler(async (req, res) => {
     }
 
     reportData = { project, headerLabel: dateLabel, materials: materialData, movements: movementLogs.sort((a, b) => a.date - b.date) };
-    htmlContent = generateMaterialReportHTML(reportData);
+
+    if (format === 'excel') {
+      const outputDir = path.join(__dirname, '../uploads/reports');
+      await fs.mkdir(outputDir, { recursive: true });
+      const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-material-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
+      const outputPath = path.join(outputDir, filename);
+      await generateMaterialExcel(reportData, outputPath);
+
+      const report = await Report.create({
+        projectId,
+        type,
+        week: week || 'CUSTOM',
+        startDate: start,
+        endDate: end,
+        pdfUrl: `/uploads/reports/${filename}`,
+        generatedBy: req.user._id
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Material Excel report generated successfully',
+        data: report
+      });
+    } else {
+      htmlContent = generateMaterialReportHTML(reportData);
+    }
 
   } else if (type === 'activity') {
     // Generate activity report - fetched from real DailyReports

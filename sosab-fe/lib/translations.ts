@@ -180,6 +180,7 @@ export const translations = {
             quantity: "Stock Qty",
             no_materials: "No materials found for this project.",
             loading: "Loading stock...",
+            excel_export: "Export Excel",
         },
         settings: {
             profile: "Profile",
@@ -414,6 +415,7 @@ export const translations = {
             quantity: "Qté en Stock",
             no_materials: "Aucun matériau trouvé pour ce projet.",
             loading: "Chargement du stock...",
+            excel_export: "Exporter Excel",
         },
         settings: {
             profile: "Profil",

@@ -288,7 +288,133 @@ async function generatePaymentExcel(data, outputPath) {
     console.log(`Payment Excel report generated: ${outputPath}`);
 }
 
+/**
+ * Generate Material Report in Excel format
+ * @param {Object} data - Report data
+ * @param {Object} data.project - Project information
+ * @param {String} data.headerLabel - Date range label
+ * @param {Array} data.materials - Summary of materials
+ * @param {Array} data.movements - Detailed material movements
+ * @param {String} outputPath - Path to save the Excel file
+ */
+async function generateMaterialExcel(data, outputPath) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Material Report');
+
+    const { project, headerLabel, materials, movements } = data;
+
+    // Set column widths
+    worksheet.columns = [
+        { width: 12 },  // Date
+        { width: 20 },  // Material Name
+        { width: 10 },  // Type
+        { width: 10 },  // Quantity
+        { width: 10 },  // Unit
+        { width: 20 },  // Supplier/Delivered By
+        { width: 30 }   // Notes
+    ];
+
+    // Title Row
+    worksheet.mergeCells('A1:G1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = `Rapport Matériel: ${project.name}`;
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    titleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Date Range Row
+    worksheet.mergeCells('A2:G2');
+    const dateCell = worksheet.getCell('A2');
+    dateCell.value = `Période: ${headerLabel}`;
+    dateCell.font = { bold: true, size: 12 };
+    dateCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // --- Summary Section ---
+    let currentRow = 4;
+    worksheet.getCell(`A${currentRow}`).value = 'RÉSUMÉ DES STOCKS';
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    const summaryHeaderRow = worksheet.getRow(currentRow);
+    summaryHeaderRow.values = ['Matériau', 'Unité', 'Total Entrées', 'Total Sorties', 'SOLDE', '', ''];
+    summaryHeaderRow.font = { bold: true };
+    summaryHeaderRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+    currentRow++;
+
+    materials.forEach(mat => {
+        const row = worksheet.getRow(currentRow);
+        row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance, '', ''];
+        row.eachCell((cell, col) => {
+            if (col <= 5) {
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            }
+        });
+        currentRow++;
+    });
+
+    // --- Detailed Movements ---
+    currentRow += 2;
+    worksheet.getCell(`A${currentRow}`).value = 'MOUVEMENTS DÉTAILLÉS';
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    const headerRow = worksheet.getRow(currentRow);
+    headerRow.values = [
+        'DATE',
+        'DÉSIGNATION',
+        'TYPE',
+        'QTÉ',
+        'UNITÉ',
+        'FOURNISSEUR/LIVREUR',
+        'NOTES'
+    ];
+    headerRow.font = { bold: true };
+    headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+    currentRow++;
+
+    movements.forEach((log) => {
+        const row = worksheet.getRow(currentRow);
+        row.values = [
+            new Date(log.date).toLocaleDateString('fr-FR'),
+            log.name,
+            log.type,
+            log.quantity,
+            log.unit,
+            log.supplier || log.deliveredBy || 'N/A',
+            log.notes || ''
+        ];
+
+        // Style the type column
+        const typeCell = row.getCell(3);
+        if (log.type === 'IN') {
+            typeCell.font = { color: { argb: 'FF00B050' }, bold: true };
+        } else {
+            typeCell.font = { color: { argb: 'FFFF0000' }, bold: true };
+        }
+
+        row.eachCell((cell) => {
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        });
+
+        currentRow++;
+    });
+
+    // Save file
+    await workbook.xlsx.writeFile(outputPath);
+}
+
 module.exports = {
     generateAttendanceExcel,
-    generatePaymentExcel
+    generatePaymentExcel,
+    generateMaterialExcel
 };
