@@ -59,6 +59,11 @@ export default function MobileProjectDetails() {
     const [projectMaterials, setProjectMaterials] = useState<any[]>([])
     const [expandedSub, setExpandedSub] = useState<string | null>(null)
 
+    // Out modal state
+    const [showOutModal, setShowOutModal] = useState(false)
+    const [outForm, setOutForm] = useState({ materialId: '', quantity: '', notes: '' })
+    const [submittingOut, setSubmittingOut] = useState(false)
+
     // Worker management state
     const [showAddWorker, setShowAddWorker] = useState(false)
     const [isAddingWorker, setIsAddingWorker] = useState(false)
@@ -220,6 +225,32 @@ export default function MobileProjectDetails() {
         }
     }
 
+    const handleRegisterOut = async () => {
+        if (!outForm.materialId || !outForm.quantity) return toast.error("Please select a material and enter quantity")
+        try {
+            setSubmittingOut(true)
+            await api.post('/materials/log', {
+                materialId: outForm.materialId,
+                type: 'OUT',
+                quantity: outForm.quantity,
+                notes: outForm.notes
+            })
+            toast.success(t("projects.out_success") || "Material Out Logged!")
+            setShowOutModal(false)
+            setOutForm({ materialId: '', quantity: '', notes: '' })
+
+            // Refresh logs and materials
+            const logsRes = await api.get(`/materials/projects/${id}/logs`)
+            if (logsRes.data.success) setMaterialLogs(logsRes.data.data)
+            const matRes = await api.get(`/materials/${id}`)
+            if (matRes.data.success) setProjectMaterials(matRes.data.data)
+        } catch (error) {
+            toast.error("Failed to log material out")
+        } finally {
+            setSubmittingOut(false)
+        }
+    }
+
 
     const handleAddWorker = async () => {
         // Validation
@@ -353,9 +384,14 @@ export default function MobileProjectDetails() {
                                     <FileText className="w-4 h-4 text-primary" />
                                     <h3 className="text-sm font-bold uppercase tracking-wider">Materials Log</h3>
                                 </div>
-                                <Button size="sm" variant="outline" className="h-7 text-xs border-primary/20 hover:bg-primary/10 text-primary" onClick={() => router.push(`/app/scan?projectId=${id}&type=in`)}>
-                                    + Arrival
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button size="sm" variant="outline" className="h-7 text-xs border-red-500/20 hover:bg-red-500/10 text-red-500" onClick={() => setShowOutModal(true)}>
+                                        {t("projects.out") || "- Out"}
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="h-7 text-xs border-primary/20 hover:bg-primary/10 text-primary" onClick={() => router.push(`/app/scan?projectId=${id}&type=in`)}>
+                                        {t("projects.arrival") || "+ Arrival"}
+                                    </Button>
+                                </div>
                             </div>
                             <div className="p-0">
                                 <div className="max-h-48 overflow-y-auto custom-scrollbar gpu" style={{ contentVisibility: 'auto' } as any}>
@@ -992,6 +1028,81 @@ export default function MobileProjectDetails() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Out Modal */}
+            {showOutModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
+                    <Card className="w-full max-w-sm glass-card border-white/10">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <ArrowUpRight className="w-5 h-5 text-red-500" />
+                                {t("projects.out_title") || "Log Material Out"}
+                            </CardTitle>
+                            <CardDescription className="text-xs text-muted-foreground">
+                                {project?.name}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                    {t("projects.out_select_material") || "Select Material"}
+                                </label>
+                                <select
+                                    className="w-full p-2.5 rounded-md text-sm bg-background/50 border border-white/10 focus:border-red-500/50 focus:outline-none"
+                                    value={outForm.materialId}
+                                    onChange={e => setOutForm({ ...outForm, materialId: e.target.value })}
+                                >
+                                    <option value="">{t("projects.out_select_material") || "-- Select Material --"}</option>
+                                    {projectMaterials.map(m => (
+                                        <option key={m._id} value={m._id}>
+                                            {m.name} ({m.stockQuantity} {m.unit})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                    {t("projects.out_quantity") || "Quantity Out"}
+                                </label>
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={outForm.quantity}
+                                    onChange={e => setOutForm({ ...outForm, quantity: e.target.value })}
+                                    className="bg-background/50 border-white/10 focus:border-red-500/50 text-center text-xl font-bold h-14"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                    {t("projects.out_notes") || "Notes (optional)"}
+                                </label>
+                                <Input
+                                    placeholder="e.g. Used for foundation work"
+                                    value={outForm.notes}
+                                    onChange={e => setOutForm({ ...outForm, notes: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                                <Button variant="ghost" className="flex-1" onClick={() => { setShowOutModal(false); setOutForm({ materialId: '', quantity: '', notes: '' }) }}>
+                                    {t("common.cancel") || "Cancel"}
+                                </Button>
+                                <Button
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold"
+                                    onClick={handleRegisterOut}
+                                    disabled={submittingOut}
+                                >
+                                    {submittingOut ? <Spinner className="w-4 h-4 mr-2" /> : null}
+                                    {t("projects.out_confirm") || "CONFIRM OUT"}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     )
 }

@@ -14,7 +14,8 @@ import {
     HardHat,
     Menu,
     Bell,
-    Settings
+    Settings,
+    Warehouse
 } from "lucide-react"
 import {
     Sheet,
@@ -36,6 +37,7 @@ const managerNavItems = (t: (key: string) => string) => [
     { href: "/app/materials", icon: Package, label: t("nav.materials") },
     { href: "/app/daily-reports", icon: ClipboardList, label: t("nav.daily_reports") },
     { href: "/app/reports", icon: FileBarChart, label: t("nav.reports") },
+    { href: "/app/stock", icon: Warehouse, label: t("nav.stock") },
 ]
 
 export function ManagerNavDrawer() {
