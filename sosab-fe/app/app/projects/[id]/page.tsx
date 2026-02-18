@@ -152,21 +152,30 @@ export default function MobileProjectDetails() {
     }, [id, selectedDate])
 
     const handleMarkAttendance = async (workerId: string, present: boolean, dayValue: number = 1) => {
+        // Optimistic update: capture current state to revert if needed
+        const previousState = attendanceMap[workerId]
+
+        // Update local state immediately for instant UI feedback
+        setAttendanceMap(prev => ({
+            ...prev,
+            [workerId]: { present, dayValue }
+        }))
+
         try {
-            // Use selected date instead of today
             const dateString = format(selectedDate, 'yyyy-MM-dd')
-
             await api.post('/attendance', { workerId, projectId: id, date: dateString, present, dayValue })
-            toast.success(`${t("projects.marked_as")} ${present ? t("projects.present") : t("projects.absent")} (${dayValue}x)`)
 
-            // Update local state to hide buttons immediately
+            // Show success toast in background
+            toast.success(`${t("projects.marked_as")} ${present ? t("projects.present") : t("projects.absent")} (${dayValue}x)`)
+        } catch (error) {
+            console.error("Failed to mark attendance:", error)
+            toast.error("Failed to update status. Please try again.")
+
+            // Rollback to previous state on error
             setAttendanceMap(prev => ({
                 ...prev,
-                [workerId]: { present, dayValue }
+                [workerId]: previousState
             }))
-
-        } catch (error) {
-            toast.error("Failed to update status")
         }
     }
 
