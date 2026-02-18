@@ -205,35 +205,7 @@ export default function StockPage() {
                     </div>
                 )}
 
-                {/* Quick Actions */}
-                {selectedProjectId && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <Card
-                            className="glass-card border-white/5 cursor-pointer hover:border-green-500/30 transition-all active:scale-95"
-                            onClick={() => router.push(`/app/scan?projectId=${selectedProjectId}&type=in`)}
-                        >
-                            <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
-                                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                                    <ArrowDownLeft className="w-5 h-5 text-green-500" />
-                                </div>
-                                <span className="text-xs font-bold text-green-500 uppercase tracking-wider">+ Arrival</span>
-                                <span className="text-[10px] text-muted-foreground">Log incoming materials</span>
-                            </CardContent>
-                        </Card>
-                        <Card
-                            className="glass-card border-white/5 cursor-pointer hover:border-red-500/30 transition-all active:scale-95"
-                            onClick={() => router.push(`/app/projects/${selectedProjectId}?tab=overview`)}
-                        >
-                            <CardContent className="p-4 flex flex-col items-center gap-2 text-center">
-                                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                                    <ArrowUpRight className="w-5 h-5 text-red-500" />
-                                </div>
-                                <span className="text-xs font-bold text-red-500 uppercase tracking-wider">- Out</span>
-                                <span className="text-[10px] text-muted-foreground">Log materials used</span>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
+
             </div>
         </div>
     )
