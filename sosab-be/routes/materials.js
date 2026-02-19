@@ -10,7 +10,8 @@ const {
   getProjectMaterialSummary,
   getAllMaterialsSummary,
   transferMaterial,
-  directReception
+  directReception,
+  quickLog
 } = require('../controllers/materialController');
 
 const {
@@ -30,6 +31,7 @@ router.get('/depot/all', getDepotMaterials);
 router.get('/manager/summary', getAllMaterialsSummary);
 router.post('/transfer', authorize('Admin'), logAction('transfer', 'Material'), transferMaterial);
 router.post('/direct-reception', authorize('Admin', 'Project Manager'), uploadReceptionPhotos, handleUploadError, logAction('arrival', 'Material'), directReception);
+router.post('/quick-log', authorize('Admin', 'Project Manager'), logAction('quick-log', 'Material'), quickLog);
 
 router
   .route('/')

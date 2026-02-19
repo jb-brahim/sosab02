@@ -425,3 +425,96 @@ exports.directReception = asyncHandler(async (req, res) => {
     }
   });
 });
+
+// @desc    Quick IN or OUT log for any catalog material (auto-creates Material doc if needed)
+// @route   POST /api/materials/quick-log
+// @access  Private (Manager/Admin)
+exports.quickLog = asyncHandler(async (req, res) => {
+  const { projectId, materialName, unit, category, quantity, type, notes } = req.body;
+
+  if (!projectId || !materialName || !unit || !quantity || !type) {
+    return res.status(400).json({ success: false, message: 'projectId, materialName, unit, quantity and type are required' });
+  }
+  if (!['IN', 'OUT'].includes(type)) {
+    return res.status(400).json({ success: false, message: 'type must be IN or OUT' });
+  }
+
+  const qty = parseFloat(quantity);
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ success: false, message: 'quantity must be a positive number' });
+  }
+
+  // Verify project
+  const project = await Project.findById(projectId);
+  if (!project) {
+    return res.status(404).json({ success: false, message: 'Project not found' });
+  }
+
+  // Find or auto-create Material record
+  let material = await Material.findOne({ projectId, name: materialName });
+  if (!material) {
+    material = await Material.create({
+      projectId,
+      name: materialName,
+      unit,
+      category: category || 'Standard',
+      price: 0,
+      stockQuantity: 0
+    });
+  }
+
+  // For OUT: check current computed balance from logs
+  if (type === 'OUT') {
+    const stats = await MaterialLog.aggregate([
+      { $match: { materialId: material._id } },
+      {
+        $group: {
+          _id: null,
+          totalIn: { $sum: { $cond: [{ $eq: ['$type', 'IN'] }, '$quantity', 0] } },
+          totalOut: { $sum: { $cond: [{ $eq: ['$type', 'OUT'] }, '$quantity', 0] } }
+        }
+      }
+    ]);
+    const balance = stats.length > 0 ? Math.max(0, stats[0].totalIn - stats[0].totalOut) : 0;
+    if (qty > balance) {
+      return res.status(400).json({
+        success: false,
+        message: `Stock insuffisant. Disponible: ${balance} ${material.unit}`
+      });
+    }
+  }
+
+  // Create log
+  await MaterialLog.create({
+    materialId: material._id,
+    type,
+    quantity: qty,
+    notes: notes || '',
+    loggedBy: req.user._id,
+    date: new Date()
+  });
+
+  // Keep stockQuantity in sync
+  if (type === 'IN') {
+    material.stockQuantity += qty;
+  } else {
+    material.stockQuantity = Math.max(0, material.stockQuantity - qty);
+  }
+  material.updatedAt = new Date();
+  await material.save();
+
+  // Return computed balance
+  const totalIn = type === 'IN' ? material.stockQuantity : material.stockQuantity + qty;
+  const totalOut = type === 'OUT' ? material.stockQuantity : 0;
+
+  res.status(201).json({
+    success: true,
+    data: {
+      materialId: material._id,
+      name: material.name,
+      unit: material.unit,
+      stockQuantity: material.stockQuantity
+    }
+  });
+});
+

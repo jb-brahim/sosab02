@@ -12,13 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, MapPin, Calendar as CalendarIcon, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft } from "lucide-react"
+import { ChevronLeft, MapPin, Calendar as CalendarIcon, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft, Search, ChevronRight, Package, X } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useLanguage } from "@/lib/language-context"
+import { MATERIAL_CATALOG, ALL_CLASSIFICATION_NAMES } from "@/lib/material-catalog"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -47,23 +48,29 @@ export default function MobileProjectDetails() {
     const [reportForm, setReportForm] = useState({
         workCompleted: '',
         issues: '',
-        materialsUsed: [] as { materialId: string, quantity: number, name?: string }[],
+        materialsUsed: [] as { materialId?: string, quantity: number, name: string, unit: string, category: string }[],
         photos: null as FileList | null
     })
-    const [tempMaterial, setTempMaterial] = useState({ id: '', quantity: '' })
+    const [tempMaterial, setTempMaterial] = useState({ id: '', quantity: '', name: '', unit: '', category: '' })
     const [materialSearch, setMaterialSearch] = useState('')
     const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false)
     const [submittingReport, setSubmittingReport] = useState(false)
 
     const [showRegisterUsage, setShowRegisterUsage] = useState(false)
-    const [usageForm, setUsageForm] = useState({ materialId: '', quantity: '', notes: '' })
+    const [usageForm, setUsageForm] = useState({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' })
     const [projectMaterials, setProjectMaterials] = useState<any[]>([])
     const [expandedSub, setExpandedSub] = useState<string | null>(null)
 
     // Out modal state
     const [showOutModal, setShowOutModal] = useState(false)
-    const [outForm, setOutForm] = useState({ materialId: '', quantity: '', notes: '' })
+    const [outForm, setOutForm] = useState({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' })
     const [submittingOut, setSubmittingOut] = useState(false)
+
+    // Selection UI state (Shared for modals)
+    const [pickerModalType, setPickerModalType] = useState<"usage" | "out" | "report" | null>(null)
+    const [selectedClassification, setSelectedClassification] = useState("")
+    const [classQuery, setClassQuery] = useState("")
+    const [showClassSuggestions, setShowClassSuggestions] = useState(false)
 
     // Worker management state
     const [showAddWorker, setShowAddWorker] = useState(false)
@@ -214,17 +221,23 @@ export default function MobileProjectDetails() {
 
 
     const handleRegisterUsage = async () => {
-        if (!usageForm.materialId || !usageForm.quantity) return toast.error("Please fill all fields")
+        if (!usageForm.quantity) return toast.error("Please enter quantity")
+        if (!usageForm.materialId && !usageForm.name) return toast.error("Please select a material")
+
         try {
-            await api.post('/materials/log', {
-                materialId: usageForm.materialId,
+            await api.post('/materials/quick-log', {
+                projectId: id,
+                materialId: usageForm.materialId || undefined,
+                materialName: usageForm.name,
+                unit: usageForm.unit,
+                category: usageForm.category,
                 type: 'OUT',
-                quantity: usageForm.quantity,
+                quantity: parseFloat(usageForm.quantity),
                 notes: usageForm.notes
             })
             toast.success("Usage Registered!")
             setShowRegisterUsage(false)
-            setUsageForm({ materialId: '', quantity: '', notes: '' })
+            setUsageForm({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' })
 
             // Refresh
             const logsRes = await api.get(`/materials/projects/${id}/logs`)
@@ -237,18 +250,24 @@ export default function MobileProjectDetails() {
     }
 
     const handleRegisterOut = async () => {
-        if (!outForm.materialId || !outForm.quantity) return toast.error("Please select a material and enter quantity")
+        if (!outForm.quantity) return toast.error("Please enter quantity")
+        if (!outForm.materialId && !outForm.name) return toast.error("Please select a material")
+
         try {
             setSubmittingOut(true)
-            await api.post('/materials/log', {
-                materialId: outForm.materialId,
+            await api.post('/materials/quick-log', {
+                projectId: id,
+                materialId: outForm.materialId || undefined,
+                materialName: outForm.name,
+                unit: outForm.unit,
+                category: outForm.category,
                 type: 'OUT',
-                quantity: outForm.quantity,
+                quantity: parseFloat(outForm.quantity),
                 notes: outForm.notes
             })
             toast.success(t("projects.out_success") || "Material Out Logged!")
             setShowOutModal(false)
-            setOutForm({ materialId: '', quantity: '', notes: '' })
+            setOutForm({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' })
 
             // Refresh logs and materials
             const logsRes = await api.get(`/materials/projects/${id}/logs`)
@@ -531,79 +550,109 @@ export default function MobileProjectDetails() {
                                         <HardHat className="w-3 h-3 text-amber-500" /> {t("projects.materials_used")}
                                     </label>
 
-                                    <div className="flex gap-2 relative">
-                                        <div className="flex-[2] relative">
-                                            <Input
-                                                placeholder={t("projects.search_material")}
-                                                className="bg-background/50 border-border/50 text-sm"
-                                                value={materialSearch}
-                                                onChange={e => {
-                                                    setMaterialSearch(e.target.value)
-                                                    setShowMaterialSuggestions(e.target.value.length >= 3)
-                                                }}
-                                                onFocus={() => {
-                                                    if (materialSearch.length >= 3) setShowMaterialSuggestions(true)
-                                                }}
-                                            />
-                                            {showMaterialSuggestions && (
-                                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border/50 rounded-xl shadow-xl max-h-[200px] overflow-y-auto glass animate-in fade-in slide-in-from-top-1">
-                                                    {projectMaterials
-                                                        .filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase()))
-                                                        .map(m => (
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex gap-2">
+                                            <div className="flex-[2] relative">
+                                                <Input
+                                                    placeholder={t("projects.search_material")}
+                                                    className="bg-background/50 border-border/50 text-sm h-11"
+                                                    value={materialSearch}
+                                                    onChange={e => {
+                                                        setMaterialSearch(e.target.value)
+                                                        setShowMaterialSuggestions(true)
+                                                    }}
+                                                    onFocus={() => setShowMaterialSuggestions(true)}
+                                                />
+                                                {showMaterialSuggestions && materialSearch.length > 0 && (
+                                                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border/50 rounded-xl shadow-xl max-h-[220px] overflow-y-auto glass animate-in fade-in slide-in-from-top-1">
+                                                        {/* Classification Suggestions */}
+                                                        {ALL_CLASSIFICATION_NAMES.filter(n => n.toLowerCase().includes(materialSearch.toLowerCase())).map(cat => (
+                                                            <button
+                                                                key={cat}
+                                                                className="w-full text-left px-4 py-3 text-sm hover:bg-primary/10 transition-colors flex justify-between items-center border-b border-white/5"
+                                                                onClick={() => {
+                                                                    setSelectedClassification(cat)
+                                                                    setPickerModalType("report")
+                                                                    setShowMaterialSuggestions(false)
+                                                                    setMaterialSearch("")
+                                                                }}
+                                                            >
+                                                                <span className="font-bold flex items-center gap-2">
+                                                                    <Search className="w-3.5 h-3.5 text-primary" /> {cat}
+                                                                </span>
+                                                                <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                                                            </button>
+                                                        ))}
+
+                                                        {/* Direct Material Suggestions from Project List */}
+                                                        {projectMaterials.filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase())).map(m => (
                                                             <button
                                                                 key={m._id}
-                                                                className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 transition-colors flex justify-between items-center border-b border-border/10 last:border-0"
+                                                                className="w-full text-left px-4 py-3 text-sm hover:bg-primary/10 transition-colors flex justify-between items-center border-b border-white/5"
                                                                 onClick={() => {
-                                                                    setTempMaterial(prev => ({ ...prev, id: m._id }))
+                                                                    setTempMaterial({
+                                                                        id: m._id,
+                                                                        name: m.name,
+                                                                        unit: m.unit,
+                                                                        category: m.category || t("materials.general"),
+                                                                        quantity: tempMaterial.quantity
+                                                                    })
                                                                     setMaterialSearch(m.name)
                                                                     setShowMaterialSuggestions(false)
                                                                 }}
                                                             >
                                                                 <span className="font-medium">{m.name}</span>
-                                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                                                                    {m.stockQuantity} {m.unit}
-                                                                </span>
+                                                                <span className="text-[10px] text-muted-foreground font-bold uppercase">{m.stockQuantity} {m.unit}</span>
                                                             </button>
-                                                        ))
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                placeholder="Qty"
+                                                className="flex-1 bg-background/50 border-border/50 h-11"
+                                                value={tempMaterial.quantity}
+                                                onChange={e => setTempMaterial(prev => ({ ...prev, quantity: e.target.value }))}
+                                            />
+                                            <Button
+                                                size="sm"
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-4"
+                                                onClick={() => {
+                                                    if (!tempMaterial.name || !tempMaterial.quantity) {
+                                                        toast.error("Please select a material and enter quantity")
+                                                        return;
                                                     }
-                                                    {projectMaterials.filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase())).length === 0 && (
-                                                        <div className="px-4 py-3 text-xs text-muted-foreground text-center">
-                                                            No materials found
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                                    setReportForm(prev => ({
+                                                        ...prev,
+                                                        materialsUsed: [...prev.materialsUsed, {
+                                                            materialId: tempMaterial.id || undefined,
+                                                            quantity: Number(tempMaterial.quantity),
+                                                            name: tempMaterial.name,
+                                                            unit: tempMaterial.unit,
+                                                            category: tempMaterial.category
+                                                        }]
+                                                    }));
+                                                    setTempMaterial({ id: '', quantity: '', name: '', unit: '', category: '' });
+                                                    setMaterialSearch('');
+                                                }}
+                                            >
+                                                Add
+                                            </Button>
                                         </div>
-                                        <Input
-                                            type="number"
-                                            placeholder="Qty"
-                                            className="flex-1 bg-background/50 border-border/50"
-                                            value={tempMaterial.quantity}
-                                            onChange={e => setTempMaterial(prev => ({ ...prev, quantity: e.target.value }))}
-                                        />
-                                        <Button
-                                            size="sm"
-                                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-                                            onClick={() => {
-                                                if (!tempMaterial.id || !tempMaterial.quantity) {
-                                                    toast.error("Please select a material and enter quantity")
-                                                    return;
-                                                }
-                                                const mat = projectMaterials.find(m => m._id === tempMaterial.id);
-                                                setReportForm(prev => ({
-                                                    ...prev,
-                                                    materialsUsed: [...prev.materialsUsed, {
-                                                        materialId: tempMaterial.id,
-                                                        quantity: Number(tempMaterial.quantity),
-                                                        name: mat?.name
-                                                    }]
-                                                }));
-                                                setTempMaterial({ id: '', quantity: '' });
-                                                setMaterialSearch('');
-                                            }}
-                                        >
-                                            Add
-                                        </Button>
+
+                                        {/* Helper to show what's selected before adding */}
+                                        {tempMaterial.name && (
+                                            <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20 animate-in fade-in">
+                                                <div className="flex items-center gap-2">
+                                                    <Package className="w-3.5 h-3.5 text-primary" />
+                                                    <span className="text-xs font-bold">{tempMaterial.name} ({tempMaterial.unit})</span>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setTempMaterial({ ...tempMaterial, name: '', id: '' })}>
+                                                    <X className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {reportForm.materialsUsed.length > 0 && (
@@ -1082,61 +1131,177 @@ export default function MobileProjectDetails() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                                    {t("projects.out_select_material") || "Select Material"}
-                                </label>
-                                <select
-                                    className="w-full p-2.5 rounded-md text-sm bg-background/50 border border-white/10 focus:border-red-500/50 focus:outline-none"
-                                    value={outForm.materialId}
-                                    onChange={e => setOutForm({ ...outForm, materialId: e.target.value })}
-                                >
-                                    <option value="">{t("projects.out_select_material") || "-- Select Material --"}</option>
-                                    {projectMaterials.map(m => (
-                                        <option key={m._id} value={m._id}>
-                                            {m.name} ({m.stockQuantity} {m.unit})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            <div className="space-y-4">
+                                {!outForm.name ? (
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                            {t("projects.out_select_material") || "Select Material"}
+                                        </label>
+                                        <div className="relative">
+                                            <Input
+                                                placeholder={t("materials.search_placeholder") || "Rechercher..."}
+                                                className="bg-background/50 border-white/10 h-11"
+                                                value={classQuery}
+                                                onChange={e => {
+                                                    setClassQuery(e.target.value)
+                                                    setShowClassSuggestions(true)
+                                                }}
+                                                onFocus={() => setShowClassSuggestions(true)}
+                                            />
+                                            {showClassSuggestions && classQuery.length > 0 && (
+                                                <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-card border border-white/10 rounded-xl shadow-2xl max-h-[200px] overflow-y-auto glass">
+                                                    {/* Classification Search */}
+                                                    {ALL_CLASSIFICATION_NAMES.filter(n => n.toLowerCase().includes(classQuery.toLowerCase())).map(cat => (
+                                                        <button
+                                                            key={cat}
+                                                            className="w-full text-left px-4 py-3 text-sm hover:bg-red-500/10 transition-colors flex justify-between items-center border-b border-white/5"
+                                                            onClick={() => {
+                                                                setSelectedClassification(cat)
+                                                                setPickerModalType("out")
+                                                                setShowClassSuggestions(false)
+                                                            }}
+                                                        >
+                                                            <span className="font-bold">{cat}</span>
+                                                            <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                                                        </button>
+                                                    ))}
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                                    {t("projects.out_quantity") || "Quantity Out"}
-                                </label>
-                                <Input
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={outForm.quantity}
-                                    onChange={e => setOutForm({ ...outForm, quantity: e.target.value })}
-                                    className="bg-background/50 border-white/10 focus:border-red-500/50 text-center text-xl font-bold h-14"
-                                />
-                            </div>
+                                                    {/* Direct Selection from Project Materials */}
+                                                    {projectMaterials.filter(m => m.name.toLowerCase().includes(classQuery.toLowerCase())).map(m => (
+                                                        <button
+                                                            key={m._id}
+                                                            className="w-full text-left px-4 py-3 text-sm hover:bg-red-500/10 transition-colors flex justify-between items-center border-b border-white/5"
+                                                            onClick={() => {
+                                                                setOutForm({
+                                                                    ...outForm,
+                                                                    materialId: m._id,
+                                                                    name: m.name,
+                                                                    unit: m.unit,
+                                                                    category: m.category || t("materials.general")
+                                                                })
+                                                                setShowClassSuggestions(false)
+                                                            }}
+                                                        >
+                                                            <span className="font-medium">{m.name}</span>
+                                                            <span className="text-[10px] text-muted-foreground font-bold uppercase">{m.stockQuantity} {m.unit}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                                    <Package className="w-5 h-5 text-red-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold leading-tight">{outForm.name}</p>
+                                                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                                        {outForm.category} • {outForm.unit}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-red-500/10" onClick={() => setOutForm({ ...outForm, name: '', materialId: '' })}>
+                                                <X className="w-4 h-4 text-red-500" />
+                                            </Button>
+                                        </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                                    {t("projects.out_notes") || "Notes (optional)"}
-                                </label>
-                                <Input
-                                    placeholder="e.g. Used for foundation work"
-                                    value={outForm.notes}
-                                    onChange={e => setOutForm({ ...outForm, notes: e.target.value })}
-                                    className="bg-background/50 border-white/10"
-                                />
-                            </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                                {t("projects.out_quantity") || "Quantity Out"}
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={outForm.quantity}
+                                                onChange={e => setOutForm({ ...outForm, quantity: e.target.value })}
+                                                className="bg-background/50 border-white/10 focus:border-red-500/50 text-center text-xl font-bold h-14"
+                                            />
+                                        </div>
 
-                            <div className="flex gap-2 pt-2">
-                                <Button variant="ghost" className="flex-1" onClick={() => { setShowOutModal(false); setOutForm({ materialId: '', quantity: '', notes: '' }) }}>
-                                    {t("common.cancel") || "Cancel"}
-                                </Button>
-                                <Button
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold"
-                                    onClick={handleRegisterOut}
-                                    disabled={submittingOut}
-                                >
-                                    {submittingOut ? <Spinner className="w-4 h-4 mr-2" /> : null}
-                                    {t("projects.out_confirm") || "CONFIRM OUT"}
-                                </Button>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                                {t("projects.out_notes") || "Notes (optional)"}
+                                            </label>
+                                            <Input
+                                                placeholder="e.g. Used for foundation work"
+                                                value={outForm.notes}
+                                                onChange={e => setOutForm({ ...outForm, notes: e.target.value })}
+                                                className="bg-background/50 border-white/10"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 pt-2">
+                                    <Button variant="ghost" className="flex-1" onClick={() => { setShowOutModal(false); setOutForm({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' }) }}>
+                                        {t("common.cancel") || "Cancel"}
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold"
+                                        onClick={handleRegisterOut}
+                                        disabled={submittingOut || !outForm.name}
+                                    >
+                                        {submittingOut ? <Spinner className="w-4 h-4 mr-2" /> : null}
+                                        {t("projects.out_confirm") || "CONFIRM OUT"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            {/* Catalog Item Picker Overlay */}
+            {selectedClassification && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
+                    <Card className="w-full max-w-sm glass-card border-white/10 max-h-[80vh] flex flex-col">
+                        <CardHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between space-y-0">
+                            <div>
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-primary">{selectedClassification}</CardTitle>
+                                <p className="text-[10px] text-muted-foreground">{t("materials.select_item") || "Select Item"}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedClassification("")}>
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="p-2 overflow-y-auto">
+                            <div className="grid grid-cols-1 gap-1">
+                                {MATERIAL_CATALOG.find(c => c.classification === selectedClassification)?.items.map(item => (
+                                    <button
+                                        key={item.name}
+                                        className="w-full text-left p-3 rounded-lg hover:bg-primary/10 transition-colors flex justify-between items-center group border border-transparent hover:border-primary/20"
+                                        onClick={() => {
+                                            const data = {
+                                                id: '', // New from catalog
+                                                name: item.name,
+                                                unit: item.unit,
+                                                category: selectedClassification
+                                            };
+
+                                            if (pickerModalType === "report") {
+                                                setTempMaterial({ ...tempMaterial, ...data });
+                                                setMaterialSearch(item.name);
+                                            } else if (pickerModalType === "out") {
+                                                setOutForm({ ...outForm, ...data });
+                                            } else if (pickerModalType === "usage") {
+                                                setUsageForm({ ...usageForm, ...data });
+                                            }
+
+                                            setSelectedClassification("");
+                                            setPickerModalType(null);
+                                        }}
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-semibold">{item.name}</span>
+                                        </div>
+                                        <Badge variant="secondary" className="text-[9px] font-bold uppercase py-0 px-1.5 bg-primary/10 text-primary border-none">
+                                            {item.unit}
+                                        </Badge>
+                                    </button>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>

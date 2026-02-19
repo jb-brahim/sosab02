@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Camera, Package, CheckCircle, Plus, X, Loader2, Calendar as CalendarIcon } from "lucide-react"
+import { Camera, Package, CheckCircle, Plus, X, Loader2, Calendar as CalendarIcon, Search, ChevronRight, ArrowLeft } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import api from "@/lib/api"
@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useLanguage } from "@/lib/language-context"
+import { MATERIAL_CATALOG, ALL_CLASSIFICATION_NAMES } from "@/lib/material-catalog"
 
 export default function ScanPage() {
   const router = useRouter()
@@ -30,6 +31,12 @@ export default function ScanPage() {
   const [supplierName, setSupplierName] = useState("")
   const [notes, setNotes] = useState("")
 
+  // Selection state
+  const [classQuery, setClassQuery] = useState("")
+  const [selectedClassification, setSelectedClassification] = useState("")
+  const [isCustomMaterial, setIsCustomMaterial] = useState(false)
+  const [showClassSuggestions, setShowClassSuggestions] = useState(false)
+
   const [photos, setPhotos] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -39,13 +46,19 @@ export default function ScanPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Initial effect for search params
+  // Suggestions logic
+  const classSuggestions = ALL_CLASSIFICATION_NAMES.filter(name =>
+    name.toLowerCase().includes(classQuery.toLowerCase())
+  )
+
+  const catalogItems = MATERIAL_CATALOG.find(c => c.classification === selectedClassification)?.items || []
+
+  // Effects
   useEffect(() => {
     const pId = searchParams.get('projectId')
     if (pId) setSelectedProjectId(pId)
   }, [searchParams])
 
-  // Fetch Projects to get site name and handle fallback
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -63,6 +76,7 @@ export default function ScanPage() {
     fetchProjects()
   }, [selectedProjectId])
 
+  // Handlers
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files)
@@ -78,6 +92,26 @@ export default function ScanPage() {
       URL.revokeObjectURL(prev[index])
       return prev.filter((_, i) => i !== index)
     })
+  }
+
+  const handleSelectMaterial = (name: string, unit: string) => {
+    setMaterialName(name)
+    setMaterialUnit(unit)
+    setIsCustomMaterial(false)
+  }
+
+  const handleCustomMaterial = () => {
+    setMaterialName("")
+    setMaterialUnit("pcs")
+    setIsCustomMaterial(true)
+    setSelectedClassification("")
+  }
+
+  const resetSelection = () => {
+    setSelectedClassification("")
+    setMaterialName("")
+    setIsCustomMaterial(false)
+    setClassQuery("")
   }
 
   const handleSubmit = async () => {
@@ -96,17 +130,17 @@ export default function ScanPage() {
       formData.append('supplier', supplierName)
       formData.append('arrivalDate', format(selectedDate, 'yyyy-MM-dd'))
       formData.append('notes', notes)
+      formData.append('category', selectedClassification || "Autre")
 
       photos.forEach(photo => formData.append('photos', photo))
 
-      // Direct reception endpoint (Arrival only)
       const res = await api.post('/materials/direct-reception', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
 
       if (res.data.success) {
         setSubmitted(true)
-        setTimeout(() => router.push('/app/materials'), 2000)
+        setTimeout(() => router.push('/app/stock'), 2000)
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to log arrival")
@@ -119,8 +153,8 @@ export default function ScanPage() {
     return (
       <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/20">
-            <CheckCircle className="h-10 w-10 text-success" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
+            <CheckCircle className="h-10 w-10 text-green-500" />
           </div>
           <h2 className="font-display text-2xl font-bold">{t("materials.arrival_success")}</h2>
           <p className="text-muted-foreground font-medium">{t("materials.arrival_saved")}</p>
@@ -167,127 +201,212 @@ export default function ScanPage() {
       </div>
 
       <div className="space-y-4">
-        <Card className="border-border bg-card shadow-sm overflow-hidden">
+        <Card className="border-border bg-card shadow-sm overflow-hidden min-h-[160px]">
           <CardContent className="p-4 space-y-5">
-            {/* Material Manual Entry */}
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-                <Package className="w-3 h-3" /> {t("materials.material_unit")}
-              </Label>
-              <div className="grid grid-cols-4 gap-2">
-                <Input
-                  className="col-span-3 bg-background h-11 border-border/50 transition-all focus:border-success/50"
-                  placeholder={t("materials.material_name_placeholder") || "Material Name (e.g. Cement)"}
-                  value={materialName}
-                  onChange={e => setMaterialName(e.target.value)}
-                />
-                <Select value={materialUnit} onValueChange={setMaterialUnit}>
-                  <SelectTrigger className="bg-background h-11 border-border/50 px-2 font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['pcs', 'kg', 'ton', 'm3', 'm2', 'voy', 'sac'].map(u => (
-                      <SelectItem key={u} value={u}>{u}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {!selectedClassification && !isCustomMaterial ? (
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 px-1">
+                  <Search className="w-3 h-3" /> {t("materials.select_classification") || "Classification"}
+                </Label>
+                <div className="relative">
+                  <Input
+                    className="bg-background h-11 border-border/50 rounded-xl focus:ring-green-500/20"
+                    placeholder={t("materials.search_placeholder") || "Rechercher..."}
+                    value={classQuery}
+                    onChange={e => {
+                      setClassQuery(e.target.value)
+                      setShowClassSuggestions(true)
+                    }}
+                    onFocus={() => setShowClassSuggestions(true)}
+                  />
+                  {showClassSuggestions && classQuery.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border/50 rounded-xl shadow-xl max-h-[200px] overflow-y-auto">
+                      {classSuggestions.map(name => (
+                        <button
+                          key={name}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-green-500/5 transition-colors flex justify-between items-center border-b border-border/5 last:border-0"
+                          onClick={() => {
+                            setSelectedClassification(name)
+                            setShowClassSuggestions(false)
+                          }}
+                        >
+                          <span className="font-medium">{name}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                        </button>
+                      ))}
+                      <button
+                        className="w-full text-left px-4 py-3 text-sm text-green-500 font-bold hover:bg-green-500/5 transition-colors border-t border-green-500/10"
+                        onClick={handleCustomMaterial}
+                      >
+                        + {t("materials.other_manual") || "Autre (Manuel)"}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Quantity */}
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-                <Plus className="w-3 h-3" /> {t("materials.qty_received")}
-              </Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="bg-background h-14 text-2xl font-display font-bold text-center border-border/50 focus:ring-success/20"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Logistic Details */}
-        <Card className="border-border bg-card shadow-sm">
-          <CardContent className="p-4 grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.driver_label")}</Label>
-              <Input
-                className="bg-background h-11 border-border/50 text-sm"
-                placeholder={t("materials.driver_placeholder")}
-                value={deliveredBy}
-                onChange={(e) => setDeliveredBy(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.supplier_label")}</Label>
-              <Input
-                className="bg-background h-11 border-border/50 text-sm"
-                placeholder={t("materials.supplier_placeholder")}
-                value={supplierName}
-                onChange={(e) => setSupplierName(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notes & Evidence */}
-        <Card className="border-border bg-card shadow-sm">
-          <CardContent className="p-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.notes_label")}</Label>
-              <Input
-                className="bg-background h-11 border-border/50 text-sm"
-                placeholder={t("materials.notes_placeholder")}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground flex justify-between">
-                {t("materials.photo_evidence")}
-                <span>{photos.length}/10</span>
-              </Label>
-              <div className="grid grid-cols-4 gap-2">
-                {previews.map((src, i) => (
-                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/50 group">
-                    <img src={src} alt="Preview" className="w-full h-full object-cover" />
+            ) : selectedClassification && !materialName && !isCustomMaterial ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{selectedClassification}</Label>
+                  <Button variant="ghost" size="sm" className="h-6 text-[9px] uppercase font-bold text-muted-foreground hover:text-green-500" onClick={resetSelection}>
+                    <ArrowLeft className="w-3 h-3 mr-1" /> {t("common.back") || "Back"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5 max-h-[250px] overflow-y-auto pr-1">
+                  {catalogItems.map(item => (
                     <button
-                      onClick={() => removePhoto(i)}
-                      className="absolute top-1 right-1 bg-destructive/90 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      key={item.name}
+                      onClick={() => handleSelectMaterial(item.name, item.unit)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/10 hover:border-green-500/30 hover:bg-green-500/5 transition-all group"
                     >
-                      <X className="w-3 h-3" />
+                      <span className="text-sm font-medium">{item.name}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground group-hover:text-green-500 uppercase">{item.unit}</span>
                     </button>
-                  </div>
-                ))}
-                {photos.length < 10 && (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="aspect-square border-2 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition-all hover:border-success/50"
-                  >
-                    <Camera className="w-6 h-6 mb-1 opacity-40" />
-                    <span className="text-[8px] font-bold">{t("materials.add_photo")}</span>
-                  </button>
-                )}
+                  ))}
+                  <Button variant="outline" className="mt-2 border-dashed border-border/30 h-10 text-xs font-bold uppercase tracking-wider" onClick={handleCustomMaterial}>
+                    + {t("materials.other") || "Other"}
+                  </Button>
+                </div>
               </div>
-              <input type="file" accept="image/*" multiple className="hidden" ref={fileInputRef} onChange={handlePhotoChange} />
-            </div>
+            ) : (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/5 border border-green-500/20">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold leading-tight truncate">{materialName || "Nouveau Matériel"}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
+                        {isCustomMaterial ? t("materials.custom") || "Manuel" : selectedClassification} • {materialUnit}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-green-500/10 flex-shrink-0" onClick={resetSelection}>
+                    <ArrowLeft className="w-4 h-4 text-green-500" />
+                  </Button>
+                </div>
+
+                {isCustomMaterial && (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.material_unit")}</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      <Input
+                        className="col-span-3 bg-background h-11 border-border/50"
+                        placeholder="Nom du matériel"
+                        value={materialName}
+                        onChange={e => setMaterialName(e.target.value)}
+                      />
+                      <Select value={materialUnit} onValueChange={setMaterialUnit}>
+                        <SelectTrigger className="bg-background h-11 border-border/50 font-medium">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['pcs', 'kg', 'T', 'm', 'ml', 'm²', 'm³', 'U', 'L', 'box', 'bag', 'liter'].map(u => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+                    <Plus className="w-3 h-3 text-green-500" /> {t("materials.qty_received")}
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="bg-background h-14 text-3xl font-display font-bold text-center border-border/50 focus:ring-green-500/20 rounded-2xl"
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Submit */}
-        <Button
-          className="w-full h-14 text-lg font-bold transition-all active:scale-[0.98] shadow-lg shadow-black/10 bg-success hover:bg-success/90 text-success-foreground"
-          disabled={submitting}
-          onClick={handleSubmit}
-        >
-          {submitting ? <Loader2 className="w-6 h-6 animate-spin mr-2" /> : <CheckCircle className="w-6 h-6 mr-2" />}
-          {t("materials.confirm_arrival")}
-        </Button>
+        {(materialName || isCustomMaterial) && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <Card className="border-border bg-card shadow-sm">
+              <CardContent className="p-4 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.driver_label")}</Label>
+                  <Input
+                    className="bg-background h-11 border-border/50 text-sm"
+                    placeholder={t("materials.driver_placeholder")}
+                    value={deliveredBy}
+                    onChange={(e) => setDeliveredBy(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.supplier_label")}</Label>
+                  <Input
+                    className="bg-background h-11 border-border/50 text-sm"
+                    placeholder={t("materials.supplier_placeholder")}
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-card shadow-sm">
+              <CardContent className="p-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.notes_label")}</Label>
+                  <Input
+                    className="bg-background h-11 border-border/50 text-sm"
+                    placeholder={t("materials.notes_placeholder")}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground flex justify-between">
+                    {t("materials.photo_evidence")}
+                    <span>{photos.length}/10</span>
+                  </Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/50 group">
+                        <img src={src} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removePhoto(i)}
+                          className="absolute top-1 right-1 bg-destructive/90 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < 10 && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square border-2 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition-all hover:border-green-500/50"
+                      >
+                        <Camera className="w-6 h-6 mb-1 opacity-40" />
+                        <span className="text-[8px] font-bold">{t("materials.add_photo")}</span>
+                      </button>
+                    )}
+                  </div>
+                  <input type="file" accept="image/*" multiple className="hidden" ref={fileInputRef} onChange={handlePhotoChange} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button
+              className="w-full h-14 text-lg font-bold transition-all active:scale-[0.98] shadow-lg shadow-black/10 bg-green-600 hover:bg-green-700 text-white rounded-2xl"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? <Loader2 className="w-6 h-6 animate-spin mr-2" /> : <CheckCircle className="w-6 h-6 mr-2" />}
+              {t("materials.confirm_arrival")}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
