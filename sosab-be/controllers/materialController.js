@@ -54,13 +54,38 @@ exports.getMaterials = asyncHandler(async (req, res) => {
     });
   }
 
-  const materials = await Material.find({ projectId })
-    .populate('logs');
+  const materials = await Material.find({ projectId }).lean();
+  const materialIds = materials.map(m => m._id);
+
+  // Compute totalIn / totalOut from logs for accuracy
+  const stats = await MaterialLog.aggregate([
+    { $match: { materialId: { $in: materialIds } } },
+    {
+      $group: {
+        _id: '$materialId',
+        totalIn: { $sum: { $cond: [{ $eq: ['$type', 'IN'] }, '$quantity', 0] } },
+        totalOut: { $sum: { $cond: [{ $eq: ['$type', 'OUT'] }, '$quantity', 0] } }
+      }
+    }
+  ]);
+
+  // Merge computed stock into each material
+  const data = materials.map(m => {
+    const stat = stats.find(s => s._id.toString() === m._id.toString());
+    const totalIn = stat ? stat.totalIn : 0;
+    const totalOut = stat ? stat.totalOut : 0;
+    return {
+      ...m,
+      totalIn,
+      totalOut,
+      stockQuantity: Math.max(0, totalIn - totalOut)
+    };
+  });
 
   res.status(200).json({
     success: true,
-    count: materials.length,
-    data: materials
+    count: data.length,
+    data
   });
 });
 

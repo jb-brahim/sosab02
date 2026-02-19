@@ -1,0 +1,150 @@
+materil unite
+Béton HRS dosé 150kg/m³ Pompé m³
+Béton HRS dosé 200kg/m³  Pompé m³
+Béton HRS dosé 250kg/m³ Pompé m³
+Béton HRS dosé 300kg/m³ Pompé m³
+Béton HRS dosé 350kg/m³ Pompé m³
+Béton HRS dosé 400kg/m³ Pompé m³
+Béton CPA dosé 150kg/m³ Pompé m³
+Béton CPA dosé 200kg/m³ Pompé m³
+Béton CPA dosé 250kg/m³ Pompé m³
+Béton CPA dosé 300kg/m³ Pompé m³
+Béton CPA dosé 350kg/m³ Pompé m³
+Béton CPA dosé 400kg/m³ Pompé m³
+Béton HRS dosé 150kg/m³ non Pompé m³
+Béton HRS dosé 200kg/m³ non Pompé m³
+Béton HRS dosé 250kg/m³ non Pompé m³
+Béton HRS dosé 300kg/m³ non Pompé m³
+Béton HRS dosé 350kg/m³ non Pompé m³
+Béton HRS dosé 400kg/m³ non Pompé m³
+Béton CPA dosé 150kg/m³ non Pompé m³
+Béton CPA dosé 200kg/m³ non Pompé m³
+Béton CPA dosé 250kg/m³ non Pompé m³
+Béton CPA dosé 300kg/m³ non Pompé m³
+Béton CPA dosé 350kg/m³ non Pompé m³
+Béton CPA dosé 400kg/m³ non Pompé m³
+LIANTS
+Ciment HRS en sacs T
+Ciment CPA en sacs T
+Ciment normal en sacs T
+Chaux hydraulique en sacs T
+PRODUITS DE CARRIERE
+Sable ordinaire m³
+Sable lavé m³
+Terre végétale m³
+Gravier 5/8, 8/12, 4/15 et 8/16 m³
+Gravier 12/20 et 15/25 m³
+Gravier 20/40 et 25/40 m³
+Tout venant 0/20 m³
+Tuff m³
+PRODUITS ROUGE ET ARMATURE
+Brique platrière U
+Brique 12 trous U
+Hourdis de 16 U
+Brique de 8 U
+Acier de 6 T
+Acier HA 8,10,12,14,16,20 T
+treillis soudés 4 15X15 m²
+treillis soudés 4 20X20 m²
+treillis soudés 5 15X15 m²
+treillis soudés 5 20X20 m²
+treillis soudés 6 15X15 m²
+treillis soudés 6 20X20 m²
+treillis soudés 8 15X15 m²
+treillis soudés 8 20X20 m²
+ETANCHEITE et PRODUITS BITUMINEUX
+Chébidex SP44 - Rouleau de 10 m² m²
+Derbigum SP4 - Rouleau de 10 m² m²
+Derbigum - Sceau de 15 Kgs kg
+NARDYL SEAU DE 18KG DERBIGUM kg
+Bitume kg
+BOIS ET DERIVES
+Bois blanc m²
+Bois rouges (1er choix) m²
+Planche 23mm X 4m m²
+Contreplaqués 4mm m²
+Contreplaqués 5mm m²
+Bastin m³
+Panello 3,00X0,50 m ep 2,7cm m²
+Panello 2,00X0,50 m ep 2,7cm m²
+Panneau stratifié 18 mm m²
+Panneau stratifié 15 mm m²
+entretoise 20==>40 cm U
+Bras 50 cm U
+Coin type A 17 cm U
+Papillons U
+Tige fileté ml
+Forreau en PVC ml
+Panneau métallique m²
+Cale U
+Echaffaudage et coffrage
+Etais métallique 4m U
+Fourche U
+Sabot U
+Sapine 850 U
+Ratrappage U
+Sapine 450 U
+BORDURES ET PAVES
+Bordure mince P2 ml
+Bordure de trottoir type "T2" ml
+Bordure de trottoir type "T3" ml
+Caniveau latéral "CS" ml
+Caniveau central "CC" ml
+Pavés autobloquants gris m²
+Pavés autobloquants rouge m²
+REVETEMENTS
+Marbre local Ep 2cm m²
+Marbre local Ep 3cm m²
+Marbre blanc importé Ep 2cm m²
+Marbre blanc importé Ep 3cm m²
+Plinthe lustré locale ml
+Carreaux granito mosaique ordinaire 25X25 m²
+Carreaux granitos marbré Local 25X25 m²
+Faience blanc doremail 20X50 m²
+Faience coloré doremail 20X50 m²
+Regard
+Regard de visite 80 E 15 cm U
+Dalle regard de visite 80 U
+Rehausse regard de visite 80 U
+Produit SIKA
+Sika ceram 100 kg
+Sika ceram 105 kg
+Sika top 121 10,7 kg U
+Sika top 209 réservoir 38 kg U
+Sika latex L
+Sika Flex 11pro FC 300 ml U
+Sika dur 30 colle U
+Anchrofix U
+DIVERS
+Grillage en plastique m²
+Polystyrène ep 2cm m²
+Polystyrène ep 4cm densité 20 m²
+Joint water stop type O 22 ml
+Film en polyane m²
+Fond de joint  Ø 20 mm ml
+Carojoint kg
+Join croisillons U
+Couvre joint en aluminum ml
+Chape dur kg
+Grillage métallique m²
+TUYAUX PVC
+Tube PVC diam 32 ep 1,8mm ml
+Tube PVC diam 32 ep 3mm ml
+Tube PVC diam 40 ep 3mm ml
+Tube PVC diam 50 ep 3mm ml
+Tube PVC diam 63 ep 3mm ml
+Tube PVC diam 75 ep 3mm ml
+Tube PVC diam 75 ep 1,8mm ml
+Tube PVC diam 100 ep 1,8mm ml
+Tube PVC diam 100 ep 3mm ml
+Tube PVC diam 110 ep 3,2mm ml
+Tube PVC diam 110 ep 3mm ml
+Tube PVC diam 125 ep 3mm ml
+Tube PVC diam 140 ep 3mm ml
+Tube PVC diam 160 ep 2,8mm ml
+Tube PVC diam 160 ep 3,2mm ml
+Tube PVC diam 200 ep 3,2mm ml
+Tube PVC diam 200 ep 3,8mm ml
+Tube PVC diam 250 ep 4,4mm ml
+Tube PVC diam 250 ep 6,2mm ml
+tube gorge diam 50 m
