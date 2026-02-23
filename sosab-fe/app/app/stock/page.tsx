@@ -173,37 +173,41 @@ export default function StockPage() {
             </div>
 
             <div className="p-4 relative z-10 space-y-3">
-                {/* Project Selector */}
-                <div className="glass-card rounded-2xl p-4">
-                    <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2 block">
-                        {t("stock.select_project") || "Select Project"}
-                    </label>
-                    {loadingProjects ? (
-                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                            <Loader2 className="w-4 h-4 animate-spin" /><span>Loading...</span>
-                        </div>
-                    ) : (
-                        <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                            <SelectTrigger className="w-full bg-background/50 border-white/10">
-                                <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {projects.map(p => (
-                                    <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                {/* Project Selector & Export Button */}
+                <div className="flex items-end gap-3">
+                    <div className="glass-card rounded-2xl p-4 flex-1">
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2 block">
+                            {t("stock.select_project") || "Select Project"}
+                        </label>
+                        {loadingProjects ? (
+                            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                <Loader2 className="w-4 h-4 animate-spin" /><span>Loading...</span>
+                            </div>
+                        ) : (
+                            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                                <SelectTrigger className="w-full bg-background/50 border-white/10">
+                                    <SelectValue placeholder="Select a project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {projects.map(p => (
+                                        <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
+                    {selectedProjectId && (
+                        <Button
+                            onClick={handleExportExcel}
+                            disabled={isExporting || loading}
+                            variant="outline"
+                            className="glass-card border-primary/20 hover:bg-primary/5 text-primary rounded-2xl h-[72px] w-14 flex items-center justify-center p-0 flex-shrink-0"
+                        >
+                            {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileSpreadsheet className="w-5 h-5" />}
+                        </Button>
                     )}
                 </div>
-
-                {/* Export Button */}
-                {selectedProjectId && (
-                    <Button onClick={handleExportExcel} disabled={isExporting || loading} variant="outline"
-                        className="w-full glass-card border-primary/20 hover:bg-primary/5 text-primary rounded-2xl h-11 gap-2">
-                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-                        <span className="font-bold uppercase tracking-wider text-xs">{t("stock.excel_export") || "Export Excel"}</span>
-                    </Button>
-                )}
 
                 {/* Quick-log overlay */}
                 {quickLog && (
