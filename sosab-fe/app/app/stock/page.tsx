@@ -304,8 +304,8 @@ export default function StockPage() {
                                             <div className="border-t border-white/5">
                                                 {/* Column headers */}
                                                 <div className="grid grid-cols-12 px-4 py-2 bg-black/10">
-                                                    <span className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Material</span>
-                                                    <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Unit</span>
+                                                    <span className="col-span-6 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Material</span>
+                                                    <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Unit</span>
                                                     <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-green-500/70 text-center">IN</span>
                                                     <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-red-500/70 text-center">OUT</span>
                                                     <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">=</span>
@@ -326,12 +326,12 @@ export default function StockPage() {
                                                                 className={`grid grid-cols-12 items-center px-3 py-2.5 hover:bg-white/5 transition-colors ${i % 2 === 0 ? '' : 'bg-black/10'}`}
                                                             >
                                                                 {/* Name */}
-                                                                <div className="col-span-5 flex items-center gap-1.5 min-w-0">
-                                                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${db ? (isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500') : 'bg-white/20'}`} />
-                                                                    <span className="text-xs font-medium truncate">{item.name}</span>
+                                                                <div className="col-span-6 flex items-start gap-1.5 min-w-0 pt-0.5">
+                                                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${db ? (isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500') : 'bg-white/20'}`} />
+                                                                    <span className="text-xs font-medium leading-tight">{item.name}</span>
                                                                 </div>
                                                                 {/* Unit */}
-                                                                <div className="col-span-2 text-center">
+                                                                <div className="col-span-1 text-center">
                                                                     <span className="text-[10px] text-muted-foreground font-bold uppercase">{item.unit}</span>
                                                                 </div>
                                                                 {/* IN */}
