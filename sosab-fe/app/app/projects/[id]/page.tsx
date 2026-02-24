@@ -565,6 +565,35 @@ export default function MobileProjectDetails() {
                                                 />
                                                 {showMaterialSuggestions && materialSearch.length > 0 && (
                                                     <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border/50 rounded-xl shadow-xl max-h-[220px] overflow-y-auto glass animate-in fade-in slide-in-from-top-1">
+                                                        {/* Material Suggestions from Catalog */}
+                                                        {MATERIAL_CATALOG.flatMap(cat =>
+                                                            cat.items.map(item => ({ ...item, classification: cat.classification }))
+                                                        ).filter(item =>
+                                                            item.name.toLowerCase().includes(materialSearch.toLowerCase())
+                                                        ).slice(0, 15).map((item, idx) => (
+                                                            <button
+                                                                key={`${item.name}-${idx}`}
+                                                                className="w-full text-left px-4 py-3 text-sm hover:bg-primary/10 transition-colors flex flex-col border-b border-white/5"
+                                                                onClick={() => {
+                                                                    setTempMaterial({
+                                                                        id: '', // Catalog item
+                                                                        name: item.name,
+                                                                        unit: item.unit,
+                                                                        category: item.classification,
+                                                                        quantity: tempMaterial.quantity
+                                                                    })
+                                                                    setMaterialSearch(item.name)
+                                                                    setShowMaterialSuggestions(false)
+                                                                }}
+                                                            >
+                                                                <span className="font-semibold">{item.name}</span>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <span className="text-[10px] text-primary/70 uppercase font-bold tracking-wider">{item.classification}</span>
+                                                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">• {item.unit}</span>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+
                                                         {/* Classification Suggestions */}
                                                         {ALL_CLASSIFICATION_NAMES.filter(n => n.toLowerCase().includes(materialSearch.toLowerCase())).map(cat => (
                                                             <button
@@ -577,8 +606,8 @@ export default function MobileProjectDetails() {
                                                                     setMaterialSearch("")
                                                                 }}
                                                             >
-                                                                <span className="font-bold flex items-center gap-2">
-                                                                    <Search className="w-3.5 h-3.5 text-primary" /> {cat}
+                                                                <span className="font-bold flex items-center gap-2 text-primary/80">
+                                                                    <Search className="w-3.5 h-3.5" /> {cat}
                                                                 </span>
                                                                 <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                                                             </button>
@@ -1150,6 +1179,35 @@ export default function MobileProjectDetails() {
                                             />
                                             {showClassSuggestions && classQuery.length > 0 && (
                                                 <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-card border border-white/10 rounded-xl shadow-2xl max-h-[200px] overflow-y-auto glass">
+                                                    {/* Material Suggestions from Catalog */}
+                                                    {MATERIAL_CATALOG.flatMap(cat =>
+                                                        cat.items.map(item => ({ ...item, classification: cat.classification }))
+                                                    ).filter(item =>
+                                                        item.name.toLowerCase().includes(classQuery.toLowerCase())
+                                                    ).slice(0, 15).map((item, idx) => (
+                                                        <button
+                                                            key={`${item.name}-${idx}`}
+                                                            className="w-full text-left px-4 py-3 text-sm hover:bg-red-500/10 transition-colors flex flex-col border-b border-white/5"
+                                                            onClick={() => {
+                                                                setOutForm({
+                                                                    ...outForm,
+                                                                    materialId: '',
+                                                                    name: item.name,
+                                                                    unit: item.unit,
+                                                                    category: item.classification
+                                                                })
+                                                                setShowClassSuggestions(false)
+                                                                setClassQuery("")
+                                                            }}
+                                                        >
+                                                            <span className="font-semibold">{item.name}</span>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="text-[10px] text-red-500/70 uppercase font-bold tracking-wider">{item.classification}</span>
+                                                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">• {item.unit}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+
                                                     {/* Classification Search */}
                                                     {ALL_CLASSIFICATION_NAMES.filter(n => n.toLowerCase().includes(classQuery.toLowerCase())).map(cat => (
                                                         <button
@@ -1161,7 +1219,7 @@ export default function MobileProjectDetails() {
                                                                 setShowClassSuggestions(false)
                                                             }}
                                                         >
-                                                            <span className="font-bold">{cat}</span>
+                                                            <span className="font-bold text-red-500/80">{cat}</span>
                                                             <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                                                         </button>
                                                     ))}
