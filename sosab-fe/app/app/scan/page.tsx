@@ -247,7 +247,7 @@ export default function ScanPage() {
                             onClick={() => {
                               setMaterialName(m.name)
                               setMaterialUnit(m.unit)
-                              setIsCustomMaterial(false)
+                              setIsCustomMaterial(true)
                               setShowClassSuggestions(false)
                             }}
                           >
