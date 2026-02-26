@@ -51,8 +51,8 @@ router
 
 router
   .route('/item/:id')
-  .patch(authorize('Admin'), logAction('update', 'Material'), updateMaterial)
-  .delete(authorize('Admin'), logAction('delete', 'Material'), deleteMaterial);
+  .patch(authorize('Admin', 'Project Manager'), logAction('update', 'Material'), updateMaterial)
+  .delete(authorize('Admin', 'Project Manager'), logAction('delete', 'Material'), deleteMaterial);
 
 // Material Log routes
 router
