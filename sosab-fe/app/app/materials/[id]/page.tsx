@@ -37,37 +37,50 @@ export default function MaterialDetailsPage() {
     const [summary, setSummary] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
-    // Edit state
+    // Material edit state
     const [showEdit, setShowEdit] = useState(false)
     const [editForm, setEditForm] = useState({ name: '', unit: '', category: '', supplier: '' })
     const [savingEdit, setSavingEdit] = useState(false)
 
-    // Delete state
+    // Material delete state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
 
-    useEffect(() => {
-        const fetchDetails = async () => {
-            try {
-                setLoading(true)
-                const res = await api.get(`/materials/logs/${params.id}`)
-                if (res.data.success) {
-                    setLogs(res.data.data)
-                    setSummary(res.data.summary)
-                    if (res.data.data.length > 0) {
-                        setMaterial(res.data.data[0].materialId)
-                    }
+    // Log edit state
+    const [editingLog, setEditingLog] = useState<any | null>(null)
+    const [logEditForm, setLogEditForm] = useState({
+        date: '',
+        quantity: '',
+        supplier: '',
+        bonLivraison: '',
+        notes: ''
+    })
+    const [savingLog, setSavingLog] = useState(false)
+
+    const fetchDetails = async () => {
+        try {
+            setLoading(true)
+            const res = await api.get(`/materials/logs/${params.id}`)
+            if (res.data.success) {
+                setLogs(res.data.data)
+                setSummary(res.data.summary)
+                if (res.data.data.length > 0) {
+                    setMaterial(res.data.data[0].materialId)
                 }
-            } catch (error) {
-                console.error("Failed to load logs", error)
-                toast.error(t("materials.failed_to_load_history"))
-            } finally {
-                setLoading(false)
             }
+        } catch (error) {
+            console.error("Failed to load logs", error)
+            toast.error(t("materials.failed_to_load_history"))
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchDetails()
     }, [params.id])
 
+    // ── Material edit/delete ──────────────────────────────────────────────────
     const openEdit = () => {
         setEditForm({
             name: material?.name || '',
@@ -106,6 +119,39 @@ export default function MaterialDetailsPage() {
         }
     }
 
+    // ── Log edit ─────────────────────────────────────────────────────────────
+    const openLogEdit = (log: any) => {
+        setEditingLog(log)
+        setLogEditForm({
+            date: format(new Date(log.date || log.createdAt), "yyyy-MM-dd"),
+            quantity: String(log.quantity),
+            supplier: log.supplier || '',
+            bonLivraison: log.bonLivraison || '',
+            notes: log.notes || ''
+        })
+    }
+
+    const handleSaveLog = async () => {
+        if (!logEditForm.quantity || isNaN(Number(logEditForm.quantity))) return toast.error('Enter a valid quantity')
+        try {
+            setSavingLog(true)
+            await api.patch(`/materials/log/${editingLog._id}`, {
+                date: logEditForm.date,
+                quantity: parseFloat(logEditForm.quantity),
+                supplier: logEditForm.supplier,
+                bonLivraison: logEditForm.bonLivraison,
+                notes: logEditForm.notes
+            })
+            toast.success('Delivery updated!')
+            setEditingLog(null)
+            await fetchDetails()
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to update delivery')
+        } finally {
+            setSavingLog(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -135,12 +181,12 @@ export default function MaterialDetailsPage() {
     return (
         <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
             <div className="space-y-4">
-                {/* Back button */}
+                {/* Back */}
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-4 h-8 text-muted-foreground hover:text-primary">
                     <ChevronLeft className="w-4 h-4 mr-1" /> {t("materials.back_to_inventory")}
                 </Button>
 
-                {/* Title + Edit/Delete actions */}
+                {/* Title + Material Edit/Delete */}
                 <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 flex-1 min-w-0">
                         <h1 className="text-3xl font-display font-black tracking-tight truncate">{material?.name}</h1>
@@ -150,24 +196,16 @@ export default function MaterialDetailsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0 pt-1">
-                        <button
-                            onClick={openEdit}
-                            className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
-                            title="Edit material"
-                        >
+                        <button onClick={openEdit} className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Edit material">
                             <Pencil className="w-4 h-4 text-primary" />
                         </button>
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="h-9 w-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                            title="Delete material"
-                        >
+                        <button onClick={() => setShowDeleteConfirm(true)} className="h-9 w-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors" title="Delete material">
                             <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
                     </div>
                 </div>
 
-                {/* Quick Summary Card */}
+                {/* Summary Card */}
                 <Card className="bg-success/5 border-success/20 overflow-hidden shadow-sm">
                     <CardContent className="p-5 flex items-center justify-between">
                         <div className="space-y-0.5">
@@ -182,7 +220,7 @@ export default function MaterialDetailsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Timeline of Arrivals */}
+                {/* Timeline */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                         <label className="text-[10px] uppercase font-black text-muted-foreground/60 tracking-widest">{t("materials.delivery_timeline")}</label>
@@ -192,12 +230,11 @@ export default function MaterialDetailsPage() {
                     <div className="space-y-4 relative before:absolute before:inset-0 before:left-[19px] before:w-px before:bg-border/50">
                         {logs.map((log) => (
                             <div key={log._id} className="relative pl-10 space-y-2">
-                                {/* Dot */}
                                 <div className="absolute left-0 top-1 h-10 w-10 flex items-center justify-center">
                                     <div className="h-3 w-3 rounded-full bg-background border-2 border-primary shadow-[0_0_0_4px_rgba(var(--primary-rgb),0.1)] z-10" />
                                 </div>
 
-                                <Card className="border-border/50 shadow-sm overflow-hidden active:scale-[0.99] transition-transform">
+                                <Card className="border-border/50 shadow-sm overflow-hidden">
                                     <CardContent className="p-4 space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-0.5">
@@ -206,14 +243,24 @@ export default function MaterialDetailsPage() {
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/80 uppercase">
                                                     <Calendar className="w-3 h-3" />
-                                                    {format(new Date(log.createdAt), 'MMM dd, yyyy • HH:mm')}
+                                                    {format(new Date(log.date || log.createdAt), 'MMM dd, yyyy • HH:mm')}
                                                 </div>
                                             </div>
-                                            {log.photos && log.photos.length > 0 && (
-                                                <Badge variant="secondary" className="h-5 px-1.5 bg-muted text-[9px] font-bold">
-                                                    <ImageIcon className="w-3 h-3 mr-1" /> {log.photos.length}
-                                                </Badge>
-                                            )}
+                                            <div className="flex items-center gap-1.5">
+                                                {log.photos && log.photos.length > 0 && (
+                                                    <Badge variant="secondary" className="h-5 px-1.5 bg-muted text-[9px] font-bold">
+                                                        <ImageIcon className="w-3 h-3 mr-1" /> {log.photos.length}
+                                                    </Badge>
+                                                )}
+                                                {/* Edit this log entry */}
+                                                <button
+                                                    onClick={() => openLogEdit(log)}
+                                                    className="h-7 w-7 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                                                    title="Edit this delivery"
+                                                >
+                                                    <Pencil className="w-3 h-3 text-primary" />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-dashed">
@@ -273,67 +320,112 @@ export default function MaterialDetailsPage() {
                 </div>
             </div>
 
-            {/* ── Edit Modal ── */}
+            {/* ── Material Edit Modal ── */}
             {showEdit && (
-                <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4"
-                    onClick={() => setShowEdit(false)}
-                >
-                    <div
-                        className="w-full max-w-sm bg-card rounded-2xl p-5 border border-white/10 space-y-4 shadow-2xl"
-                        onClick={e => e.stopPropagation()}
-                    >
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4" onClick={() => setShowEdit(false)}>
+                    <div className="w-full max-w-sm bg-card rounded-2xl p-5 border border-white/10 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between">
                             <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
                                 <Pencil className="w-4 h-4 text-primary" /> Edit Material
                             </h3>
-                            <button onClick={() => setShowEdit(false)} className="p-1 rounded-lg hover:bg-white/10">
-                                <X className="w-4 h-4" />
-                            </button>
+                            <button onClick={() => setShowEdit(false)} className="p-1 rounded-lg hover:bg-white/10"><X className="w-4 h-4" /></button>
                         </div>
-
                         <div className="space-y-3">
                             <div className="space-y-1">
                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Name</Label>
-                                <Input
-                                    value={editForm.name}
-                                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                    className="bg-background/50 border-white/10"
-                                />
+                                <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="bg-background/50 border-white/10" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unit</Label>
-                                    <Input
-                                        value={editForm.unit}
-                                        onChange={e => setEditForm({ ...editForm, unit: e.target.value })}
-                                        className="bg-background/50 border-white/10"
-                                    />
+                                    <Input value={editForm.unit} onChange={e => setEditForm({ ...editForm, unit: e.target.value })} className="bg-background/50 border-white/10" />
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Category</Label>
-                                    <Input
-                                        value={editForm.category}
-                                        onChange={e => setEditForm({ ...editForm, category: e.target.value })}
-                                        className="bg-background/50 border-white/10"
-                                    />
+                                    <Input value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="bg-background/50 border-white/10" />
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Supplier</Label>
+                                <Input value={editForm.supplier} onChange={e => setEditForm({ ...editForm, supplier: e.target.value })} className="bg-background/50 border-white/10" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                            <Button variant="ghost" className="flex-1" onClick={() => setShowEdit(false)}>Cancel</Button>
+                            <Button className="flex-1" onClick={handleSaveEdit} disabled={savingEdit}>
+                                {savingEdit ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} Save
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Log Edit Modal ── */}
+            {editingLog && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4" onClick={() => setEditingLog(null)}>
+                    <div className="w-full max-w-sm bg-card rounded-2xl p-5 border border-white/10 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-primary" /> Edit Delivery
+                            </h3>
+                            <button onClick={() => setEditingLog(null)} className="p-1 rounded-lg hover:bg-white/10"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="space-y-3">
+                            {/* Date */}
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> Date
+                                </Label>
                                 <Input
-                                    value={editForm.supplier}
-                                    onChange={e => setEditForm({ ...editForm, supplier: e.target.value })}
+                                    type="date"
+                                    value={logEditForm.date}
+                                    onChange={e => setLogEditForm({ ...logEditForm, date: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+                            {/* Quantity */}
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Quantité ({material?.unit})</Label>
+                                <Input
+                                    type="number"
+                                    value={logEditForm.quantity}
+                                    onChange={e => setLogEditForm({ ...logEditForm, quantity: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+                            {/* Supplier */}
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Fournisseur</Label>
+                                <Input
+                                    value={logEditForm.supplier}
+                                    onChange={e => setLogEditForm({ ...logEditForm, supplier: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+                            {/* Bon de Livraison */}
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">N° Bon de Livraison</Label>
+                                <Input
+                                    value={logEditForm.bonLivraison}
+                                    onChange={e => setLogEditForm({ ...logEditForm, bonLivraison: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                    placeholder="Ex: BL-2024-0123"
+                                />
+                            </div>
+                            {/* Notes */}
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Notes</Label>
+                                <Input
+                                    value={logEditForm.notes}
+                                    onChange={e => setLogEditForm({ ...logEditForm, notes: e.target.value })}
                                     className="bg-background/50 border-white/10"
                                 />
                             </div>
                         </div>
-
                         <div className="flex gap-2 pt-2">
-                            <Button variant="ghost" className="flex-1" onClick={() => setShowEdit(false)}>Cancel</Button>
-                            <Button className="flex-1" onClick={handleSaveEdit} disabled={savingEdit}>
-                                {savingEdit ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                                Save
+                            <Button variant="ghost" className="flex-1" onClick={() => setEditingLog(null)}>Cancel</Button>
+                            <Button className="flex-1" onClick={handleSaveLog} disabled={savingLog}>
+                                {savingLog ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} Save
                             </Button>
                         </div>
                     </div>
@@ -342,14 +434,8 @@ export default function MaterialDetailsPage() {
 
             {/* ── Delete Confirm Modal ── */}
             {showDeleteConfirm && (
-                <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4"
-                    onClick={() => setShowDeleteConfirm(false)}
-                >
-                    <div
-                        className="w-full max-w-sm bg-card rounded-2xl p-5 border border-red-500/20 space-y-4 shadow-2xl"
-                        onClick={e => e.stopPropagation()}
-                    >
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4" onClick={() => setShowDeleteConfirm(false)}>
+                    <div className="w-full max-w-sm bg-card rounded-2xl p-5 border border-red-500/20 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
                                 <Trash2 className="w-5 h-5 text-red-400" />
@@ -361,12 +447,10 @@ export default function MaterialDetailsPage() {
                                 </p>
                             </div>
                         </div>
-
                         <div className="flex gap-2">
                             <Button variant="ghost" className="flex-1" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
                             <Button variant="destructive" className="flex-1" onClick={handleDelete} disabled={deleting}>
-                                {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                                Delete
+                                {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />} Delete
                             </Button>
                         </div>
                     </div>

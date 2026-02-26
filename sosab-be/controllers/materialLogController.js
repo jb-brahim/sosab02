@@ -141,7 +141,7 @@ exports.getMaterialLogs = asyncHandler(async (req, res) => {
 // @route   PATCH /api/materials/log/:id
 // @access  Private
 exports.updateMaterialLog = asyncHandler(async (req, res) => {
-    const { quantity, notes, supplier } = req.body;
+    const { quantity, notes, supplier, date, bonLivraison } = req.body;
 
     const log = await MaterialLog.findById(req.params.id);
 
@@ -152,8 +152,12 @@ exports.updateMaterialLog = asyncHandler(async (req, res) => {
         });
     }
 
-    // Only allow updating your own logs or if admin
-    if (log.loggedBy.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+    // Allow if: Admin, Project Manager, or the person who logged it
+    if (
+        req.user.role !== 'Admin' &&
+        req.user.role !== 'Project Manager' &&
+        log.loggedBy.toString() !== req.user._id.toString()
+    ) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized to update this log'
@@ -177,7 +181,9 @@ exports.updateMaterialLog = asyncHandler(async (req, res) => {
     }
 
     if (notes !== undefined) log.notes = notes;
-    if (supplier) log.supplier = supplier;
+    if (supplier !== undefined) log.supplier = supplier;
+    if (bonLivraison !== undefined) log.bonLivraison = bonLivraison;
+    if (date) log.date = new Date(date);
 
     await log.save();
 
