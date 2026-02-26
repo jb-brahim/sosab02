@@ -46,6 +46,9 @@ export default function ScanPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // DB materials for the selected project (for search suggestions)
+  const [dbProjectMaterials, setDbProjectMaterials] = useState<{ name: string, unit: string }[]>([])
+
   // Suggestions logic
   const classSuggestions = ALL_CLASSIFICATION_NAMES.filter(name =>
     name.toLowerCase().includes(classQuery.toLowerCase())
@@ -74,6 +77,18 @@ export default function ScanPage() {
       }
     }
     fetchProjects()
+  }, [selectedProjectId])
+
+  // Fetch project's existing DB materials for search suggestions
+  useEffect(() => {
+    if (!selectedProjectId) return
+    api.get(`/materials/${selectedProjectId}`)
+      .then(res => {
+        if (res.data.success) {
+          setDbProjectMaterials(res.data.data.map((m: any) => ({ name: m.name, unit: m.unit })))
+        }
+      })
+      .catch(() => { })
   }, [selectedProjectId])
 
   // Handlers
@@ -222,12 +237,34 @@ export default function ScanPage() {
                     />
                     {showClassSuggestions && classQuery.length > 0 && (
                       <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-card border border-border/50 rounded-2xl shadow-2xl max-h-[300px] overflow-y-auto overflow-x-hidden animate-in fade-in zoom-in-95 duration-200">
-                        {/* Material Suggestions */}
+                        {/* DB Project Materials (already used in this project) */}
+                        {dbProjectMaterials.filter(m =>
+                          m.name.toLowerCase().includes(classQuery.toLowerCase())
+                        ).slice(0, 8).map((m, idx) => (
+                          <button
+                            key={`db-${m.name}-${idx}`}
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-amber-500/5 transition-colors flex flex-col border-b border-border/5 last:border-0"
+                            onClick={() => {
+                              setMaterialName(m.name)
+                              setMaterialUnit(m.unit)
+                              setIsCustomMaterial(false)
+                              setShowClassSuggestions(false)
+                            }}
+                          >
+                            <span className="font-semibold">{m.name}</span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-amber-500 uppercase font-bold tracking-wider">Ce projet</span>
+                              <span className="text-[10px] text-green-500/70 font-black uppercase text-[8px]">• {m.unit}</span>
+                            </div>
+                          </button>
+                        ))}
+                        {/* Material Suggestions from catalog */}
                         {MATERIAL_CATALOG.flatMap(cat =>
                           cat.items.map(item => ({ ...item, classification: cat.classification }))
                         ).filter(item =>
-                          item.name.toLowerCase().includes(classQuery.toLowerCase())
-                        ).slice(0, 20).map((item, idx) => (
+                          item.name.toLowerCase().includes(classQuery.toLowerCase()) &&
+                          !dbProjectMaterials.some(m => m.name.toLowerCase() === item.name.toLowerCase())
+                        ).slice(0, 12).map((item, idx) => (
                           <button
                             key={`${item.name}-${idx}`}
                             className="w-full text-left px-4 py-3 text-sm hover:bg-green-500/5 transition-colors flex flex-col border-b border-border/5 last:border-0"

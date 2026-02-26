@@ -89,6 +89,16 @@ export default function StockPage() {
     const dbMap = new Map<string, DbMaterial>()
     dbMaterials.forEach(m => dbMap.set(m.name.toLowerCase(), m))
 
+    // All catalog item names (lowercase) for exclusion check
+    const catalogNames = new Set(
+        MATERIAL_CATALOG.flatMap(g => g.items.map(i => i.name.toLowerCase()))
+    )
+
+    // DB materials that are NOT in the catalog at all
+    const uncategorizedMaterials = dbMaterials.filter(
+        m => !catalogNames.has(m.name.toLowerCase()) && (m.totalIn > 0 || m.totalOut > 0 || m.stockQuantity > 0)
+    )
+
     // Export Excel
     const handleExportExcel = async () => {
         if (!selectedProjectId) return
@@ -369,6 +379,89 @@ export default function StockPage() {
                                     </div>
                                 )
                             })}
+
+                            {/* ── Uncategorized / Custom materials ── */}
+                            {uncategorizedMaterials.length > 0 && (
+                                <div className="glass-card rounded-2xl overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleGroup('__autres__')}
+                                        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 flex-shrink-0">
+                                                <span className="text-[10px] font-black text-amber-500 uppercase">A</span>
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-sm font-bold uppercase tracking-wide">Autres (Personnalisés)</p>
+                                                <p className="text-[10px] text-muted-foreground font-medium">
+                                                    {uncategorizedMaterials.length} items
+                                                    <span className="ml-2 text-amber-500 font-bold">
+                                                        • {uncategorizedMaterials.reduce((s, m) => s + m.stockQuantity, 0)} in stock
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {expandedGroups.has('__autres__')
+                                            ? <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                            : <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                        }
+                                    </button>
+
+                                    {expandedGroups.has('__autres__') && (
+                                        <div className="border-t border-white/5">
+                                            <div className="grid grid-cols-12 px-4 py-2 bg-black/10">
+                                                <span className="col-span-6 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Material</span>
+                                                <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Unit</span>
+                                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-green-500/70 text-center">IN</span>
+                                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-red-500/70 text-center">OUT</span>
+                                                <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">=</span>
+                                            </div>
+                                            <div className="divide-y divide-white/5">
+                                                {uncategorizedMaterials.map((m, i) => {
+                                                    const balance = Math.max(0, (m.totalIn ?? 0) - (m.totalOut ?? 0))
+                                                    const isOut = balance === 0
+                                                    const isLow = balance > 0 && balance <= 5
+                                                    return (
+                                                        <div key={m._id} className={`grid grid-cols-12 items-center px-3 py-2.5 hover:bg-white/5 transition-colors ${i % 2 === 0 ? '' : 'bg-black/10'}`}>
+                                                            <div className="col-span-6 flex items-start gap-1.5 min-w-0 pt-0.5">
+                                                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                                                <span className="text-xs font-medium leading-tight">{m.name}</span>
+                                                            </div>
+                                                            <div className="col-span-1 text-center">
+                                                                <span className="text-[10px] text-muted-foreground font-bold uppercase">{m.unit}</span>
+                                                            </div>
+                                                            <div className="col-span-2 flex items-center justify-center">
+                                                                <button
+                                                                    onClick={e => openQuickLog(m.name, m.unit, m.category || 'Autre', "IN", e)}
+                                                                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-green-500/20 transition-colors group/in"
+                                                                >
+                                                                    <Plus className="w-3 h-3 text-green-500 opacity-60 group-hover/in:opacity-100" />
+                                                                    <span className="text-xs font-semibold tabular-nums text-green-500">{m.totalIn ?? 0}</span>
+                                                                </button>
+                                                            </div>
+                                                            <div className="col-span-2 flex items-center justify-center">
+                                                                <button
+                                                                    onClick={e => openQuickLog(m.name, m.unit, m.category || 'Autre', "OUT", e)}
+                                                                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-red-500/20 transition-colors group/out"
+                                                                >
+                                                                    <Minus className="w-3 h-3 text-red-400 opacity-60 group-hover/out:opacity-100" />
+                                                                    <span className="text-xs font-semibold tabular-nums text-red-400">{m.totalOut ?? 0}</span>
+                                                                </button>
+                                                            </div>
+                                                            <div className="col-span-1 text-right pr-1">
+                                                                <span className={`text-sm font-bold tabular-nums ${isOut ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-foreground'}`}>
+                                                                    {balance}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Legend */}
                             <div className="px-2 py-2 flex items-center gap-4">
