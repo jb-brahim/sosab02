@@ -82,7 +82,7 @@ export default function MaterialDetailsPage() {
         if (!editForm.name || !editForm.unit) return toast.error('Name and unit are required')
         try {
             setSavingEdit(true)
-            await api.patch(`/materials/${params.id}`, editForm)
+            await api.patch(`/materials/item/${params.id}`, editForm)
             toast.success('Material updated!')
             setMaterial((prev: any) => ({ ...prev, ...editForm }))
             setShowEdit(false)
@@ -96,7 +96,7 @@ export default function MaterialDetailsPage() {
     const handleDelete = async () => {
         try {
             setDeleting(true)
-            await api.delete(`/materials/${params.id}`)
+            await api.delete(`/materials/item/${params.id}`)
             toast.success('Material deleted')
             router.replace('/app/materials')
         } catch (error: any) {
