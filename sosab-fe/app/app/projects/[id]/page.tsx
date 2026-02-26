@@ -971,7 +971,7 @@ export default function MobileProjectDetails() {
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
                                 <Label htmlFor="isSubcontractor-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
-                                    {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                                    Sous-traitant ?
                                 </Label>
                             </div>
 
@@ -1064,7 +1064,7 @@ export default function MobileProjectDetails() {
                                             className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                         />
                                         <Label htmlFor="isSubcontractor-edit-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
-                                            {t("projects.is_subcontractor") || "Is Subcontractor?"}
+                                            Sous-traitant ?
                                         </Label>
                                     </div>
 
