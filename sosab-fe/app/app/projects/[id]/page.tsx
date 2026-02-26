@@ -962,18 +962,7 @@ export default function MobileProjectDetails() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 px-1 py-1">
-                                <input
-                                    type="checkbox"
-                                    id="isSubcontractor-manager"
-                                    checked={createWorkerForm.isSubcontractor}
-                                    onChange={(e) => setCreateWorkerForm({ ...createWorkerForm, isSubcontractor: e.target.checked })}
-                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <Label htmlFor="isSubcontractor-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
-                                    Sous-traitant ?
-                                </Label>
-                            </div>
+
 
                             {/* Supervisor Selection */}
                             {createWorkerForm.trade !== 'Sous Traitant' && subcontractors.length > 0 && (
@@ -1055,18 +1044,7 @@ export default function MobileProjectDetails() {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 px-1 py-1">
-                                        <input
-                                            type="checkbox"
-                                            id="isSubcontractor-edit-manager"
-                                            checked={editingWorker.isSubcontractor}
-                                            onChange={(e) => setEditingWorker({ ...editingWorker, isSubcontractor: e.target.checked })}
-                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                        />
-                                        <Label htmlFor="isSubcontractor-edit-manager" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider cursor-pointer">
-                                            Sous-traitant ?
-                                        </Label>
-                                    </div>
+
 
                                     {/* Supervisor Selection in Edit */}
                                     {editingWorker.trade !== 'Sous Traitant' && subcontractors.length > 0 && (
