@@ -368,7 +368,7 @@ exports.transferMaterial = asyncHandler(async (req, res) => {
 // @route   POST /api/materials/direct-reception
 // @access  Private (Manager/Admin)
 exports.directReception = asyncHandler(async (req, res) => {
-  const { projectId, materialName, quantity, unit, deliveredBy, notes, price, category, supplier, arrivalDate } = req.body;
+  const { projectId, materialName, quantity, unit, deliveredBy, notes, price, category, supplier, arrivalDate, bonLivraison } = req.body;
 
   if (!projectId || !materialName || !quantity || !unit) {
     return res.status(400).json({ success: false, message: 'Please provide projectId, materialName, quantity and unit' });
@@ -412,6 +412,7 @@ exports.directReception = asyncHandler(async (req, res) => {
     type: 'IN',
     deliveredBy: deliveredBy || 'Unknown',
     supplier: supplier || 'Unknown',
+    bonLivraison: bonLivraison || '',
     photos,
     notes: notes || 'Direct arrival on site',
     date: logDate

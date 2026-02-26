@@ -46,6 +46,10 @@ const materialLogSchema = new mongoose.Schema({
   supplier: {
     type: String
   },
+  bonLivraison: {
+    type: String,
+    trim: true
+  },
   notes: {
     type: String,
     trim: true

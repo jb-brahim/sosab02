@@ -29,6 +29,7 @@ export default function ScanPage() {
   const [quantity, setQuantity] = useState("")
   const [deliveredBy, setDeliveredBy] = useState("")
   const [supplierName, setSupplierName] = useState("")
+  const [bonLivraison, setBonLivraison] = useState("")
   const [notes, setNotes] = useState("")
 
   // Selection state
@@ -128,6 +129,7 @@ export default function ScanPage() {
       formData.append('quantity', quantity)
       formData.append('deliveredBy', deliveredBy)
       formData.append('supplier', supplierName)
+      formData.append('bonLivraison', bonLivraison)
       formData.append('arrivalDate', format(selectedDate, 'yyyy-MM-dd'))
       formData.append('notes', notes)
       formData.append('category', selectedClassification || "Autre")
@@ -383,23 +385,34 @@ export default function ScanPage() {
         {(materialName || isCustomMaterial) && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
             <Card className="border-border bg-card shadow-sm">
-              <CardContent className="p-4 grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.driver_label")}</Label>
-                  <Input
-                    className="bg-background h-11 border-border/50 text-sm"
-                    placeholder={t("materials.driver_placeholder")}
-                    value={deliveredBy}
-                    onChange={(e) => setDeliveredBy(e.target.value)}
-                  />
+              <CardContent className="p-4 grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.driver_label")}</Label>
+                    <Input
+                      className="bg-background h-11 border-border/50 text-sm"
+                      placeholder={t("materials.driver_placeholder")}
+                      value={deliveredBy}
+                      onChange={(e) => setDeliveredBy(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.supplier_label")}</Label>
+                    <Input
+                      className="bg-background h-11 border-border/50 text-sm"
+                      placeholder={t("materials.supplier_placeholder")}
+                      value={supplierName}
+                      onChange={(e) => setSupplierName(e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.supplier_label")}</Label>
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">N° Bon de Livraison</Label>
                   <Input
                     className="bg-background h-11 border-border/50 text-sm"
-                    placeholder={t("materials.supplier_placeholder")}
-                    value={supplierName}
-                    onChange={(e) => setSupplierName(e.target.value)}
+                    placeholder="Ex: BL-2024-0123"
+                    value={bonLivraison}
+                    onChange={(e) => setBonLivraison(e.target.value)}
                   />
                 </div>
               </CardContent>

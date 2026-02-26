@@ -245,102 +245,142 @@ async function generatePaymentExcel(data, outputPath) {
  */
 async function generateMaterialExcel(data, outputPath) {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Material Report');
-
     const { project, headerLabel, materials, movements } = data;
 
-    // Set column widths
-    worksheet.columns = [
-        { width: 12 },  // Date
-        { width: 20 },  // Material Name
-        { width: 10 },  // Type
-        { width: 10 },  // Quantity
-        { width: 10 },  // Unit
-        { width: 20 },  // Supplier/Delivered By
-        { width: 30 }   // Notes
+    // ─────────────────────────────────────────────────────────────────────
+    // SHEET 1 — RÉSUMÉ DES STOCKS
+    // ─────────────────────────────────────────────────────────────────────
+    const summarySheet = workbook.addWorksheet('RÉSUMÉ DES STOCKS', {
+        properties: { tabColor: { argb: 'FF00B050' } }
+    });
+
+    summarySheet.columns = [
+        { width: 22 },  // Matériau
+        { width: 10 },  // Unité
+        { width: 15 },  // Total IN
+        { width: 15 },  // Total OUT
+        { width: 12 }   // SOLDE
     ];
 
-    // Title Row
-    worksheet.mergeCells('A1:G1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = `Rapport Matériel: ${project.name}`;
-    titleCell.font = { bold: true, size: 14 };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE0E0E0' }
-    };
+    // Title
+    summarySheet.mergeCells('A1:E1');
+    const sTitleCell = summarySheet.getCell('A1');
+    sTitleCell.value = `Rapport Matériel: ${project.name}`;
+    sTitleCell.font = { bold: true, size: 14 };
+    sTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    sTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
 
-    // Date Range Row
-    worksheet.mergeCells('A2:G2');
-    const dateCell = worksheet.getCell('A2');
-    dateCell.value = `Période: ${headerLabel}`;
-    dateCell.font = { bold: true, size: 12 };
-    dateCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    // Date range
+    summarySheet.mergeCells('A2:E2');
+    const sDateCell = summarySheet.getCell('A2');
+    sDateCell.value = `Période: ${headerLabel}`;
+    sDateCell.font = { bold: true, size: 12 };
+    sDateCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-    // --- Summary Section ---
-    let currentRow = 4;
-    worksheet.getCell(`A${currentRow}`).value = 'RÉSUMÉ DES STOCKS';
-    worksheet.getCell(`A${currentRow}`).font = { bold: true };
-    currentRow++;
+    // Section label
+    summarySheet.getCell('A4').value = 'RÉSUMÉ DES STOCKS';
+    summarySheet.getCell('A4').font = { bold: true };
 
-    const summaryHeaderRow = worksheet.getRow(currentRow);
-    summaryHeaderRow.values = ['Matériau', 'Unité', 'Total Entrées', 'Total Sorties', 'SOLDE', '', ''];
-    summaryHeaderRow.font = { bold: true };
-    summaryHeaderRow.eachCell((cell) => {
+    // Header
+    const sHeaderRow = summarySheet.getRow(5);
+    sHeaderRow.values = ['Matériau', 'Unité', 'Total Entrées', 'Total Sorties', 'SOLDE'];
+    sHeaderRow.font = { bold: true };
+    sHeaderRow.eachCell((cell) => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
         cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
-    currentRow++;
 
+    let sRow = 6;
     materials.forEach(mat => {
-        const row = worksheet.getRow(currentRow);
-        row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance, '', ''];
+        const row = summarySheet.getRow(sRow);
+        row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance];
         row.eachCell((cell, col) => {
             if (col <= 5) {
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             }
+            if (col === 5) {
+                cell.font = { bold: true };
+                if (mat.balance === 0) cell.font = { bold: true, color: { argb: 'FFFF0000' } };
+            }
         });
-        currentRow++;
+        sRow++;
     });
 
-    // --- Detailed Movements ---
-    currentRow += 2;
-    worksheet.getCell(`A${currentRow}`).value = 'MOUVEMENTS DÉTAILLÉS';
-    worksheet.getCell(`A${currentRow}`).font = { bold: true };
-    currentRow++;
+    // ─────────────────────────────────────────────────────────────────────
+    // SHEET 2 — MOUVEMENTS DÉTAILLÉS
+    // ─────────────────────────────────────────────────────────────────────
+    const movSheet = workbook.addWorksheet('MOUVEMENTS DÉTAILLÉS', {
+        properties: { tabColor: { argb: 'FF0070C0' } }
+    });
 
-    const headerRow = worksheet.getRow(currentRow);
-    headerRow.values = [
+    movSheet.columns = [
+        { width: 12 },  // DATE
+        { width: 22 },  // DÉSIGNATION
+        { width: 8 },  // TYPE
+        { width: 10 },  // QTÉ
+        { width: 8 },  // UNITÉ
+        { width: 20 },  // FOURNISSEUR
+        { width: 18 },  // LIVREUR
+        { width: 18 },  // N° BON LIVRAISON
+        { width: 28 }   // NOTES
+    ];
+
+    // Title
+    movSheet.mergeCells('A1:I1');
+    const mTitleCell = movSheet.getCell('A1');
+    mTitleCell.value = `Rapport Matériel: ${project.name}`;
+    mTitleCell.font = { bold: true, size: 14 };
+    mTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    mTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+    // Date range
+    movSheet.mergeCells('A2:I2');
+    const mDateCell = movSheet.getCell('A2');
+    mDateCell.value = `Période: ${headerLabel}`;
+    mDateCell.font = { bold: true, size: 12 };
+    mDateCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Section label
+    movSheet.getCell('A4').value = 'MOUVEMENTS DÉTAILLÉS';
+    movSheet.getCell('A4').font = { bold: true };
+
+    // Header
+    const mHeaderRow = movSheet.getRow(5);
+    mHeaderRow.values = [
         'DATE',
         'DÉSIGNATION',
         'TYPE',
         'QTÉ',
         'UNITÉ',
-        'FOURNISSEUR/LIVREUR',
+        'FOURNISSEUR',
+        'LIVREUR',
+        'N° BON LIVRAISON',
         'NOTES'
     ];
-    headerRow.font = { bold: true };
-    headerRow.eachCell((cell) => {
+    mHeaderRow.font = { bold: true };
+    mHeaderRow.eachCell((cell) => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
         cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     });
-    currentRow++;
 
+    let mRow = 6;
     movements.forEach((log) => {
-        const row = worksheet.getRow(currentRow);
+        const row = movSheet.getRow(mRow);
         row.values = [
             new Date(log.date).toLocaleDateString('fr-FR'),
             log.name,
             log.type,
             log.quantity,
             log.unit,
-            log.supplier || log.deliveredBy || 'N/A',
+            log.supplier || 'N/A',
+            log.deliveredBy || 'N/A',
+            log.bonLivraison || '',
             log.notes || ''
         ];
 
-        // Style the type column
+        // Style the TYPE column (col 3)
         const typeCell = row.getCell(3);
         if (log.type === 'IN') {
             typeCell.font = { color: { argb: 'FF00B050' }, bold: true };
@@ -352,7 +392,7 @@ async function generateMaterialExcel(data, outputPath) {
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
 
-        currentRow++;
+        mRow++;
     });
 
     // Save file

@@ -253,6 +253,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
           type: log.type,
           quantity: log.quantity,
           deliveredBy: log.deliveredBy || 'N/A',
+          bonLivraison: log.bonLivraison || '',
           notes: log.notes,
           cost: log.cost || (log.quantity * (material.price || 0)),
           supplier: log.supplier || material.supplier || 'N/A'

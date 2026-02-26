@@ -155,6 +155,14 @@ export default function MaterialDetailsPage() {
                                                 </div>
                                                 <div className="text-[11px] font-bold truncate">{log.supplier || 'N/A'}</div>
                                             </div>
+                                            {log.bonLivraison && (
+                                                <div className="col-span-2 space-y-1">
+                                                    <div className="text-[9px] uppercase font-black text-muted-foreground/50 flex items-center gap-1">
+                                                        <FileText className="w-2.5 h-2.5" /> N° Bon de Livraison
+                                                    </div>
+                                                    <div className="text-[11px] font-bold font-mono">{log.bonLivraison}</div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {log.notes && (
