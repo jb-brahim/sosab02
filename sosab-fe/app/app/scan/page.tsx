@@ -41,7 +41,6 @@ export default function ScanPage() {
   const [photos, setPhotos] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
 
@@ -141,8 +140,20 @@ export default function ScanPage() {
       })
 
       if (res.data.success) {
-        setSubmitted(true)
-        setTimeout(() => router.push('/app/stock'), 2000)
+        toast.success(t("materials.arrival_success") || "Arrival saved!")
+        // Reset form to allow adding another material immediately
+        setMaterialName("")
+        setMaterialUnit("pcs")
+        setQuantity("")
+        setDeliveredBy("")
+        setSupplierName("")
+        setBonLivraison("")
+        setNotes("")
+        setPhotos([])
+        setPreviews([])
+        setSelectedClassification("")
+        setIsCustomMaterial(false)
+        setClassQuery("")
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to log arrival")
@@ -151,19 +162,6 @@ export default function ScanPage() {
     }
   }
 
-  if (submitted) {
-    return (
-      <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
-            <CheckCircle className="h-10 w-10 text-green-500" />
-          </div>
-          <h2 className="font-display text-2xl font-bold">{t("materials.arrival_success")}</h2>
-          <p className="text-muted-foreground font-medium">{t("materials.arrival_saved")}</p>
-        </div>
-      </div>
-    )
-  }
 
   const currentProject = projects.find(p => p._id === selectedProjectId)
 
