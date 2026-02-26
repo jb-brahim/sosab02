@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import {
     Package,
@@ -15,7 +17,12 @@ import {
     Truck,
     Store,
     FileText,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Pencil,
+    Trash2,
+    X,
+    Loader2,
+    Check
 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +36,15 @@ export default function MaterialDetailsPage() {
     const [material, setMaterial] = useState<any>(null)
     const [summary, setSummary] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+
+    // Edit state
+    const [showEdit, setShowEdit] = useState(false)
+    const [editForm, setEditForm] = useState({ name: '', unit: '', category: '', supplier: '' })
+    const [savingEdit, setSavingEdit] = useState(false)
+
+    // Delete state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [deleting, setDeleting] = useState(false)
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -51,6 +67,44 @@ export default function MaterialDetailsPage() {
         }
         fetchDetails()
     }, [params.id])
+
+    const openEdit = () => {
+        setEditForm({
+            name: material?.name || '',
+            unit: material?.unit || '',
+            category: material?.category || '',
+            supplier: material?.supplier || ''
+        })
+        setShowEdit(true)
+    }
+
+    const handleSaveEdit = async () => {
+        if (!editForm.name || !editForm.unit) return toast.error('Name and unit are required')
+        try {
+            setSavingEdit(true)
+            await api.patch(`/materials/${params.id}`, editForm)
+            toast.success('Material updated!')
+            setMaterial((prev: any) => ({ ...prev, ...editForm }))
+            setShowEdit(false)
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to update material')
+        } finally {
+            setSavingEdit(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        try {
+            setDeleting(true)
+            await api.delete(`/materials/${params.id}`)
+            toast.success('Material deleted')
+            router.replace('/app/materials')
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to delete material')
+            setDeleting(false)
+            setShowDeleteConfirm(false)
+        }
+    }
 
     if (loading) {
         return (
@@ -81,15 +135,35 @@ export default function MaterialDetailsPage() {
     return (
         <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
             <div className="space-y-4">
+                {/* Back button */}
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-4 h-8 text-muted-foreground hover:text-primary">
                     <ChevronLeft className="w-4 h-4 mr-1" /> {t("materials.back_to_inventory")}
                 </Button>
 
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-display font-black tracking-tight">{material?.name}</h1>
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase py-0">{material?.unit}</Badge>
-                        <span className="text-muted-foreground text-sm font-medium">{t("materials.arrival_journal")}</span>
+                {/* Title + Edit/Delete actions */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 flex-1 min-w-0">
+                        <h1 className="text-3xl font-display font-black tracking-tight truncate">{material?.name}</h1>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase py-0">{material?.unit}</Badge>
+                            <span className="text-muted-foreground text-sm font-medium">{t("materials.arrival_journal")}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0 pt-1">
+                        <button
+                            onClick={openEdit}
+                            className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                            title="Edit material"
+                        >
+                            <Pencil className="w-4 h-4 text-primary" />
+                        </button>
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="h-9 w-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                            title="Delete material"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
                     </div>
                 </div>
 
@@ -198,6 +272,106 @@ export default function MaterialDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ── Edit Modal ── */}
+            {showEdit && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4"
+                    onClick={() => setShowEdit(false)}
+                >
+                    <div
+                        className="w-full max-w-sm bg-card rounded-2xl p-5 border border-white/10 space-y-4 shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                                <Pencil className="w-4 h-4 text-primary" /> Edit Material
+                            </h3>
+                            <button onClick={() => setShowEdit(false)} className="p-1 rounded-lg hover:bg-white/10">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Name</Label>
+                                <Input
+                                    value={editForm.name}
+                                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unit</Label>
+                                    <Input
+                                        value={editForm.unit}
+                                        onChange={e => setEditForm({ ...editForm, unit: e.target.value })}
+                                        className="bg-background/50 border-white/10"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Category</Label>
+                                    <Input
+                                        value={editForm.category}
+                                        onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                                        className="bg-background/50 border-white/10"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Supplier</Label>
+                                <Input
+                                    value={editForm.supplier}
+                                    onChange={e => setEditForm({ ...editForm, supplier: e.target.value })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <Button variant="ghost" className="flex-1" onClick={() => setShowEdit(false)}>Cancel</Button>
+                            <Button className="flex-1" onClick={handleSaveEdit} disabled={savingEdit}>
+                                {savingEdit ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                Save
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Delete Confirm Modal ── */}
+            {showDeleteConfirm && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center pb-6 px-4"
+                    onClick={() => setShowDeleteConfirm(false)}
+                >
+                    <div
+                        className="w-full max-w-sm bg-card rounded-2xl p-5 border border-red-500/20 space-y-4 shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <Trash2 className="w-5 h-5 text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-sm">Delete Material?</h3>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">
+                                    This will permanently delete <strong>{material?.name}</strong> and all its delivery logs.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button variant="ghost" className="flex-1" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+                            <Button variant="destructive" className="flex-1" onClick={handleDelete} disabled={deleting}>
+                                {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
