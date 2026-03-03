@@ -38,11 +38,6 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemo = (type: "admin" | "pm") => {
-    setEmail(type === "admin" ? "admin@sosab.com" : "pm@sosab.com")
-    setPassword("demo123")
-    setError("")
-  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background p-4">
@@ -138,35 +133,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="space-y-3 rounded-lg border border-dashed border-border/50 bg-muted/30 p-4">
-            <p className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Demo Accounts
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemo("admin")}
-                className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
-              >
-                Admin
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemo("pm")}
-                className="flex-1 border-secondary/30 text-secondary hover:bg-secondary/10"
-              >
-                Manager
-              </Button>
-            </div>
-            <p className="text-center text-xs text-muted-foreground">
-              Password: <code className="rounded bg-muted px-1.5 py-0.5">demo123</code>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
