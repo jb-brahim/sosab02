@@ -9,7 +9,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 // @route   POST /api/projects
 // @access  Private/Admin
 exports.createProject = asyncHandler(async (req, res) => {
-  const { name, location, budget, startDate, endDate, managerId } = req.body;
+  const { name, location, budget, startDate, endDate, managers } = req.body;
 
   const project = await Project.create({
     name,
@@ -17,7 +17,7 @@ exports.createProject = asyncHandler(async (req, res) => {
     budget,
     startDate,
     endDate,
-    managerId
+    managers: managers || []
   });
 
   res.status(201).json({
@@ -34,7 +34,7 @@ exports.getProjects = asyncHandler(async (req, res) => {
 
   // If user is not Admin, only show assigned projects
   if (req.user.role !== 'Admin') {
-    query.managerId = req.user._id;
+    query.managers = req.user._id;
   }
 
   // Filter by archived status
@@ -45,7 +45,7 @@ exports.getProjects = asyncHandler(async (req, res) => {
   }
 
   const projects = await Project.find(query)
-    .populate('managerId', 'name email')
+    .populate('managers', 'name email')
     .populate('tasks');
 
   res.status(200).json({
@@ -60,7 +60,7 @@ exports.getProjects = asyncHandler(async (req, res) => {
 // @access  Private
 exports.getProject = asyncHandler(async (req, res) => {
   const project = await Project.findById(req.params.id)
-    .populate('managerId', 'name email')
+    .populate('managers', 'name email')
     .populate('tasks');
 
   if (!project) {
@@ -71,7 +71,8 @@ exports.getProject = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId._id.toString() !== req.user._id.toString()) {
+  const isManager = project.managers.some(m => m._id.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to access this project'
@@ -88,7 +89,7 @@ exports.getProject = asyncHandler(async (req, res) => {
 // @route   PATCH /api/projects/:id
 // @access  Private/Admin or Project Manager
 exports.updateProject = asyncHandler(async (req, res) => {
-  const { name, location, coordinates, budget, startDate, endDate, managerId, progress, status, documents } = req.body;
+  const { name, location, coordinates, budget, startDate, endDate, managers, progress, status, documents } = req.body;
 
   const project = await Project.findById(req.params.id);
 
@@ -100,7 +101,8 @@ exports.updateProject = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to update this project'
@@ -113,7 +115,7 @@ exports.updateProject = asyncHandler(async (req, res) => {
   if (budget) project.budget = budget;
   if (startDate) project.startDate = startDate;
   if (endDate) project.endDate = endDate;
-  if (managerId) project.managerId = managerId;
+  if (managers) project.managers = managers;
   if (progress !== undefined) project.progress = progress;
   if (status) project.status = status;
   if (documents) project.documents = documents;
@@ -179,7 +181,8 @@ exports.getProjectHistory = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId?.toString() !== req.user._id.toString()) {
+  const isManager = project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view this project history'

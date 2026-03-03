@@ -13,11 +13,11 @@ import { ProjectWorkersDialog } from "@/components/admin/project-workers-dialog"
 interface Project {
     _id: string
     name: string
-    managerId: {
+    managers: {
         _id: string
         name: string
         email: string
-    }
+    }[]
     // Add other fields if necessary
 }
 
@@ -100,11 +100,17 @@ export default function WorkersPage() {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                                        {project.managerId?.name?.charAt(0) || "M"}
+                                                        {project.managers?.[0]?.name?.charAt(0) || "M"}
                                                     </div>
                                                     <div>
-                                                        <div className="font-medium">{project.managerId?.name || "Unassigned"}</div>
-                                                        <div className="text-xs text-muted-foreground">{project.managerId?.email}</div>
+                                                        <div className="font-medium">
+                                                            {project.managers && project.managers.length > 0
+                                                                ? project.managers.map(m => m.name).join(", ")
+                                                                : "Unassigned"}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {project.managers?.[0]?.email || ""}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </TableCell>

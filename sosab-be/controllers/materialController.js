@@ -247,7 +247,7 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
 
   // If PM, only show materials from their projects
   if (req.user.role === 'Project Manager') {
-    const projects = await Project.find({ managerId: req.user._id });
+    const projects = await Project.find({ managers: req.user._id });
     const projectIds = projects.map(p => p._id);
     query = { projectId: { $in: projectIds } };
   }

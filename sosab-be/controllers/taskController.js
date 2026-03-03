@@ -18,7 +18,8 @@ exports.createTask = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to create tasks for this project'
@@ -63,7 +64,8 @@ exports.getTasks = asyncHandler(async (req, res) => {
     }
 
     // Check access
-    if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+    const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+    if (req.user.role !== 'Admin' && !isManager) {
       // Also allow if user is assigned to the project? 
       // Current logic was strict for manager/admin. 
       // If we want workers to see tasks, we might need to relax this or check if they are 'assigned'.
@@ -93,7 +95,7 @@ exports.getTasks = asyncHandler(async (req, res) => {
 
   if (req.user.role !== 'Admin') {
     // Find projects where user is manager
-    const managedProjects = await Project.find({ managerId: req.user._id }).select('_id');
+    const managedProjects = await Project.find({ managers: req.user._id }).select('_id');
     const managedProjectIds = managedProjects.map(p => p._id);
 
     query = {
@@ -134,7 +136,8 @@ exports.updateTask = asyncHandler(async (req, res) => {
 
   // Check access
   const project = await Project.findById(task.projectId);
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project && project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to update this task'
@@ -175,7 +178,8 @@ exports.deleteTask = asyncHandler(async (req, res) => {
 
   // Check access
   const project = await Project.findById(task.projectId);
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project && project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to delete this task'

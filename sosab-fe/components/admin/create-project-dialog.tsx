@@ -43,8 +43,8 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
         budget: "",
         startDate: "",
         endDate: "",
-        managerId: "",
     })
+    const [selectedManagers, setSelectedManagers] = useState<string[]>([])
 
     useEffect(() => {
         if (open) {
@@ -70,8 +70,10 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    const handleManagerChange = (value: string) => {
-        setFormData({ ...formData, managerId: value })
+    const handleManagerToggle = (userId: string) => {
+        setSelectedManagers(prev =>
+            prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+        )
     }
 
     const handleLocationSelect = (lat: number, lng: number, address?: string) => {
@@ -89,7 +91,8 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
             const payload = {
                 ...formData,
                 budget: Number(formData.budget),
-                coordinates: coordinates // Attach coordinates
+                coordinates: coordinates, // Attach coordinates
+                managers: selectedManagers
             }
 
             const res = await api.post("/projects", payload)
@@ -104,8 +107,8 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
                     budget: "",
                     startDate: "",
                     endDate: "",
-                    managerId: "",
                 })
+                setSelectedManagers([])
                 setCoordinates(null)
                 setShowMap(false)
             }
@@ -199,25 +202,29 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="manager">Project Manager</Label>
-                            <Select onValueChange={handleManagerChange} value={formData.managerId} required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select manager" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {loadingUsers ? (
-                                        <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div>
-                                    ) : users.length === 0 ? (
-                                        <div className="p-2 text-center text-sm text-muted-foreground">No users found</div>
-                                    ) : (
-                                        users.map((user) => (
-                                            <SelectItem key={user._id} value={user._id}>
-                                                {user.name}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
+                            <Label>Project Managers</Label>
+                            <div className="border rounded-md p-2 max-h-36 overflow-y-auto space-y-1 bg-background">
+                                {loadingUsers ? (
+                                    <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div>
+                                ) : users.length === 0 ? (
+                                    <div className="p-2 text-center text-sm text-muted-foreground">No users found</div>
+                                ) : (
+                                    users.filter(u => u.role === 'Project Manager').map((user) => (
+                                        <label key={user._id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded p-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedManagers.includes(user._id)}
+                                                onChange={() => handleManagerToggle(user._id)}
+                                                className="accent-primary"
+                                            />
+                                            <span className="text-sm">{user.name}</span>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                            {selectedManagers.length > 0 && (
+                                <p className="text-xs text-muted-foreground">{selectedManagers.length} manager(s) selected</p>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">

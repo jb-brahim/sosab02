@@ -24,7 +24,8 @@ exports.addMaterialLog = asyncHandler(async (req, res) => {
     // Check permissions: If not Admin, must be manager of the project
     if (req.user.role !== 'Admin') {
         const project = await Project.findById(material.projectId);
-        if (!project || project.managerId.toString() !== req.user._id.toString()) {
+        const isManager = project && project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+        if (!isManager) {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to log materials for this project'

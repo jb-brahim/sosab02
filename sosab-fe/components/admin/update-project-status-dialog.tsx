@@ -13,8 +13,7 @@ interface Project {
     _id: string
     name: string
     status: string
-    manager?: any
-    managerId?: any
+    managers?: any[]
 }
 
 interface UpdateProjectStatusDialogProps {
@@ -27,8 +26,8 @@ interface UpdateProjectStatusDialogProps {
 export function UpdateProjectStatusDialog({ project, open, onOpenChange, onStatusUpdated }: UpdateProjectStatusDialogProps) {
     const [formData, setFormData] = useState({
         status: "Active",
-        managerId: ""
     })
+    const [selectedManagers, setSelectedManagers] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [users, setUsers] = useState<any[]>([])
 
@@ -36,8 +35,15 @@ export function UpdateProjectStatusDialog({ project, open, onOpenChange, onStatu
         if (project) {
             setFormData({
                 status: project.status,
-                managerId: (project.manager && typeof project.manager === 'object') ? project.manager._id : (project.manager || "")
             })
+            // Pre-select existing managers
+            if (project.managers && Array.isArray(project.managers)) {
+                setSelectedManagers(project.managers.map((m: any) =>
+                    typeof m === 'object' ? m._id : m
+                ))
+            } else {
+                setSelectedManagers([])
+            }
         }
 
         if (open) {
@@ -56,13 +62,22 @@ export function UpdateProjectStatusDialog({ project, open, onOpenChange, onStatu
         }
     }
 
+    const handleManagerToggle = (userId: string) => {
+        setSelectedManagers(prev =>
+            prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+        )
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!project) return
 
         setIsLoading(true)
         try {
-            const res = await api.patch(`/projects/${project._id}`, formData)
+            const res = await api.patch(`/projects/${project._id}`, {
+                ...formData,
+                managers: selectedManagers
+            })
             if (res.data.success) {
                 toast.success("Project updated successfully")
                 onStatusUpdated()
@@ -106,20 +121,26 @@ export function UpdateProjectStatusDialog({ project, open, onOpenChange, onStatu
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="manager">Project Manager</Label>
-                        <Select
-                            value={formData.managerId}
-                            onValueChange={(val) => setFormData({ ...formData, managerId: val })}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select manager" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {users.map(u => (
-                                    <SelectItem key={u._id} value={u._id}>{u.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Label>Project Managers</Label>
+                        <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1 bg-background">
+                            {users.filter(u => u.role === 'Project Manager').map(u => (
+                                <label key={u._id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded p-1">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedManagers.includes(u._id)}
+                                        onChange={() => handleManagerToggle(u._id)}
+                                        className="accent-primary"
+                                    />
+                                    <span className="text-sm">{u.name}</span>
+                                </label>
+                            ))}
+                            {users.filter(u => u.role === 'Project Manager').length === 0 && (
+                                <p className="text-sm text-muted-foreground p-1">No project managers found</p>
+                            )}
+                        </div>
+                        {selectedManagers.length > 0 && (
+                            <p className="text-xs text-muted-foreground">{selectedManagers.length} manager(s) selected</p>
+                        )}
                     </div>
 
                     <DialogFooter>

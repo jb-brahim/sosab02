@@ -21,7 +21,8 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
 
   // Check access
   const allowedRoles = ['Admin', 'Accountant', 'Project Manager'];
-  if (!allowedRoles.includes(req.user.role) && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (!allowedRoles.includes(req.user.role) && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view salary for this project'
@@ -40,7 +41,7 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
     if (!salary) {
       // Calculate salary
       const breakdown = await calculateWeeklySalary(worker._id, projectId, week);
-      
+
       // Create salary record
       salary = await Salary.create({
         workerId: worker._id,

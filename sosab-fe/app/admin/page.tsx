@@ -16,11 +16,11 @@ import type { UserRole } from "@/lib/auth-context"
 interface Project {
   _id: string
   name: string
-  managerId: {
+  managers: {
     _id: string
     name: string
     email: string
-  }
+  }[]
   progress: number
   status: "active" | "on-hold" | "completed" | "delayed"
   budget: number
@@ -100,7 +100,9 @@ export default function AdminDashboard() {
   const tableProjects = projects.map(p => ({
     id: p._id,
     name: p.name,
-    manager: p.managerId?.name || "Unassigned",
+    manager: p.managers && p.managers.length > 0
+      ? p.managers.map(m => m.name).join(", ")
+      : "Unassigned",
     progress: p.progress || 0,
     status: p.status,
     budget: `${(p.budget || 0).toLocaleString()} TND`,

@@ -22,7 +22,8 @@ exports.markAttendance = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to mark attendance for this project'
@@ -96,7 +97,8 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view attendance for this project'

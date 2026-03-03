@@ -80,10 +80,16 @@ const validateProjectCreate = [
         .withMessage('Budget must be a positive number')
         .toFloat(),
 
-    body('managerId')
+    body('managers')
         .optional()
-        .isMongoId()
-        .withMessage('Invalid manager ID format'),
+        .isArray()
+        .withMessage('Managers must be an array')
+        .custom((arr) => {
+            if (arr && arr.some(id => !/^[a-fA-F0-9]{24}$/.test(id))) {
+                throw new Error('Each manager ID must be a valid Mongo ID');
+            }
+            return true;
+        }),
 
     body('description')
         .optional()
@@ -163,10 +169,16 @@ const validateProjectUpdate = [
         .withMessage('Budget must be a positive number')
         .toFloat(),
 
-    body('managerId')
+    body('managers')
         .optional()
-        .isMongoId()
-        .withMessage('Invalid manager ID format'),
+        .isArray()
+        .withMessage('Managers must be an array')
+        .custom((arr) => {
+            if (arr && arr.some(id => !/^[a-fA-F0-9]{24}$/.test(id))) {
+                throw new Error('Each manager ID must be a valid Mongo ID');
+            }
+            return true;
+        }),
 
     body('description')
         .optional()

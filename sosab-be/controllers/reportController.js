@@ -31,7 +31,8 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   // Check permissions: If not Admin, must be manager of the project
   const isAdmin = req.user.role === 'Admin' || req.user.role === 'admin';
-  if (!isAdmin && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+  if (!isAdmin && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to generate reports for this project'
@@ -582,7 +583,7 @@ exports.getReport = asyncHandler(async (req, res) => {
   if (type) query.type = type;
 
   if (req.user.role !== 'Admin') {
-    const managedProjects = await Project.find({ managerId: req.user._id });
+    const managedProjects = await Project.find({ managers: req.user._id });
     const managedProjectIds = managedProjects.map(p => p._id);
     if (query.projectId) {
       if (!managedProjectIds.some(id => id.toString() === query.projectId.toString())) {
@@ -618,7 +619,7 @@ exports.deleteReport = asyncHandler(async (req, res) => {
   // Check permissions: Admin, Project Manager, or Report Creator
   const isAdmin = req.user.role === 'Admin';
   const isCreator = report.generatedBy && report.generatedBy.toString() === req.user._id.toString();
-  const isManager = report.projectId && report.projectId.managerId && report.projectId.managerId.toString() === req.user._id.toString();
+  const isManager = report.projectId && report.projectId.managers && report.projectId.managers.some(m => m.toString() === req.user._id.toString());
 
   if (!isAdmin && !isCreator && !isManager) {
     return res.status(403).json({ success: false, message: 'Not authorized to delete reports' });

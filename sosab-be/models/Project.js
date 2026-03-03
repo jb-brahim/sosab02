@@ -34,11 +34,10 @@ const projectSchema = new mongoose.Schema({
       message: 'End date must be after start date'
     }
   },
-  managerId: {
+  managers: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Manager is required']
-  },
+    ref: 'User'
+  }],
   documents: [{
     name: String,
     url: String,

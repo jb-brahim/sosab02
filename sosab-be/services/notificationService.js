@@ -29,19 +29,21 @@ exports.checkLowStock = async () => {
     try {
         const lowStockThreshold = 10;
         const materials = await Material.find({ stockQuantity: { $lt: lowStockThreshold } })
-            .populate('projectId', 'name managerId');
+            .populate('projectId', 'name managers');
 
         for (const material of materials) {
-            if (material.projectId && material.projectId.managerId) {
-                await exports.createNotification(
-                    material.projectId.managerId,
-                    'low_stock',
-                    'Stock Faible',
-                    `${material.name} est en stock faible: ${material.stockQuantity} ${material.unit}`,
-                    { materialId: material._id, projectId: material.projectId._id },
-                    `/materials/${material.projectId._id}`,
-                    'high'
-                );
+            if (material.projectId && material.projectId.managers && material.projectId.managers.length > 0) {
+                for (const managerId of material.projectId.managers) {
+                    await exports.createNotification(
+                        managerId,
+                        'low_stock',
+                        'Stock Faible',
+                        `${material.name} est en stock faible: ${material.stockQuantity} ${material.unit}`,
+                        { materialId: material._id, projectId: material.projectId._id },
+                        `/materials/${material.projectId._id}`,
+                        'high'
+                    );
+                }
             }
         }
 
@@ -64,19 +66,21 @@ exports.checkWorkerAbsences = async (date = new Date()) => {
             date: { $gte: startOfDay, $lte: endOfDay },
             present: false
         }).populate('workerId', 'name')
-            .populate('projectId', 'name managerId');
+            .populate('projectId', 'name managers');
 
         for (const absence of absences) {
-            if (absence.projectId && absence.projectId.managerId) {
-                await exports.createNotification(
-                    absence.projectId.managerId,
-                    'worker_absence',
-                    'Absence Ouvrier',
-                    `${absence.workerId.name} est absent aujourd'hui`,
-                    { workerId: absence.workerId._id, projectId: absence.projectId._id },
-                    `/attendance/${absence.projectId._id}`,
-                    'medium'
-                );
+            if (absence.projectId && absence.projectId.managers && absence.projectId.managers.length > 0) {
+                for (const managerId of absence.projectId.managers) {
+                    await exports.createNotification(
+                        managerId,
+                        'worker_absence',
+                        'Absence Ouvrier',
+                        `${absence.workerId.name} est absent aujourd'hui`,
+                        { workerId: absence.workerId._id, projectId: absence.projectId._id },
+                        `/attendance/${absence.projectId._id}`,
+                        'medium'
+                    );
+                }
             }
         }
 
