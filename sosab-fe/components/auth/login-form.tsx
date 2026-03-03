@@ -105,20 +105,7 @@ export function LoginForm() {
               )}
             </Button>
 
-            <div className="mt-6 rounded-lg border border-border bg-muted/50 p-4">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Demo Credentials:</p>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>
-                  <span className="text-secondary">Admin:</span> admin@sosab.com
-                </p>
-                <p>
-                  <span className="text-secondary">PM:</span> pm@sosab.com
-                </p>
-                <p>
-                  <span className="text-secondary">Password:</span> demo123
-                </p>
-              </div>
-            </div>
+
           </form>
         </CardContent>
       </Card>
