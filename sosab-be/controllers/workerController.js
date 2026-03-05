@@ -20,7 +20,8 @@ exports.addWorker = asyncHandler(async (req, res) => {
   }
 
   // Check strict authorization: Only Project Manager of THIS project or Admin can add worker
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(id => id.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to add workers to this project'
@@ -76,7 +77,8 @@ exports.getWorkers = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  if (req.user.role !== 'Admin' && project.managerId.toString() !== req.user._id.toString()) {
+  const isManager = project.managers && project.managers.some(id => id.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view workers for this project'
@@ -102,7 +104,7 @@ exports.getAllWorkers = asyncHandler(async (req, res) => {
   // If Manager, filter by assigned projects
   if (req.user.role !== 'Admin') {
     // Find projects managed by this user
-    const projects = await Project.find({ managerId: req.user._id });
+    const projects = await Project.find({ managers: req.user._id });
     const projectIds = projects.map(p => p._id);
 
     // Filter workers belonging to these projects
@@ -143,7 +145,8 @@ exports.updateWorker = asyncHandler(async (req, res) => {
   }
 
   // Check authorization
-  if (req.user.role !== 'Admin' && worker.projectId.managerId.toString() !== req.user.id) {
+  const isManager = worker.projectId.managers && worker.projectId.managers.some(id => id.toString() === req.user._id.toString());
+  if (req.user.role !== 'Admin' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to update this worker'
@@ -189,7 +192,8 @@ exports.deleteWorker = asyncHandler(async (req, res) => {
     // Check access
     // If worker is assigned to a project, check if user is manager of that project
     if (worker.projectId) {
-      if (req.user.role !== 'Admin' && worker.projectId.managerId.toString() !== req.user._id.toString()) {
+      const isManager = worker.projectId.managers && worker.projectId.managers.some(id => id.toString() === req.user._id.toString());
+      if (req.user.role !== 'Admin' && !isManager) {
         return res.status(403).json({
           success: false,
           message: 'Not authorized to delete this worker'
