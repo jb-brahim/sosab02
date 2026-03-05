@@ -42,7 +42,7 @@ exports.addWorker = asyncHandler(async (req, res) => {
 
   // Notify Admins if added by Manager
   if (req.user.role !== 'Admin') {
-    const admins = await User.find({ role: 'Admin' });
+    const admins = await User.find({ role: { $in: ['Admin', 'Gérant'] } });
     const notifications = admins.map(admin => ({
       userId: admin._id,
       type: 'system',
@@ -78,7 +78,7 @@ exports.getWorkers = asyncHandler(async (req, res) => {
 
   // Check access
   const isManager = project.managers && project.managers.some(id => id.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view workers for this project'
@@ -102,7 +102,8 @@ exports.getAllWorkers = asyncHandler(async (req, res) => {
   let query = { active: true };
 
   // If Manager, filter by assigned projects
-  if (req.user.role !== 'Admin') {
+  // Gérant sees all projects' workers too (read-only)
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     // Find projects managed by this user
     const projects = await Project.find({ managers: req.user._id });
     const projectIds = projects.map(p => p._id);

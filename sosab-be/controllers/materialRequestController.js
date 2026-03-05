@@ -48,7 +48,7 @@ exports.createRequest = asyncHandler(async (req, res) => {
     });
 
     // Notify Admins
-    const admins = await User.find({ role: 'Admin' });
+    const admins = await User.find({ role: { $in: ['Admin', 'Gérant'] } });
 
     const notifications = admins.map(admin => ({
         userId: admin._id,

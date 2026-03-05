@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
-export type UserRole = "admin" | "pm" | "worker"
+export type UserRole = "admin" | "pm" | "gerant" | "worker"
 
 export interface User {
   id: string
@@ -52,7 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (parsed.role) {
           const r = parsed.role.toLowerCase();
           parsed.role = r === "admin" ? "admin" :
-            (r.includes("manager") || r === "pm") ? "pm" : "worker"
+            (r.includes("manager") || r === "pm") ? "pm" :
+              (r === "gérant" || r === "gerant") ? "gerant" : "worker"
         }
 
         setUser(parsed)
@@ -72,8 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (res.data.success) {
         // Normalize role to lowercase to match frontend expectations
-        const normalizedRole = res.data.user.role.toLowerCase() === "admin" ? "admin" :
-          res.data.user.role.toLowerCase().includes("manager") ? "pm" : "worker"
+        const r = res.data.user.role.toLowerCase()
+        const normalizedRole = r === "admin" ? "admin" :
+          (r.includes("manager") || r === "pm") ? "pm" :
+            (r === "gérant" || r === "gerant") ? "gerant" : "worker"
 
         const userData = {
           ...res.data.user,

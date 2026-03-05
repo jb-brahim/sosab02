@@ -20,7 +20,7 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
   }
 
   // Check access
-  const allowedRoles = ['Admin', 'Accountant', 'Project Manager'];
+  const allowedRoles = ['Admin', 'Gérant', 'Project Manager'];
   const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
   if (!allowedRoles.includes(req.user.role) && !isManager) {
     return res.status(403).json({

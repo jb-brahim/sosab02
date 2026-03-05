@@ -16,7 +16,7 @@ router
 
 router
   .route('/:id/approve')
-  .patch(authorize('Accountant', 'Admin'), logAction('approve', 'Salary'), approveSalary);
+  .patch(authorize('Admin'), logAction('approve', 'Salary'), approveSalary);
 
 module.exports = router;
 

@@ -15,6 +15,8 @@ export default function Home() {
         router.push("/login")
       } else if (user.role === "admin") {
         router.push("/admin")
+      } else if (user.role === "gerant") {
+        router.push("/gerant")
       } else {
         router.push("/app")
       }

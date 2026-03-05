@@ -113,8 +113,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                             <SelectContent>
                                 <SelectItem value="Admin">Admin</SelectItem>
                                 <SelectItem value="Project Manager">Project Manager</SelectItem>
-                                <SelectItem value="Accountant">Accountant</SelectItem>
-                                <SelectItem value="Worker">Worker</SelectItem>
+                                <SelectItem value="Gérant">Gérant</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

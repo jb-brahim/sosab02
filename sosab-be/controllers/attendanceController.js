@@ -96,9 +96,9 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access
+  // Check access: Admin and Gérant can see any project; PM must be manager
   const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view attendance for this project'

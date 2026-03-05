@@ -241,7 +241,7 @@ const sendReportNotifications = async (project, week) => {
     const users = await User.find({
       $or: [
         { role: 'Admin' },
-        { role: 'Accountant' },
+        { role: 'Gérant' },
         { role: 'Project Manager', assignedProjects: project._id }
       ],
       active: true

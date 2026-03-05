@@ -32,8 +32,8 @@ exports.createProject = asyncHandler(async (req, res) => {
 exports.getProjects = asyncHandler(async (req, res) => {
   let query = {};
 
-  // If user is not Admin, only show assigned projects
-  if (req.user.role !== 'Admin') {
+  // Admin and Gérant see all projects; PM sees only their assigned ones
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     query.managers = req.user._id;
   }
 
@@ -70,9 +70,9 @@ exports.getProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access
+  // Check access: Admin and Gérant can see any project; PM must be a manager
   const isManager = project.managers.some(m => m._id.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to access this project'
@@ -125,7 +125,7 @@ exports.updateProject = asyncHandler(async (req, res) => {
 
   // Notify Admins of Status Change if triggered by Manager
   if (status && req.user.role !== 'Admin') {
-    const admins = await User.find({ role: 'Admin' });
+    const admins = await User.find({ role: { $in: ['Admin', 'Gérant'] } });
     const notifications = admins.map(admin => ({
       userId: admin._id,
       type: 'alert',
