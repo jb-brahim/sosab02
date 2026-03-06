@@ -88,11 +88,14 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
         setIsLoading(true)
 
         try {
-            const payload = {
+            const payload: any = {
                 ...formData,
                 budget: Number(formData.budget),
-                coordinates: coordinates, // Attach coordinates
                 managers: selectedManagers
+            }
+
+            if (coordinates) {
+                payload.coordinates = coordinates;
             }
 
             const res = await api.post("/projects", payload)
