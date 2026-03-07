@@ -40,6 +40,7 @@ export const translations = {
             menu: "القائمة",
             tasks: "المهام",
             workers: "العمال",
+            users: "المستخدمين",
         },
         dashboard: {
             welcome: "مرحباً بك مجدداً",
@@ -331,7 +332,8 @@ export const translations = {
             scan: "Scan",
             menu: "Menu",
             tasks: "Tâches",
-            workers: "Travailleurs",
+            workers: "Ouvriers",
+            users: "Utilisateurs",
         },
         dashboard: {
             welcome: "Bienvenue",

@@ -165,13 +165,12 @@ exports.deleteProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // Soft delete
-  project.isArchived = true;
-  await project.save();
+  // Hard delete
+  await Project.findByIdAndDelete(req.params.id);
 
   res.status(200).json({
     success: true,
-    message: 'Project archived successfully'
+    message: 'Project deleted successfully'
   });
 });
 

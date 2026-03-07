@@ -35,6 +35,7 @@ import {
   Search,
   HardHat,
 } from "lucide-react"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 const adminNavItems = (t: (key: string) => string) => [
   { href: "/admin", icon: LayoutDashboard, label: t("nav.home") || "Dashboard" },
@@ -261,6 +262,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <LanguageSwitcher />
             <ThemeToggle />
 
             <div className="h-6 w-px bg-border" />

@@ -171,13 +171,12 @@ exports.deleteUser = asyncHandler(async (req, res) => {
     });
   }
 
-  // Soft delete - set active to false
-  user.active = false;
-  await user.save();
+  // Hard delete
+  await User.findByIdAndDelete(req.params.id);
 
   res.status(200).json({
     success: true,
-    message: 'User disabled successfully'
+    message: 'User deleted successfully'
   });
 });
 
