@@ -20,6 +20,14 @@ exports.createProject = asyncHandler(async (req, res) => {
     managers: managers || []
   });
 
+  // Notify Admins and Gérants
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'system',
+    `Nouveau projet créé : ${project.name}`,
+    `/admin/projects/${project._id}`
+  );
+
   res.status(201).json({
     success: true,
     data: project

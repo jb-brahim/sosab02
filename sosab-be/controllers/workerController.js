@@ -1,7 +1,6 @@
 const Worker = require('../models/Worker');
 const Project = require('../models/Project');
-const Notification = require('../models/Notification');
-const User = require('../models/User');
+const { sendNotificationToRoles } = require('./notificationController');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // @desc    Add worker
@@ -40,20 +39,13 @@ exports.addWorker = asyncHandler(async (req, res) => {
     isSubcontractor: isSubcontractor || (trade === 'Sous Traitant')
   });
 
-  // Notify Admins if added by Manager
-  if (req.user.role !== 'Admin') {
-    const admins = await User.find({ role: { $in: ['Admin', 'Gérant'] } });
-    const notifications = admins.map(admin => ({
-      userId: admin._id,
-      type: 'system',
-      message: `New Worker Added: ${req.user.name} added ${worker.name} (${worker.trade}) to ${project.name}`,
-      link: `/admin/projects/${project._id}`
-    }));
-
-    if (notifications.length > 0) {
-      await Notification.insertMany(notifications);
-    }
-  }
+  // Notify Admins and Gérants
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'system',
+    `Nouveau travailleur ajouté : ${req.user.name} a ajouté ${worker.name} (${worker.trade}) au projet ${project.name}`,
+    `/admin/projects/${project._id}`
+  );
 
   res.status(201).json({
     success: true,

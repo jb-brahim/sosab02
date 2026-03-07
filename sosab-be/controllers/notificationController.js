@@ -1,4 +1,5 @@
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // @desc    Get notifications for user
@@ -82,3 +83,22 @@ exports.createNotification = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Send notification to users with specific roles
+// @access  Internal
+exports.sendNotificationToRoles = async (roles, type, message, link) => {
+  try {
+    const users = await User.find({ role: { $in: roles }, active: true });
+    if (users.length === 0) return;
+
+    const notifications = users.map(user => ({
+      userId: user._id,
+      type,
+      message,
+      link
+    }));
+
+    await Notification.insertMany(notifications);
+  } catch (error) {
+    console.error('Error sending role-based notifications:', error);
+  }
+};

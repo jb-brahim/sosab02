@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { sendNotificationToRoles } = require('./notificationController');
 const asyncHandler = require('../middleware/asyncHandler');
 
 // @desc    Create user (Admin only)
@@ -34,6 +35,14 @@ exports.createUser = asyncHandler(async (req, res) => {
     role: role || 'Project Manager',
     assignedProjects: assignedProjects || []
   });
+
+  // Notify Admins and Gérants
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'system',
+    `Nouvel utilisateur ajouté : ${user.name} (${user.role})`,
+    `/admin/users`
+  );
 
   res.status(201).json({
     success: true,

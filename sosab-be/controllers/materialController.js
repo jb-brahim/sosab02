@@ -1,6 +1,7 @@
 const Material = require('../models/Material');
 const MaterialLog = require('../models/MaterialLog');
 const Project = require('../models/Project');
+const { sendNotificationToRoles } = require('./notificationController');
 const asyncHandler = require('../middleware/asyncHandler');
 const { getWeekDates } = require('../utils/weekHelper');
 
@@ -32,6 +33,14 @@ exports.addMaterial = asyncHandler(async (req, res) => {
     size,
     category
   });
+
+  // Notify Gérant
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'material',
+    `Matériel ajouté : ${material.name} (${material.stockQuantity} ${material.unit})`,
+    `/admin/materials`
+  );
 
   res.status(201).json({
     success: true,
@@ -418,6 +427,15 @@ exports.directReception = asyncHandler(async (req, res) => {
     date: logDate
   });
 
+  // Notify Gérant
+  const project = await Project.findById(projectId);
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'material',
+    `Réception directe : ${quantity} ${unit} de ${materialName} pour le projet ${project?.name || 'Inconnu'}`,
+    `/admin/materials`
+  );
+
   res.status(200).json({
     success: true,
     data: {
@@ -507,6 +525,14 @@ exports.quickLog = asyncHandler(async (req, res) => {
   // Return computed balance
   const totalIn = type === 'IN' ? material.stockQuantity : material.stockQuantity + qty;
   const totalOut = type === 'OUT' ? material.stockQuantity : 0;
+
+  // Notify Gérant
+  await sendNotificationToRoles(
+    ['Admin', 'Gérant'],
+    'material',
+    `Log rapide (${type}) : ${quantity} ${unit} de ${materialName} pour le projet ${project?.name || 'Inconnu'}`,
+    `/admin/materials`
+  );
 
   res.status(201).json({
     success: true,

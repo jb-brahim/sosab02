@@ -11,7 +11,10 @@ import {
     HardHat,
     Menu,
     Settings,
-    ChevronLeft
+    ChevronLeft,
+    Bell,
+    Package,
+    Check
 } from "lucide-react"
 import {
     Sheet,
@@ -21,15 +24,25 @@ import {
     SheetTrigger,
     SheetClose,
 } from "@/components/ui/sheet"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAuth } from "@/lib/auth-context"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLanguage } from "@/lib/language-context"
+import api from "@/lib/api"
 
 const gerantNavItems = (t: (key: string) => string) => [
     { href: "/gerant", icon: FolderKanban, label: t("nav.projects") || "Projects" },
+    { href: "/gerant/materials", icon: Package, label: t("common.materials") || "Materials" },
     { href: "/gerant/reports", icon: FileBarChart, label: t("nav.reports") || "Reports" },
 ]
 
@@ -49,6 +62,68 @@ export function GerantNavDrawer() {
         logout()
         router.push("/login")
     }
+
+    // Notification State
+    const [notifications, setNotifications] = React.useState<any[]>([])
+    const [unreadCount, setUnreadCount] = React.useState(0)
+
+    // Fetch Notifications
+    const fetchNotifications = React.useCallback(async () => {
+        if (!user) return;
+        try {
+            const res = await api.get(`/notifications/${user.id}`)
+            if (res.data.success) {
+                setNotifications(res.data.data)
+                setUnreadCount(res.data.data.filter((n: any) => !n.read).length)
+            }
+        } catch (error) {
+            console.error("Failed to fetch notifications", error)
+        }
+    }, [user])
+
+    // Mark as read and navigate
+    const handleNotificationClick = async (notification: any) => {
+        if (!notification.read) {
+            await markAsRead(notification._id)
+        }
+        if (notification.link) {
+            // Adjust link for Gérant if necessary, though most /admin links are fine if Gérant has access
+            router.push(notification.link)
+        }
+    }
+
+    const markAsRead = async (id: string) => {
+        try {
+            const res = await api.patch(`/notifications/${id}/read`)
+            if (res.data.success) {
+                setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n))
+                setUnreadCount(prev => Math.max(0, prev - 1))
+            }
+        } catch (error) {
+            console.error("Failed to mark notification as read", error)
+        }
+    }
+
+    const markAllAsRead = async () => {
+        const unread = notifications.filter(n => !n.read)
+        if (unread.length === 0) return
+
+        try {
+            // Sequential mark as read (simple approach)
+            await Promise.all(unread.map(n => api.patch(`/notifications/${n._id}/read`)))
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+            setUnreadCount(0)
+        } catch (error) {
+            console.error("Failed to mark all as read", error)
+        }
+    }
+
+    // Poll for notifications every 30 seconds
+    React.useEffect(() => {
+        fetchNotifications()
+        const interval = setInterval(fetchNotifications, 30000)
+        return () => clearInterval(interval)
+    }, [fetchNotifications])
 
     return (
         <div className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -160,6 +235,70 @@ export function GerantNavDrawer() {
 
                 {/* Right: Language/Theme/Avatar */}
                 <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="relative hover:bg-muted rounded-xl">
+                                <Bell className="h-5 w-5 text-muted-foreground" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground shadow-lg animate-in zoom-in">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[300px] mt-2 rounded-2xl p-0 overflow-hidden glass shadow-2xl border-white/10">
+                            <DropdownMenuLabel className="flex items-center justify-between p-4 bg-muted/30">
+                                <span className="text-sm font-bold uppercase tracking-wider">{t("common.notifications") || "Notifications"}</span>
+                                {unreadCount > 0 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={markAllAsRead}
+                                        className="h-7 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 uppercase tracking-tighter"
+                                    >
+                                        {t("common.mark_all_read") || "Read all"}
+                                    </Button>
+                                )}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="m-0 bg-white/5" />
+                            <div className="max-h-[60vh] overflow-y-auto">
+                                {notifications.length === 0 ? (
+                                    <div className="py-12 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+                                        <Bell className="h-8 w-8 opacity-10" />
+                                        <span>{t("common.no_notifications") || "No notifications"}</span>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-white/5">
+                                        {notifications.map((notification) => (
+                                            <DropdownMenuItem
+                                                key={notification._id}
+                                                className={cn(
+                                                    "flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-muted/50 transition-colors relative",
+                                                    !notification.read && "bg-primary/5"
+                                                )}
+                                                onClick={() => handleNotificationClick(notification)}
+                                            >
+                                                {!notification.read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+                                                <div className="flex items-start justify-between w-full gap-2">
+                                                    <span className={cn("text-xs leading-relaxed", !notification.read ? "font-bold text-foreground" : "text-muted-foreground")}>
+                                                        {notification.message}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between w-full mt-1">
+                                                    <span className="text-[9px] font-bold uppercase tracking-widest text-primary/60">
+                                                        {notification.type}
+                                                    </span>
+                                                    <span className="text-[9px] text-muted-foreground font-medium">
+                                                        {new Date(notification.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <LanguageSwitcher />
                     <ThemeToggle />
                     <Avatar className="h-8 w-8 ring-2 ring-primary/10">
