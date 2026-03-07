@@ -603,8 +603,8 @@ exports.generateAttendanceReportHTML = (data) => {
     th, td { border: 1px solid #333; padding: 5px 3px; text-align: center; word-wrap: break-word; }
     th { background-color: #1e293b; color: white; font-weight: bold; font-size: 9px; }
     .worker-name { text-align: left; padding-left: 5px; font-weight: 600; font-size: 10px; }
-    .total-col { background-color: #f0f9ff; font-weight: bold; }
-    .page-break { page-break-after: always; }
+    .total-col { background-color: #f0f9ff; font-weight: bold; color: #1e293b; }
+    .page-break { page-break-after: always; page-break-inside: avoid; }
     .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 5px; }
@@ -677,13 +677,13 @@ exports.generatePaymentReportHTML = (data) => {
     th, td { border: 1px solid #333; padding: 10px 8px; text-align: center; font-size: 12px; word-wrap: break-word; }
     th { background-color: #1e293b; color: white; font-weight: bold; }
     .worker-name { text-align: left; padding-left: 10px; font-weight: 600; }
-    .period-col { background-color: #f0f9ff; }
+    .period-col { background-color: #f0f9ff; color: #1e293b; }
     .balance-col { background-color: #dcfce7; font-weight: bold; color: #166534; }
     .currency { font-weight: 600; }
     .total-row { font-weight: bold; font-size: 14px; background-color: #f8fafc; }
     .total-row td { padding: 15px; }
     .grand-total { background-color: #dcfce7; font-size: 18px; font-weight: 800; color: #166534; }
-    .page-break { page-break-after: always; }
+    .page-break { page-break-after: always; page-break-inside: avoid; }
     .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 40px; display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 10px; }
@@ -741,13 +741,13 @@ exports.generatePaymentReportHTML = (data) => {
   `).join('')}
   
   ${data.groups.length > 1 ? `
-    <div class="page-break">
-      <div class="header">
+    <div class="page-break" style="page-break-before: auto;">
+      <div class="header" style="border-bottom: 2px solid #1e293b;">
         <h1>RESUME GLOBAL DE PAIEMENT</h1>
         <h2>PROJET: ${project.name} - ${headerLabel}</h2>
       </div>
-      <div style="display: flex; justify-content: center;">
-        <table style="width: 60%;">
+      <div style="margin: 0 auto; width: 60%;">
+        <table style="width: 100%; border: 2px solid #1e293b;">
           <thead>
             <tr>
               <th>GROUPE / SOUS-TRAITANT</th>
