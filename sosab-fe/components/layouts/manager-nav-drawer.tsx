@@ -23,6 +23,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
     SheetTrigger,
     SheetClose,
 } from "@/components/ui/sheet"
@@ -90,7 +91,9 @@ export function ManagerNavDrawer() {
                                         </div>
                                         <div className="text-left">
                                             <SheetTitle className="font-display text-xl font-bold tracking-tight">{t("common.sosab")}</SheetTitle>
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">{t("common.manager_portal")}</p>
+                                            <SheetDescription className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+                                                {t("common.manager_portal")}
+                                            </SheetDescription>
                                         </div>
                                     </div>
                                 </SheetHeader>

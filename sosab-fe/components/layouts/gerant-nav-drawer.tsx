@@ -21,6 +21,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
     SheetTrigger,
     SheetClose,
 } from "@/components/ui/sheet"
@@ -68,18 +69,19 @@ export function GerantNavDrawer() {
     const [unreadCount, setUnreadCount] = React.useState(0)
 
     // Fetch Notifications
-    const fetchNotifications = React.useCallback(async () => {
-        if (!user) return;
+    const fetchNotifications = React.useCallback(async (signal?: AbortSignal) => {
+        if (!user?.id) return;
         try {
-            const res = await api.get(`/notifications/${user.id}`)
+            const res = await api.get(`/notifications/${user.id}`, { signal })
             if (res.data.success) {
                 setNotifications(res.data.data)
                 setUnreadCount(res.data.data.filter((n: any) => !n.read).length)
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'CanceledError' || error.name === 'AbortError') return
             console.error("Failed to fetch notifications", error)
         }
-    }, [user])
+    }, [user?.id])
 
     // Mark as read and navigate
     const handleNotificationClick = async (notification: any) => {
@@ -120,10 +122,18 @@ export function GerantNavDrawer() {
 
     // Poll for notifications every 30 seconds
     React.useEffect(() => {
-        fetchNotifications()
-        const interval = setInterval(fetchNotifications, 30000)
-        return () => clearInterval(interval)
-    }, [fetchNotifications])
+        if (!user?.id) return
+
+        const controller = new AbortController()
+        fetchNotifications(controller.signal)
+
+        const interval = setInterval(() => fetchNotifications(controller.signal), 30000)
+
+        return () => {
+            controller.abort()
+            clearInterval(interval)
+        }
+    }, [user?.id, fetchNotifications])
 
     return (
         <div className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -157,7 +167,9 @@ export function GerantNavDrawer() {
                                         </div>
                                         <div className="text-left">
                                             <SheetTitle className="font-display text-xl font-bold tracking-tight">{t("common.sosab") || "SOSAB"}</SheetTitle>
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">{t("nav.gerant_portal") || "PORTAIL GÉRANT"}</p>
+                                            <SheetDescription className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+                                                {t("nav.gerant_portal") || "PORTAIL GÉRANT"}
+                                            </SheetDescription>
                                         </div>
                                     </div>
                                 </SheetHeader>
