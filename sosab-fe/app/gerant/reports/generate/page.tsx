@@ -70,13 +70,13 @@ export default function GerantGenerateReportPage() {
 
         switch (dateRangeType) {
             case "this_week":
-                start = startOfWeek(now, { weekStartsOn: 1 })
-                end = endOfWeek(now, { weekStartsOn: 1 })
+                start = startOfWeek(now, { weekStartsOn: 0 })
+                end = endOfWeek(now, { weekStartsOn: 0 })
                 break
             case "last_week":
                 const lastWeek = subWeeks(now, 1)
-                start = startOfWeek(lastWeek, { weekStartsOn: 1 })
-                end = endOfWeek(lastWeek, { weekStartsOn: 1 })
+                start = startOfWeek(lastWeek, { weekStartsOn: 0 })
+                end = endOfWeek(lastWeek, { weekStartsOn: 0 })
                 break
             case "this_month":
                 start = startOfMonth(now)
