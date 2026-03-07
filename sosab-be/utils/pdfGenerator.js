@@ -73,81 +73,88 @@ exports.generateSalaryReportHTML = (data) => {
   <meta charset="UTF-8">
   <title>Rapport des Salaires / تقرير الرواتب - ${project.name}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563EB; padding-bottom: 20px; }
-    .header h1 { color: #333; margin: 0; font-size: 24px; }
-    .header h2 { color: #2563EB; margin: 10px 0; font-size: 20px; }
-    .header p { color: #666; margin: 5px 0; }
-    .bilingual { display: flex; justify-content: space-between; align-items: center; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    @page { size: A4 landscape; margin: 10mm; }
+    .container { width: 100%; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2563EB; padding-bottom: 15px; }
+    .header h1 { color: #333; margin: 0; font-size: 22px; }
+    .header h2 { color: #2563EB; margin: 5px 0; font-size: 18px; }
+    .header p { color: #666; margin: 3px 0; font-size: 14px; }
+    .bilingual { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 10px; }
     .bilingual .ar { direction: rtl; text-align: right; }
     .bilingual .fr { direction: ltr; text-align: left; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    .report-content { width: 100%; display: flex; justify-content: center; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
+    th, td { border: 1px solid #ddd; padding: 10px 6px; text-align: center; font-size: 13px; word-wrap: break-word; }
     th { background-color: #2563EB; color: white; font-weight: bold; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
-    .total { font-weight: bold; font-size: 1.2em; background-color: #EFF6FF; }
-    .footer { margin-top: 30px; text-align: center; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    .total { font-weight: bold; font-size: 1.1em; background-color: #f0f9ff; }
+    .footer { margin-top: 20px; text-align: center; color: #666; border-top: 1px solid #ddd; padding-top: 15px; font-size: 12px; }
     .currency { font-weight: bold; color: #059669; }
-    .column-header { font-size: 0.85em; }
+    .column-header { font-size: 0.8em; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>SOSAB - Système de Gestion de Construction</h1>
-    <h1 style="direction: rtl;">نظام إدارة البناء SOSAB</h1>
-    <h2>Rapport des Salaires Hebdomadaire</h2>
-    <h2 style="direction: rtl;">تقرير الرواتب الأسبوعي</h2>
-    <div class="bilingual">
-      <div class="fr">
-        <p><strong>Projet:</strong> ${project.name}</p>
-        <p><strong>Lieu:</strong> ${project.location || 'Non spécifié'}</p>
-        <p><strong>Semaine:</strong> ${week}</p>
-        <p><strong>Date de génération:</strong> ${formatDateTN(new Date())}</p>
-      </div>
-      <div class="ar">
-        <p><strong>المشروع:</strong> ${project.name}</p>
-        <p><strong>الموقع:</strong> ${project.location || 'غير محدد'}</p>
-        <p><strong>الأسبوع:</strong> ${week}</p>
-        <p><strong>تاريخ الإنشاء:</strong> ${formatDateTN(new Date())}</p>
+  <div class="container">
+    <div class="header">
+      <h1>SOSAB - Système de Gestion de Construction</h1>
+      <h1 style="direction: rtl;">نظام إدارة البناء SOSAB</h1>
+      <h2>Rapport des Salaires Hebdomadaire</h2>
+      <h2 style="direction: rtl;">تقرير الرواتب الأسبوعي</h2>
+      <div class="bilingual">
+        <div class="fr">
+          <p><strong>Projet:</strong> ${project.name}</p>
+          <p><strong>Lieu:</strong> ${project.location || 'Non spécifié'}</p>
+          <p><strong>Semaine:</strong> ${week}</p>
+          <p><strong>Date de génération:</strong> ${formatDateTN(new Date())}</p>
+        </div>
+        <div class="ar">
+          <p><strong>المشروع:</strong> ${project.name}</p>
+          <p><strong>الموقع:</strong> ${project.location || 'غير محدد'}</p>
+          <p><strong>الأسبوع:</strong> ${week}</p>
+          <p><strong>تاريخ الإنشاء:</strong> ${formatDateTN(new Date())}</p>
+        </div>
       </div>
     </div>
-  </div>
-  
-  <table>
-    <thead>
-      <tr>
-        <th class="column-header">Nom de l'ouvrier<br/>اسم العامل</th>
-        <th class="column-header">Jours travaillés<br/>أيام العمل</th>
-        <th class="column-header">Salaire de base<br/>الراتب الأساسي</th>
-        <th class="column-header">Heures supplémentaires<br/>ساعات إضافية</th>
-        <th class="column-header">Prime<br/>مكافأة</th>
-        <th class="column-header">Pénalité<br/>خصم</th>
-        <th class="column-header">Total<br/>المجموع</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${workers.map(worker => `
-        <tr>
-          <td>${worker.name}</td>
-          <td>${worker.daysWorked}</td>
-          <td class="currency">${formatTND(worker.baseSalary)} د.ت</td>
-          <td class="currency">${formatTND(worker.overtime)} د.ت</td>
-          <td class="currency">${formatTND(worker.bonus)} د.ت</td>
-          <td class="currency">${formatTND(worker.penalty)} د.ت</td>
-          <td class="currency">${formatTND(worker.total)} د.ت</td>
-        </tr>
-      `).join('')}
-      <tr class="total">
-        <td colspan="6" style="text-align: right;"><strong>Total / المجموع الكلي</strong></td>
-        <td class="currency" style="font-size: 1.3em;">${formatTND(totalSalary)} د.ت</td>
-      </tr>
-    </tbody>
-  </table>
-  
-  <div class="footer">
-    <p>Ce rapport a été généré automatiquement par le système SOSAB</p>
-    <p style="direction: rtl;">تم إنشاء هذا التقرير تلقائياً بواسطة نظام SOSAB</p>
-    <p style="font-size: 0.9em; margin-top: 10px;">Tous les montants sont en Dinar tunisien (د.ت) / جميع المبالغ بالدينار التونسي (د.ت)</p>
+    
+    <div class="report-content">
+      <table>
+        <thead>
+          <tr>
+            <th class="column-header" style="width: 20%;">Nom de l'ouvrier<br/>اسم العامل</th>
+            <th class="column-header" style="width: 10%;">Jours travaillés<br/>أيام العمل</th>
+            <th class="column-header" style="width: 15%;">Salaire de base<br/>الراتب الأساسي</th>
+            <th class="column-header" style="width: 15%;">Heures supplémentaires<br/>ساعات إضافية</th>
+            <th class="column-header" style="width: 13%;">Prime<br/>مكافأة</th>
+            <th class="column-header" style="width: 12%;">Pénalité<br/>خصم</th>
+            <th class="column-header" style="width: 15%;">Total<br/>المجموع</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${workers.map(worker => `
+            <tr>
+              <td style="text-align: left; padding-left: 10px;">${worker.name}</td>
+              <td>${worker.daysWorked}</td>
+              <td class="currency">${formatTND(worker.baseSalary)} د.ت</td>
+              <td class="currency">${formatTND(worker.overtime)} د.ت</td>
+              <td class="currency">${formatTND(worker.bonus)} د.t</td>
+              <td class="currency">${formatTND(worker.penalty)} د.ت</td>
+              <td class="currency">${formatTND(worker.total)} د.ت</td>
+            </tr>
+          `).join('')}
+          <tr class="total">
+            <td colspan="6" style="text-align: right; padding-right: 20px;"><strong>Total / المجموع الكلي</strong></td>
+            <td class="currency" style="font-size: 1.25em;">${formatTND(totalSalary)} د.ت</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="footer">
+      <p>Ce rapport a été généré automatiquement par le système SOSAB</p>
+      <p style="direction: rtl;">تم إنشاء هذا التقرير تلقائياً بواسطة نظام SOSAB</p>
+      <p style="font-size: 0.85em; margin-top: 5px;">Tous les montants sont en Dinar tunisien (د.ت) / جميع المبالغ بالدينار التونسي (د.ت)</p>
+    </div>
   </div>
 </body>
 </html>
@@ -586,28 +593,31 @@ exports.generateAttendanceReportHTML = (data) => {
   <meta charset="UTF-8">
   <title>Rapport de Pointage - ${project.name}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 15px; }
-    .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e293b; padding-bottom: 15px; }
-    .header h1 { color: #1e293b; margin: 5px 0; font-size: 18px; font-weight: 800; }
-    .header h2 { color: #2563EB; margin: 5px 0; font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10px; }
-    th, td { border: 1px solid #333; padding: 6px 4px; text-align: center; }
+    @page { size: A4 landscape; margin: 10mm; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { width: 100%; }
+    .header { text-align: center; margin-bottom: 15px; border-bottom: 3px solid #1e293b; padding-bottom: 10px; }
+    .header h1 { color: #1e293b; margin: 2px 0; font-size: 18px; font-weight: 800; }
+    .header h2 { color: #2563EB; margin: 2px 0; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; table-layout: fixed; }
+    th, td { border: 1px solid #333; padding: 5px 3px; text-align: center; word-wrap: break-word; }
     th { background-color: #1e293b; color: white; font-weight: bold; font-size: 9px; }
-    .worker-name { text-align: left; padding-left: 8px; font-weight: 600; }
-    .total-col { background-color: #fef3c7; font-weight: bold; }
+    .worker-name { text-align: left; padding-left: 5px; font-weight: 600; font-size: 10px; }
+    .total-col { background-color: #f0f9ff; font-weight: bold; }
     .page-break { page-break-after: always; }
     .page-break:last-child { page-break-after: auto; }
-    .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
+    .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 5px; }
   </style>
 </head>
 <body>
+  <div class="container">
   ${data.groups.map(group => `
     <div class="page-break">
       <div class="header">
         <h1>POINTAGE CHANTIER: ${project.name}</h1>
         <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
-        <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 14px;">
+        <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 13px;">
           ${group.subcontractor ? `SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})` : 'EQUIPE DIRECTE'}
         </h3>
       </div>
@@ -615,18 +625,18 @@ exports.generateAttendanceReportHTML = (data) => {
       <table>
         <thead>
           <tr>
-            <th>QUALIF</th>
-            <th>NOM ET PRENOM</th>
-            ${(data.rangeLabels || Array.from({ length: 31 }, (_, i) => i + 1)).map(d => `<th>${d}</th>`).join('')}
-            <th>TOTAL</th>
+            <th style="width: 8%;">QUALIF</th>
+            <th style="width: 18%;">NOM ET PRENOM</th>
+            ${(data.rangeLabels || Array.from({ length: 31 }, (_, i) => i + 1)).map(d => `<th style="width: 2.2%;">${d}</th>`).join('')}
+            <th style="width: 6%;">TOTAL</th>
           </tr>
         </thead>
         <tbody>
           ${group.workers.map(worker => `
             <tr>
-              <td>${worker.qualification || 'Fer'}</td>
+              <td style="font-size: 8px;">${worker.qualification || 'Fer'}</td>
               <td class="worker-name">${worker.name}</td>
-              ${worker.dailyAttendance.map(val => `<td>${val}</td>`).join('')}
+              ${worker.dailyAttendance.map(val => `<td>${val || ''}</td>`).join('')}
               <td class="total-col">${worker.totalDays}</td>
             </tr>
           `).join('')}
@@ -640,6 +650,7 @@ exports.generateAttendanceReportHTML = (data) => {
       </div>
     </div>
   `).join('')}
+  </div>
 </body>
 </html>
   `;
@@ -656,20 +667,22 @@ exports.generatePaymentReportHTML = (data) => {
   <meta charset="UTF-8">
   <title>Rapport de Paiement - ${project.name}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1e293b; padding-bottom: 15px; }
+    @page { size: A4 landscape; margin: 10mm; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { width: 100%; }
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e293b; padding-bottom: 15px; }
     .header h1 { color: #1e293b; margin: 5px 0; font-size: 20px; font-weight: 800; }
     .header h2 { color: #2563EB; margin: 5px 0; font-size: 16px; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { border: 1px solid #333; padding: 10px 8px; text-align: center; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; table-layout: fixed; }
+    th, td { border: 1px solid #333; padding: 10px 8px; text-align: center; font-size: 12px; word-wrap: break-word; }
     th { background-color: #1e293b; color: white; font-weight: bold; }
     .worker-name { text-align: left; padding-left: 10px; font-weight: 600; }
-    .period-col { background-color: #fef3c7; }
-    .balance-col { background-color: #d4edda; font-weight: bold; color: #166534; }
+    .period-col { background-color: #f0f9ff; }
+    .balance-col { background-color: #dcfce7; font-weight: bold; color: #166534; }
     .currency { font-weight: 600; }
-    .total-row { font-weight: bold; font-size: 13px; background-color: #f8f9fa; }
+    .total-row { font-weight: bold; font-size: 14px; background-color: #f8fafc; }
     .total-row td { padding: 15px; }
-    .grand-total { background-color: #d4edda; font-size: 16px; font-weight: 800; color: #166534; }
+    .grand-total { background-color: #dcfce7; font-size: 18px; font-weight: 800; color: #166534; }
     .page-break { page-break-after: always; }
     .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 40px; display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; }
@@ -677,6 +690,7 @@ exports.generatePaymentReportHTML = (data) => {
   </style>
 </head>
 <body>
+  <div class="container">
   ${data.groups.map(group => `
     <div class="page-break">
       <div class="header">
@@ -690,13 +704,13 @@ exports.generatePaymentReportHTML = (data) => {
       <table>
         <thead>
           <tr>
-            <th>QUALIF</th>
-            <th>NOM ET PRENOM</th>
-            <th class="period-col">${headerLabel}<br>(Période)</th>
-            <th>TAUX du J</th>
-            <th>TOTAL / DT</th>
-            <th class="balance-col">NET A PAYER</th>
-            <th>SIGNATURE</th>
+            <th style="width: 10%;">QUALIF</th>
+            <th style="width: 25%;">NOM ET PRENOM</th>
+            <th style="width: 10%;" class="period-col">${headerLabel}<br>(Période)</th>
+            <th style="width: 15%;">TAUX du J</th>
+            <th style="width: 15%;">TOTAL / DT</th>
+            <th style="width: 15%;" class="balance-col">NET A PAYER</th>
+            <th style="width: 10%;">SIGNATURE</th>
           </tr>
         </thead>
         <tbody>
@@ -732,30 +746,33 @@ exports.generatePaymentReportHTML = (data) => {
         <h1>RESUME GLOBAL DE PAIEMENT</h1>
         <h2>PROJET: ${project.name} - ${headerLabel}</h2>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>GROUPE / SOUS-TRAITANT</th>
-            <th>TOTAL NET A PAYER</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.groups.map(g => `
+      <div style="display: flex; justify-content: center;">
+        <table style="width: 60%;">
+          <thead>
             <tr>
-              <td style="text-align: left; padding-left: 20px; font-weight: bold;">
-                ${g.subcontractor ? g.subcontractor.name : 'EQUIPE DIRECTE'}
-              </td>
-              <td class="currency" style="font-size: 14px;">${formatTND(g.totalPayment)}</td>
+              <th>GROUPE / SOUS-TRAITANT</th>
+              <th>TOTAL NET A PAYER</th>
             </tr>
-          `).join('')}
-          <tr class="total-row" style="background: #d4edda;">
-            <td style="text-align: right; padding-right: 20px; font-size: 16px;">TOTAL GENERAL</td>
-            <td class="grand-total" style="font-size: 20px;">${formatTND(data.totalPayment)}</td>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${data.groups.map(g => `
+              <tr>
+                <td style="text-align: left; padding-left: 20px; font-weight: bold;">
+                  ${g.subcontractor ? g.subcontractor.name : 'EQUIPE DIRECTE'}
+                </td>
+                <td class="currency" style="font-size: 14px;">${formatTND(g.totalPayment)}</td>
+              </tr>
+            `).join('')}
+            <tr class="total-row" style="background: #dcfce7;">
+              <td style="text-align: right; padding-right: 20px; font-size: 16px;">TOTAL GENERAL</td>
+              <td class="grand-total" style="font-size: 20px;">${formatTND(data.totalPayment)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   ` : ''}
+  </div>
 </body>
 </html>
   `;
