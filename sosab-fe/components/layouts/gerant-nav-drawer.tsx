@@ -41,8 +41,8 @@ import { useLanguage } from "@/lib/language-context"
 import api from "@/lib/api"
 
 const gerantNavItems = (t: (key: string) => string) => [
-    { href: "/gerant", icon: FolderKanban, label: t("nav.projects") || "Projects" },
-    { href: "/gerant/materials", icon: Package, label: t("common.materials") || "Materials" },
+    { href: "/gerant", icon: FolderKanban, label: t("nav.projects") === "nav.projects" ? "Chantier" : (t("nav.projects") === "Projets" ? "Chantier" : t("nav.projects")) || "Chantier" },
+    { href: "/gerant/materials", icon: Package, label: "Materils" },
     { href: "/gerant/reports", icon: FileBarChart, label: t("nav.reports") || "Reports" },
 ]
 

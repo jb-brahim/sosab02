@@ -77,7 +77,7 @@ export default function GerantMaterialsPage() {
                             <Package className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-display font-bold tracking-tight">{t("common.materials") || "Materials"}</h1>
+                            <h1 className="text-xl font-display font-bold tracking-tight">Materils</h1>
                             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                                 {t("stock.all_projects") || "Global Stock Summary"}
                             </p>
@@ -88,7 +88,7 @@ export default function GerantMaterialsPage() {
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder={t("common.search") || "Search materials or projects..."}
+                        placeholder="Search Materils or projects..."
                         className="pl-10 h-11 bg-muted/50 border-white/10 rounded-xl"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

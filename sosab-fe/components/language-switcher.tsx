@@ -24,10 +24,10 @@ export function LanguageSwitcher() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[120px]">
                 <DropdownMenuItem
-                    onClick={() => setLanguage("en")}
-                    className={language === "en" ? "bg-primary/10 text-primary font-medium" : ""}
+                    onClick={() => setLanguage("ar")}
+                    className={language === "ar" ? "bg-primary/10 text-primary font-medium" : ""}
                 >
-                    English
+                    العربية
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => setLanguage("fr")}

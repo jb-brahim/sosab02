@@ -262,7 +262,9 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
   }
 
   // Find all materials matching the projects
-  const materials = await Material.find(query).populate('projectId', 'name');
+  const materials = await Material.find(query)
+    .populate('projectId', 'name')
+    .sort({ createdAt: -1 });
   const materialIds = materials.map(m => m._id);
 
   // Aggregate logs

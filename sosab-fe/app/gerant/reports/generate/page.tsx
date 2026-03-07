@@ -1,17 +1,29 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import api from "@/lib/api"
+import api, { BACKEND_URL } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, Download, ArrowLeft, FileSpreadsheet } from "lucide-react"
+import {
+    FileText,
+    Download,
+    ArrowLeft,
+    FileSpreadsheet,
+    Calendar,
+    Users,
+    CreditCard,
+    CheckCircle2,
+    ChevronRight,
+    Loader2
+} from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useLanguage } from "@/lib/language-context"
+import { cn } from "@/lib/utils"
+import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, format } from "date-fns"
 
 export default function GerantGenerateReportPage() {
     const { t } = useLanguage()
@@ -28,6 +40,8 @@ export default function GerantGenerateReportPage() {
         format: "pdf"
     })
 
+    const [dateRangeType, setDateRangeType] = useState<"this_week" | "last_week" | "this_month" | "custom">("this_week")
+
     useEffect(() => {
         const fetchProjects = async () => {
             try {
@@ -35,6 +49,9 @@ export default function GerantGenerateReportPage() {
                 const res = await api.get('/projects')
                 if (res.data.success) {
                     setProjects(res.data.data)
+                    if (res.data.data.length > 0) {
+                        setFormData(prev => ({ ...prev, projectId: res.data.data[0]._id }))
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load projects", error)
@@ -46,6 +63,38 @@ export default function GerantGenerateReportPage() {
         fetchProjects()
     }, [t])
 
+    // Update dates based on type
+    useEffect(() => {
+        const now = new Date()
+        let start: Date, end: Date
+
+        switch (dateRangeType) {
+            case "this_week":
+                start = startOfWeek(now, { weekStartsOn: 1 })
+                end = endOfWeek(now, { weekStartsOn: 1 })
+                break
+            case "last_week":
+                const lastWeek = subWeeks(now, 1)
+                start = startOfWeek(lastWeek, { weekStartsOn: 1 })
+                end = endOfWeek(lastWeek, { weekStartsOn: 1 })
+                break
+            case "this_month":
+                start = startOfMonth(now)
+                end = endOfMonth(now)
+                break
+            case "custom":
+                return // Don't auto-update if custom
+            default:
+                return
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            startDate: format(start, "yyyy-MM-dd"),
+            endDate: format(end, "yyyy-MM-dd")
+        }))
+    }, [dateRangeType])
+
     const handleGenerate = async () => {
         if (!formData.projectId) {
             toast.error(t("reports.select_project") || "Please select a project")
@@ -56,35 +105,17 @@ export default function GerantGenerateReportPage() {
             return
         }
 
-        const start = new Date(formData.startDate)
-        const end = new Date(formData.endDate)
-        const diffTime = Math.abs(end.getTime() - start.getTime())
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-        if (diffDays > 31) {
-            toast.error(t("reports.date_range_error") || "Date range cannot exceed 31 days")
-            return
-        }
-
-        if (start > end) {
-            toast.error(t("reports.date_order_error") || "Start date must be before end date")
-            return
-        }
-
         try {
             setGenerating(true)
             const res = await api.post('/reports/generate', formData)
 
             if (res.data.success) {
-                toast.success(`${formData.type === 'attendance' ? t("reports.attendance_grid") : t("reports.payment_summary")} ${t("materials.arrival_success") || "Generated successfully"}`)
-
-                const apiUrl = require('@/lib/api').BACKEND_URL;
-                const downloadUrl = `${apiUrl}${res.data.data.pdfUrl}`
-                window.open(downloadUrl, '_blank')
+                toast.success(t("materials.arrival_success") || "Generated successfully")
+                window.open(`${BACKEND_URL}${res.data.data.pdfUrl}`, '_blank')
 
                 setTimeout(() => {
                     router.push('/gerant/reports')
-                }, 1500)
+                }, 1000)
             }
         } catch (error: any) {
             console.error("Failed to generate report", error)
@@ -95,126 +126,197 @@ export default function GerantGenerateReportPage() {
     }
 
     return (
-        <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
-            <div className="flex items-center gap-2 mb-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="w-5 h-5" />
+        <div className="min-h-screen bg-background pb-32">
+            {/* Simple Header */}
+            <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-primary" />
-                        {t("reports.generate_new") || "Generate Report"}
-                    </h1>
-                    <p className="text-muted-foreground text-xs">{t("reports.create_reports_desc") || "Create PDF or Excel reports for specific date ranges."}</p>
+                    <h1 className="text-xl font-display font-bold">{t("reports.new_report") || "Nouveau Rapport"}</h1>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-tighter">Étape par étape</p>
                 </div>
             </div>
 
-            <Card>
-                <CardContent className="p-6 space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="project">{t("materials.site_label") || "Project Site"}</Label>
-                        <Select
-                            value={formData.projectId}
-                            onValueChange={(value) => setFormData({ ...formData, projectId: value })}
+            <div className="p-4 space-y-8 max-w-2xl mx-auto mt-4">
+
+                {/* PART 1: CHANTIER */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">1</div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider">{t("materials.site_label") || "Quel Chantier ?"}</h2>
+                    </div>
+                    <Card className="border-white/5 bg-muted/20">
+                        <CardContent className="p-4">
+                            <Select
+                                value={formData.projectId}
+                                onValueChange={(val) => setFormData({ ...formData, projectId: val })}
+                            >
+                                <SelectTrigger className="h-14 text-base bg-background border-white/10 rounded-xl">
+                                    <SelectValue placeholder={t("reports.select_project")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {projects.map(p => (
+                                        <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </CardContent>
+                    </Card>
+                </section>
+
+                {/* PART 2: TYPE */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">2</div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider">{t("reports.status_label") || "Quel type de rapport ?"}</h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => setFormData({ ...formData, type: "attendance" })}
+                            className={cn(
+                                "relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200",
+                                formData.type === "attendance"
+                                    ? "bg-primary/10 border-primary shadow-lg shadow-primary/5 scale-[1.02]"
+                                    : "bg-muted/30 border-white/5 hover:border-white/10"
+                            )}
                         >
-                            <SelectTrigger id="project">
-                                <SelectValue placeholder={t("reports.select_project") || "Select Project"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {projects.map((project) => (
-                                    <SelectItem key={project._id} value={project._id}>
-                                        {project.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                            {formData.type === "attendance" && <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-primary" />}
+                            <div className={cn("p-3 rounded-xl", formData.type === "attendance" ? "bg-primary/20" : "bg-background/50")}>
+                                <Users className={cn("h-6 w-6", formData.type === "attendance" ? "text-primary" : "text-muted-foreground")} />
+                            </div>
+                            <span className="text-xs font-bold uppercase tracking-tight text-center">
+                                {t("reports.attendance_grid") || "Présence (Grille)"}
+                            </span>
+                        </button>
 
-                    <div className="space-y-2">
-                        <Label>{t("reports.status_label") || "Report Type"}</Label>
-                        <RadioGroup
-                            value={formData.type}
-                            onValueChange={(value) => setFormData({ ...formData, type: value })}
+                        <button
+                            onClick={() => setFormData({ ...formData, type: "payment" })}
+                            className={cn(
+                                "relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200",
+                                formData.type === "payment"
+                                    ? "bg-primary/10 border-primary shadow-lg shadow-primary/5 scale-[1.02]"
+                                    : "bg-muted/30 border-white/5 hover:border-white/10"
+                            )}
                         >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="attendance" id="attendance" />
-                                <Label htmlFor="attendance" className="font-normal cursor-pointer">
-                                    {t("reports.attendance_grid") || "Attendance"}
-                                </Label>
+                            {formData.type === "payment" && <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-primary" />}
+                            <div className={cn("p-3 rounded-xl", formData.type === "payment" ? "bg-primary/20" : "bg-background/50")}>
+                                <CreditCard className={cn("h-6 w-6", formData.type === "payment" ? "text-primary" : "text-muted-foreground")} />
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="payment" id="payment" />
-                                <Label htmlFor="payment" className="font-normal cursor-pointer">
-                                    {t("reports.payment_summary") || "Payment Summary"}
-                                </Label>
-                            </div>
-                        </RadioGroup>
+                            <span className="text-xs font-bold uppercase tracking-tight text-center">
+                                {t("reports.payment_summary") || "Paiements (Sommaire)"}
+                            </span>
+                        </button>
+                    </div>
+                </section>
+
+                {/* PART 3: PERIODE */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">3</div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider">{t("reports.custom_range") || "Pour quelle période ?"}</h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {[
+                            { id: "this_week", label: t("reports.this_week") || "Cette Semaine" },
+                            { id: "last_week", label: t("reports.last_week") || "Semaine Dernière" },
+                            { id: "this_month", label: t("reports.this_month") || "Ce Mois" },
+                            { id: "custom", label: t("reports.custom") || "Personnalisé" },
+                        ].map((btn) => (
+                            <Button
+                                key={btn.id}
+                                variant={dateRangeType === btn.id ? "default" : "outline"}
+                                className={cn(
+                                    "h-12 rounded-xl text-xs font-bold uppercase tracking-tight",
+                                    dateRangeType === btn.id && "shadow-md"
+                                )}
+                                onClick={() => setDateRangeType(btn.id as any)}
+                            >
+                                {btn.label}
+                            </Button>
+                        ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="startDate">{t("reports.from") || "From"}</Label>
-                            <Input
-                                id="startDate"
-                                type="date"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="endDate">{t("reports.to") || "To"}</Label>
-                            <Input
-                                id="endDate"
-                                type="date"
-                                value={formData.endDate}
-                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                            />
-                        </div>
-                    </div>
+                    {dateRangeType === "custom" && (
+                        <Card className="border-white/5 bg-primary/5 animate-in slide-in-from-top-2">
+                            <CardContent className="p-4 grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("reports.from")}</Label>
+                                    <Input
+                                        type="date"
+                                        className="h-10 bg-background"
+                                        value={formData.startDate}
+                                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("reports.to")}</Label>
+                                    <Input
+                                        type="date"
+                                        className="h-10 bg-background"
+                                        value={formData.endDate}
+                                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </section>
 
-                    <div className="space-y-2">
-                        <Label>{t("reports.export_format") || "Export Format"}</Label>
-                        <RadioGroup
-                            value={formData.format}
-                            onValueChange={(value) => setFormData({ ...formData, format: value })}
+                {/* PART 4: FORMAT */}
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">4</div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider">{t("reports.export_format") || "Format d'export ?"}</h2>
+                    </div>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => setFormData({ ...formData, format: "pdf" })}
+                            className={cn(
+                                "flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                                formData.format === "pdf" ? "bg-primary/10 border-primary" : "bg-muted/20 border-white/5"
+                            )}
                         >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="pdf" id="pdf" />
-                                <Label htmlFor="pdf" className="font-normal cursor-pointer flex items-center gap-2">
-                                    <FileText className="w-4 h-4" />
-                                    {t("reports.pdf_printable") || "PDF"}
-                                </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="excel" id="excel" />
-                                <Label htmlFor="excel" className="font-normal cursor-pointer flex items-center gap-2">
-                                    <FileSpreadsheet className="w-4 h-4" />
-                                    {t("reports.excel_editable") || "Excel"}
-                                </Label>
-                            </div>
-                        </RadioGroup>
+                            <FileText className={cn("h-5 w-5", formData.format === "pdf" ? "text-primary" : "text-muted-foreground")} />
+                            <span className="text-xs font-bold uppercase">{t("reports.pdf_printable") || "PDF"}</span>
+                        </button>
+                        <button
+                            onClick={() => setFormData({ ...formData, format: "excel" })}
+                            className={cn(
+                                "flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                                formData.format === "excel" ? "bg-primary/10 border-primary" : "bg-muted/20 border-white/5"
+                            )}
+                        >
+                            <FileSpreadsheet className={cn("h-5 w-5", formData.format === "excel" ? "text-primary" : "text-muted-foreground")} />
+                            <span className="text-xs font-bold uppercase">{t("reports.excel_editable") || "Excel"}</span>
+                        </button>
                     </div>
+                </section>
+            </div>
 
-                    <Button
-                        onClick={handleGenerate}
-                        disabled={generating || loading}
-                        className="w-full"
-                        size="lg"
-                    >
-                        {generating ? (
-                            <>
-                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                {t("materials.generating") || "Generating..."}
-                            </>
-                        ) : (
-                            <>
-                                <Download className="w-4 h-4 mr-2" />
-                                {t("reports.generate") || "Generate"}
-                            </>
-                        )}
-                    </Button>
-                </CardContent>
-            </Card>
+            {/* Sticky Bottom Actions */}
+            <div className="fixed bottom-0 left-0 w-full p-4 bg-background/80 backdrop-blur-xl border-t border-white/5 flex flex-col gap-3">
+                <div className="flex items-center justify-between px-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                    <span>{formData.startDate}</span>
+                    <ChevronRight className="h-3 w-3" />
+                    <span>{formData.endDate}</span>
+                </div>
+                <Button
+                    onClick={handleGenerate}
+                    disabled={generating || !formData.projectId}
+                    className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20"
+                    size="lg"
+                >
+                    {generating ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
+                    ) : (
+                        <>
+                            <Download className="h-5 w-5 mr-3" />
+                            {t("reports.generate") || "GÉNÉRER LE RAPPORT"}
+                        </>
+                    )}
+                </Button>
+            </div>
         </div>
     )
 }

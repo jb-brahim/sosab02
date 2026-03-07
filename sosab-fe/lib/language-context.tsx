@@ -12,20 +12,25 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-    const [language, setLanguageState] = useState<Language>("en");
+    const [language, setLanguageState] = useState<Language>("fr");
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
         const savedLanguage = localStorage.getItem("sosab-language") as Language;
-        if (savedLanguage && (savedLanguage === "en" || savedLanguage === "fr")) {
-            setLanguageState(savedLanguage);
-        }
+        const currentLang = (savedLanguage === "ar" || savedLanguage === "fr") ? savedLanguage : "fr";
+        setLanguageState(currentLang);
+
+        // Apply direction and lang to HTML tag
+        document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+        document.documentElement.lang = currentLang;
     }, []);
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
         localStorage.setItem("sosab-language", lang);
+        document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+        document.documentElement.lang = lang;
     };
 
     const t = (path: string): string => {
