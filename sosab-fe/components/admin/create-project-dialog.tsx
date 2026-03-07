@@ -17,6 +17,8 @@ const MapPicker = dynamic(() => import('@/components/ui/map-picker'), {
     loading: () => <div className="h-[200px] w-full flex items-center justify-center bg-muted">Loading Map...</div>
 })
 
+import { useLanguage } from "@/lib/language-context"
+
 interface User {
     _id: string
     name: string
@@ -33,6 +35,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
     const [loadingUsers, setLoadingUsers] = useState(false)
     const [users, setUsers] = useState<User[]>([])
     const [showMap, setShowMap] = useState(false)
+    const { t } = useLanguage()
 
     // Coordinates state
     const [coordinates, setCoordinates] = useState<{ lat: number, lng: number } | null>(null)
@@ -40,7 +43,6 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
     const [formData, setFormData] = useState({
         name: "",
         location: "",
-        budget: "",
         startDate: "",
         endDate: "",
     })
@@ -90,7 +92,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
         try {
             const payload: any = {
                 ...formData,
-                budget: Number(formData.budget),
+                budget: 0, // Set to 0 since it's removed from UI
                 managers: selectedManagers
             }
 
@@ -101,13 +103,12 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
             const res = await api.post("/projects", payload)
 
             if (res.data.success) {
-                toast.success("Project created successfully")
+                toast.success(t("projects.create_success") || "Project created successfully")
                 setOpen(false)
                 onProjectCreated()
                 setFormData({
                     name: "",
                     location: "",
-                    budget: "",
                     startDate: "",
                     endDate: "",
                 })
@@ -127,46 +128,31 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    New Project
+                    {t("projects.new_project") || "New Project"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
+                    <DialogTitle>{t("projects.create_title") || "Create New Project"}</DialogTitle>
                     <DialogDescription>
-                        Enter the details for the new construction project.
+                        {t("projects.create_description") || "Enter the details for the new construction project."}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Project Name</Label>
-                            <Input
-                                id="name"
-                                name="name"
-                                placeholder="e.g. Villaji Complex"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="budget">Budget (TND)</Label>
-                            <Input
-                                id="budget"
-                                name="budget"
-                                type="number"
-                                min="0"
-                                placeholder="0.00"
-                                value={formData.budget}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="name">{t("projects.project_name") || "Project Name"}</Label>
+                        <Input
+                            id="name"
+                            name="name"
+                            placeholder="e.g. Villaji Complex"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Location</Label>
+                        <Label>{t("projects.location_label") || "Location"}</Label>
                         <div className="flex gap-2">
                             <Input
                                 id="location"
@@ -205,7 +191,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Project Managers</Label>
+                            <Label>{t("projects.managers") || "Project Managers"}</Label>
                             <div className="border rounded-md p-2 max-h-36 overflow-y-auto space-y-1 bg-background">
                                 {loadingUsers ? (
                                     <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div>
@@ -231,7 +217,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
-                                <Label htmlFor="startDate">Start Date</Label>
+                                <Label htmlFor="startDate">{t("projects.start_date") || "Start Date"}</Label>
                                 <Input
                                     id="startDate"
                                     name="startDate"
@@ -242,7 +228,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="endDate">End Date</Label>
+                                <Label htmlFor="endDate">{t("projects.end_date") || "End Date"}</Label>
                                 <Input
                                     id="endDate"
                                     name="endDate"
@@ -257,11 +243,11 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
 
                     <DialogFooter className="mt-6">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
+                            {t("common.cancel") || "Cancel"}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Project
+                            {t("projects.create_project") || "Create Project"}
                         </Button>
                     </DialogFooter>
                 </form>

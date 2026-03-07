@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import api from "@/lib/api"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useLanguage } from "@/lib/language-context"
 import {
   LayoutDashboard,
   FolderKanban,
@@ -33,22 +34,15 @@ import {
   Bell,
   Search,
   HardHat,
-  ClipboardList,
-  CalendarCheck,
-  Warehouse,
-  ArrowRightLeft,
-  Banknote,
 } from "lucide-react"
 
-
-
-const navItems = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/projects", icon: FolderKanban, label: "Projects" },
-  { href: "/admin/materials", icon: Package, label: "Materials" },
-  { href: "/admin/workers", icon: Users, label: "Workers" },
-  { href: "/admin/reports", icon: FileBarChart, label: "Reports" },
-  { href: "/admin/users", icon: Users, label: "Users" },
+const adminNavItems = (t: (key: string) => string) => [
+  { href: "/admin", icon: LayoutDashboard, label: t("nav.home") || "Dashboard" },
+  { href: "/admin/projects", icon: FolderKanban, label: t("nav.projects") || "Projects" },
+  { href: "/admin/materials", icon: Package, label: t("nav.materials") || "Materials" },
+  { href: "/admin/workers", icon: Users, label: t("nav.workers") || "Workers" },
+  { href: "/admin/reports", icon: FileBarChart, label: t("nav.reports") || "Reports" },
+  { href: "/admin/users", icon: Users, label: t("nav.users") || "Users" },
 ]
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -56,6 +50,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout } = useAuth()
+  const { t, language } = useLanguage()
+  const isRTL = language === "ar"
+
+  const navItems = adminNavItems(t)
 
   const handleLogout = () => {
     logout()
@@ -67,18 +65,19 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0)
 
   // Fetch Notifications
-  const fetchNotifications = async () => {
-    if (!user) return;
+  const fetchNotifications = React.useCallback(async (signal?: AbortSignal) => {
+    if (!user?.id) return;
     try {
-      const res = await api.get(`/notifications/${user.id}`)
+      const res = await api.get(`/notifications/${user.id}`, { signal })
       if (res.data.success) {
         setNotifications(res.data.data)
         setUnreadCount(res.data.data.filter((n: any) => !n.read).length)
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'CanceledError' || error.name === 'AbortError') return
       console.error("Failed to fetch notifications", error)
     }
-  }
+  }, [user?.id])
 
   // Mark as read and navigate
   const handleNotificationClick = async (notification: any) => {
@@ -105,29 +104,34 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   // Poll for notifications every 30 seconds
   React.useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [user])
+    const controller = new AbortController()
+    fetchNotifications(controller.signal)
+    const interval = setInterval(() => fetchNotifications(controller.signal), 30000)
+    return () => {
+      controller.abort()
+      clearInterval(interval)
+    }
+  }, [fetchNotifications])
 
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className={cn("flex h-screen bg-background", isRTL && "flex-row-reverse")}>
       {/* Sidebar */}
       <aside
         className={cn(
-          "flex flex-col border-r border-border bg-sidebar transition-all duration-300",
+          "flex flex-col border-border bg-sidebar transition-all duration-300",
+          isRTL ? "border-l" : "border-r",
           collapsed ? "w-16" : "w-64",
         )}
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           {!collapsed && (
-            <div className="flex items-center gap-2">
+            <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/25">
                 <HardHat className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-display text-xl font-bold tracking-wide">SOSAB</span>
+              <span className="font-display text-xl font-bold tracking-wide">{t("common.sosab") || "SOSAB"}</span>
             </div>
           )}
           {collapsed && (
@@ -146,7 +150,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-left",
+                  isRTL && "flex-row-reverse text-right",
                   "hover:bg-sidebar-accent active:scale-[0.98]",
                   isActive
                     ? "bg-primary/15 text-primary shadow-sm shadow-primary/10"
@@ -168,7 +173,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setCollapsed(!collapsed)}
             className="w-full justify-center hover:bg-sidebar-accent"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? (isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : (isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />)}
           </Button>
         </div>
       </aside>
@@ -176,14 +181,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-6">
+        <header className={cn("flex h-16 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-6", isRTL && "flex-row-reverse")}>
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className={cn("absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground", isRTL ? "right-3" : "left-3")} />
               <input
                 type="text"
-                placeholder="Search projects, workers... (Press Enter)"
-                className="h-10 w-72 rounded-lg border border-border bg-muted/50 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                placeholder={t("common.search") || "Search projects, workers..."}
+                dir={isRTL ? "rtl" : "ltr"}
+                className={cn(
+                  "h-10 w-72 rounded-lg border border-border bg-muted/50 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all",
+                  isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
+                )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const val = (e.target as HTMLInputElement).value
@@ -196,7 +205,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative hover:bg-muted">
@@ -208,14 +217,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel className="flex items-center justify-between">
-                  <span>Notifications</span>
+              <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-80">
+                <DropdownMenuLabel className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                  <span>{t("common.notifications") || "Notifications"}</span>
                   {unreadCount > 0 && (
                     <span className="text-xs text-muted-foreground cursor-pointer hover:text-primary" onClick={() => {
                       notifications.filter(n => !n.read).forEach(n => markAsRead(n._id));
                     }}>
-                      Mark all as read
+                      {t("common.mark_all_read") || "Mark all as read"}
                     </span>
                   )}
                 </DropdownMenuLabel>
@@ -223,7 +232,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 <div className="max-h-[70vh] overflow-y-auto">
                   {notifications.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
-                      No notifications
+                      {t("common.no_notifications") || "No notifications"}
                     </div>
                   ) : (
                     notifications.map((notification) => (
@@ -231,11 +240,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         key={notification._id}
                         className={cn(
                           "flex flex-col items-start gap-1 p-3 cursor-pointer",
+                          isRTL && "items-end text-right",
                           !notification.read && "bg-muted/50"
                         )}
                         onClick={() => handleNotificationClick(notification)}
                       >
-                        <div className="flex items-start justify-between w-full">
+                        <div className={cn("flex items-start justify-between w-full", isRTL && "flex-row-reverse")}>
                           <span className="font-medium text-sm">{notification.message}</span>
                           <span className="text-[10px] text-muted-foreground ml-2 whitespace-nowrap">
                             {new Date(notification.createdAt).toLocaleDateString()}
@@ -257,31 +267,31 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-3 px-2 hover:bg-muted">
+                <Button variant="ghost" className={cn("flex items-center gap-3 px-2 hover:bg-muted", isRTL && "flex-row-reverse")}>
                   <Avatar className="h-9 w-9 border-2 border-primary/20">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-medium">
                       {user?.name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="text-left">
+                  <div className={cn("text-left", isRTL && "text-right")}>
                     <p className="text-sm font-medium">{user?.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
+                <DropdownMenuLabel className={isRTL ? "text-right" : ""}>{isRTL ? "حسابي" : "My Account"}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/settings" className="w-full flex cursor-pointer items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
+                  <Link href="/admin/settings" className={cn("w-full flex cursor-pointer items-center", isRTL && "flex-row-reverse")}>
+                    <Settings className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                    {t("common.settings") || "Settings"}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                <DropdownMenuItem onClick={handleLogout} className={cn("text-destructive focus:text-destructive flex items-center", isRTL && "flex-row-reverse")}>
+                  <LogOut className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  {t("common.logout") || "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

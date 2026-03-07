@@ -10,6 +10,9 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
+import { useLanguage } from "@/lib/language-context"
+import { cn } from "@/lib/utils"
+
 interface User {
     _id: string
     name: string
@@ -25,6 +28,8 @@ interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: EditUserDialogProps) {
+    const { t, language } = useLanguage()
+    const isRTL = language === "ar"
     const [isLoading, setIsLoading] = useState(false)
     const [formData, setFormData] = useState({
         name: "",
@@ -60,7 +65,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
             const res = await api.patch(`/users/${user._id}`, formData)
 
             if (res.data.success) {
-                toast.success("User updated successfully")
+                toast.success(t("users.update_success") || "User updated successfully")
                 onUserUpdated()
                 onOpenChange(false)
             }
@@ -75,25 +80,26 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Edit User Details</DialogTitle>
-                    <DialogDescription>
-                        Update information for <span className="font-semibold">{user?.name}</span>.
+                    <DialogTitle className={isRTL ? "text-right" : ""}>{t("users.edit_user") || "Edit User Details"}</DialogTitle>
+                    <DialogDescription className={isRTL ? "text-right" : ""}>
+                        {t("users.edit_user_desc") || "Update information for"} <span className="font-semibold">{user?.name}</span>.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name" className={cn("block", isRTL && "text-right")}>{t("users.full_name") || "Full Name"}</Label>
                         <Input
                             id="name"
                             name="name"
-                            placeholder="e.g. John Doe"
+                            placeholder={t("users.name_placeholder") || "e.g. John Doe"}
                             value={formData.name}
                             onChange={handleChange}
                             required
+                            className={isRTL ? "text-right" : ""}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="email" className={cn("block", isRTL && "text-right")}>{t("users.email") || "Email Address"}</Label>
                         <Input
                             id="email"
                             name="email"
@@ -102,28 +108,30 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            className={isRTL ? "text-right" : ""}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
-                        <Select onValueChange={handleRoleChange} value={formData.role}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select role" />
+                        <Label htmlFor="role" className={cn("block", isRTL && "text-right")}>{t("users.role") || "Role"}</Label>
+                        <Select onValueChange={handleRoleChange} value={formData.role} dir={isRTL ? "rtl" : "ltr"}>
+                            <SelectTrigger className={isRTL ? "flex-row-reverse" : ""}>
+                                <SelectValue placeholder={t("users.select_role") || "Select role"} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Admin">Admin</SelectItem>
-                                <SelectItem value="Project Manager">Project Manager</SelectItem>
-                                <SelectItem value="Gérant">Gérant</SelectItem>
+                                <SelectItem value="Admin">{t("users.roles.admin") || "Admin"}</SelectItem>
+                                <SelectItem value="Project Manager">{t("users.roles.pm") || "Project Manager"}</SelectItem>
+                                <SelectItem value="Gérant">{t("users.roles.gerant") || "Gérant"}</SelectItem>
+                                <SelectItem value="Worker">{t("users.roles.worker") || "Worker"}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className={cn("gap-2", isRTL && "flex-row-reverse")}>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {t("common.cancel") || "Cancel"}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
+                            {isLoading && <Loader2 className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "mr-2")} />}
+                            {t("common.save") || "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -131,3 +139,4 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
         </Dialog>
     )
 }
+

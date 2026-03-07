@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Loader2, MoreHorizontal, FolderKanban, Archive } from "lucide-react"
+import { Plus, Loader2, MoreHorizontal, FolderKanban } from "lucide-react"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
 import { CreateProjectDialog } from "@/components/admin/create-project-dialog"
-import { UpdateProjectStatusDialog } from "@/components/admin/update-project-status-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+
+import { useLanguage } from "@/lib/language-context"
 
 interface Project {
     _id: string
@@ -22,7 +24,6 @@ interface Project {
     status: "active" | "completed" | "on-hold" | "planning"
     startDate: string
     endDate: string
-    budget: number
     manager: { name: string } | null
 }
 
@@ -36,10 +37,11 @@ const statusColors: Record<string, string> = {
 export default function ProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const { t, language } = useLanguage()
+    const isRTL = language === "ar"
 
     const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-    const [statusDialogOpen, setStatusDialogOpen] = useState(false)
-    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const router = useRouter()
 
     const fetchProjects = async () => {
@@ -59,41 +61,37 @@ export default function ProjectsPage() {
         fetchProjects()
     }, [])
 
-    const handleArchive = async () => {
+    const handleDelete = async () => {
         if (!selectedProject) return
         try {
             const res = await api.delete(`/projects/${selectedProject._id}`)
             if (res.data.success) {
-                toast.success("Project archived successfully")
+                toast.success(t("projects.delete_success") || "Project deleted successfully")
                 fetchProjects()
-                setArchiveDialogOpen(false)
+                setDeleteDialogOpen(false)
             }
         } catch (error: any) {
-            toast.error(error.message || "Failed to archive project")
+            toast.error(error.message || "Failed to delete project")
         }
     }
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="font-display text-3xl font-bold tracking-tight">Projects</h1>
-                    <p className="text-muted-foreground mt-1">Track construction site progress.</p>
+            <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+                <div className={isRTL ? "text-right" : "text-left"}>
+                    <h1 className="font-display text-3xl font-bold tracking-tight">{t("projects.title") || "Projects"}</h1>
+                    <p className="text-muted-foreground mt-1">{t("projects.description") || "Track construction site progress."}</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => router.push("/admin/projects/archives")}>
-                        <Archive className="h-4 w-4 mr-2" />
-                        Archives
-                    </Button>
+                <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
                     <CreateProjectDialog onProjectCreated={fetchProjects} />
                 </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+            <Card className={isRTL ? "text-right" : "text-left"}>
+                <CardHeader className={cn(isRTL && "flex-row-reverse")}>
+                    <CardTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                         <FolderKanban className="h-5 w-5 text-primary" />
-                        All Projects
+                        {t("projects.all_projects") || "All Projects"}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -102,21 +100,21 @@ export default function ProjectsPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <Table>
+                        <Table dir={isRTL ? "rtl" : "ltr"}>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Project Name</TableHead>
-                                    <TableHead>Location</TableHead>
-                                    <TableHead>Manager</TableHead>
-                                    <TableHead>Budget</TableHead>
-                                    <TableHead>Timeline</TableHead>
+                                    <TableHead className={isRTL ? "text-right" : ""}>{t("projects.project_name") || "Project Name"}</TableHead>
+                                    <TableHead className={isRTL ? "text-right" : ""}>{t("projects.location_label") || "Location"}</TableHead>
+                                    <TableHead className={isRTL ? "text-right" : ""}>{t("projects.manager") || "Manager"}</TableHead>
+                                    <TableHead className={isRTL ? "text-right" : ""}>{t("projects.timeline") || "Timeline"}</TableHead>
+                                    <TableHead className={isRTL ? "text-right" : ""}>{t("common.actions") || "Actions"}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {projects.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                            No projects found.
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                            {t("common.no_results") || "No projects found."}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -126,12 +124,36 @@ export default function ProjectsPage() {
                                             className="cursor-pointer hover:bg-muted/50"
                                             onClick={() => router.push(`/admin/projects/${project._id}`)}
                                         >
-                                            <TableCell className="font-medium">{project.name}</TableCell>
+                                            <TableCell className="font-medium text-primary">
+                                                {project.name}
+                                            </TableCell>
                                             <TableCell className="text-muted-foreground">{project.location}</TableCell>
-                                            <TableCell>{project.manager?.name || "Unassigned"}</TableCell>
-                                            <TableCell>{project.budget?.toLocaleString()} TND</TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
+                                            <TableCell>{project.manager?.name || t("common.unassigned") || "Unassigned"}</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
                                                 {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align={isRTL ? "start" : "end"}>
+                                                        <DropdownMenuItem onClick={() => router.push(`/admin/projects/${project._id}`)}>
+                                                            {t("common.view") || "View Details"}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            className="text-destructive focus:text-destructive"
+                                                            onClick={() => {
+                                                                setSelectedProject(project)
+                                                                setDeleteDialogOpen(true)
+                                                            }}
+                                                        >
+                                                            {t("common.delete") || "Delete"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -142,27 +164,21 @@ export default function ProjectsPage() {
                 </CardContent>
             </Card>
 
-            <UpdateProjectStatusDialog
-                project={selectedProject}
-                open={statusDialogOpen}
-                onOpenChange={setStatusDialogOpen}
-                onStatusUpdated={fetchProjects}
-            />
-
-            <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the project
-                            <span className="font-semibold"> {selectedProject?.name} </span>
-                            and remove all associated data.
+                        <AlertDialogTitle className={isRTL ? "text-right" : ""}>
+                            {t("projects.delete_confirm_title") || "Are you absolutely sure?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className={isRTL ? "text-right" : ""}>
+                            {t("projects.delete_confirm_desc") || "This action cannot be undone. This will permanently delete the project and remove all associated data."}
+                            <span className="font-bold block mt-2">{selectedProject?.name}</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleArchive} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Archive Project
+                    <AlertDialogFooter className={isRTL ? "flex-row-reverse gap-2" : ""}>
+                        <AlertDialogCancel>{t("common.cancel") || "Cancel"}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("common.delete") || "Delete Project"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

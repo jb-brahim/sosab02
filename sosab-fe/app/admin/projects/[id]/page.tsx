@@ -13,8 +13,9 @@ import { Progress } from "@/components/ui/progress"
 import { UpdateProjectStatusDialog } from "@/components/admin/update-project-status-dialog"
 import { UpdateLocationDialog } from "@/components/admin/update-location-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useLanguage } from "@/lib/language-context"
+import { cn } from "@/lib/utils"
 
 interface Project {
     _id: string
@@ -24,7 +25,6 @@ interface Project {
     status: "active" | "completed" | "on-hold" | "planning"
     startDate: string
     endDate: string
-    budget: number
     manager: { name: string; email: string } | null
     progress: number
     description?: string
@@ -38,8 +38,6 @@ const statusColors: Record<string, string> = {
     planning: "bg-secondary/20 text-secondary border-secondary/30",
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
 export default function ProjectDetailsPage() {
     const { id } = useParams()
     const router = useRouter()
@@ -48,19 +46,19 @@ export default function ProjectDetailsPage() {
     const [history, setHistory] = useState<any[]>([])
     const [team, setTeam] = useState<any[]>([])
     const [weather, setWeather] = useState<any>(null)
+    const { t, language } = useLanguage()
+    const isRTL = language === "ar"
 
     // Actions State
     const [statusDialogOpen, setStatusDialogOpen] = useState(false)
     const [locationDialogOpen, setLocationDialogOpen] = useState(false)
-    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
     const fetchProject = async () => {
         try {
             const res = await api.get(`/projects/${id}`)
             if (res.data.success) {
-                console.log("PROJECT DATA RECEIVED:", res.data.data) // Debug log
                 setProject(res.data.data)
-                // Prefer coordinates if available, otherwise geocode string
                 if (res.data.data.coordinates && res.data.data.coordinates.lat) {
                     fetchWeatherByCoords(res.data.data.coordinates.lat, res.data.data.coordinates.lng)
                 } else if (res.data.data.location) {
@@ -101,9 +99,7 @@ export default function ProjectDetailsPage() {
         try {
             const parts = location.split(',').map(p => p.trim());
             const city = parts[0];
-            console.log("Fetching weather for:", city);
 
-            // Helper to fetch coordinates
             const getCoords = async (query: string) => {
                 if (!query) return null;
                 const res = await fetch(
@@ -113,28 +109,20 @@ export default function ProjectDetailsPage() {
                 return data.results?.[0]
             }
 
-            // Attempt 1: Exact match of first part
             let result = await getCoords(city)
 
-            // Attempt 2: Normalize first part
             if (!result) {
                 const normalizedCity = city.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 if (normalizedCity !== city) {
-                    console.log("Retrying with normalized name:", normalizedCity)
                     result = await getCoords(normalizedCity)
                 }
             }
 
-            // Attempt 3: Try second part (Region/Governorate) e.g. "Sousse" from "Kalaa Kebira, Sousse"
             if (!result && parts.length > 1) {
-                const region = parts[1];
-                console.log("City not found, trying region:", region);
-                result = await getCoords(region);
+                result = await getCoords(parts[1]);
             }
 
-            // Attempt 4: Top-level fallback (Tunis)
             if (!result) {
-                console.warn("Location not found, defaulting to Tunis")
                 result = await getCoords("Tunis")
             }
 
@@ -142,14 +130,12 @@ export default function ProjectDetailsPage() {
 
             const { latitude, longitude } = result
 
-            // Step 2: Fetch weather data using coordinates
             const weatherRes = await fetch(
                 `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`
             )
             const weatherData = await weatherRes.json()
 
             if (weatherData.current) {
-                // Map weather codes to conditions
                 const weatherCode = weatherData.current.weather_code
                 let condition = 'Clear'
                 if (weatherCode >= 61 && weatherCode <= 67) condition = 'Rainy'
@@ -176,7 +162,7 @@ export default function ProjectDetailsPage() {
             fetchHistory()
             fetchTeam()
         }
-    }, [id, router])
+    }, [id])
 
     const fetchWeatherByCoords = async (lat: number, lng: number) => {
         try {
@@ -206,25 +192,18 @@ export default function ProjectDetailsPage() {
         }
     }
 
-    const handleArchive = async () => {
+    const handleDelete = async () => {
         if (!project) return
         try {
             const res = await api.delete(`/projects/${project._id}`)
             if (res.data.success) {
-                toast.success("Project archived successfully")
+                toast.success(t("projects.delete_success") || "Project deleted successfully")
                 router.push("/admin/projects")
             }
         } catch (error: any) {
-            toast.error(error.message || "Failed to archive project")
+            toast.error(error.message || "Failed to delete project")
         }
     }
-
-    // Task Analytics Data
-    const taskData = project?.tasks ? [
-        { name: 'Completed', value: project.tasks.filter(t => t.status === 'Completed').length },
-        { name: 'In Progress', value: project.tasks.filter(t => t.status === 'In Progress').length },
-        { name: 'Not Started', value: project.tasks.filter(t => t.status === 'Not Started').length },
-    ].filter(d => d.value > 0) : [];
 
     if (isLoading) {
         return <div className="flex h-96 items-center justify-center">Loading...</div>
@@ -235,123 +214,110 @@ export default function ProjectDetailsPage() {
     return (
         <div className="space-y-6">
             {/* Header with Stats & Weather */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex items-start gap-4">
+            <div className={cn("flex flex-col gap-4 md:flex-row md:items-start md:justify-between", isRTL && "md:flex-row-reverse")}>
+                <div className={cn("flex items-start gap-4", isRTL && "flex-row-reverse")}>
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowLeft className={cn("h-4 w-4", isRTL && "rotate-180")} />
                     </Button>
-                    <div>
-                        <div className="flex items-center gap-3">
+                    <div className={isRTL ? "text-right" : "text-left"}>
+                        <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
                             <h1 className="font-display text-3xl font-bold tracking-tight">{project.name}</h1>
                         </div>
                         <div className="flex flex-col gap-1 mt-1 group cursor-pointer" onClick={() => setLocationDialogOpen(true)}>
-                            <div className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                            <div className={cn("flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors", isRTL && "flex-row-reverse")}>
                                 <MapPin className="h-4 w-4" />
                                 <span>{project.location}</span>
                                 <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                            {project.coordinates && (
-                                <p className="text-xs text-muted-foreground/60 ml-6 font-mono">
-                                    {project.coordinates.lat.toFixed(6)}, {project.coordinates.lng.toFixed(6)}
-                                </p>
-                            )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                     {weather && (
                         <Card className="bg-primary/5 border-primary/10 shadow-sm">
-                            <CardContent className="p-3 flex items-center gap-3">
+                            <CardContent className={cn("p-3 flex items-center gap-3", isRTL && "flex-row-reverse")}>
                                 <CloudSun className="h-8 w-8 text-primary" />
-                                <div>
+                                <div className={isRTL ? "text-right" : "text-left"}>
                                     <p className="text-lg font-bold text-primary">{weather.temp}°C</p>
                                     <p className="text-xs text-muted-foreground">{weather.condition}</p>
                                 </div>
                             </CardContent>
                         </Card>
                     )}
-                    <div className="flex gap-2">
+                    <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
                         <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Update Status
+                            <Pencil className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                            {t("projects.update_status") || "Update Status"}
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setArchiveDialogOpen(true)}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Archive
+                        <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+                            <Trash2 className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                            {t("common.delete") || "Delete"}
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className={cn("grid gap-6 md:grid-cols-3", isRTL && "md:grid-flow-col-dense")}>
                 {/* Main Content Column */}
-                <div className="md:col-span-2 space-y-6">
+                <div className={cn("md:col-span-2 space-y-6", isRTL && "md:col-start-2")}>
                     {/* Overview Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Project Overview</CardTitle>
+                    <Card className={isRTL ? "text-right" : "text-left"}>
+                        <CardHeader className={cn(isRTL && "flex-row-reverse")}>
+                            <CardTitle>{t("projects.overview_title") || "Project Overview"}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className={cn("grid grid-cols-2 gap-6", isRTL && "flex-row-reverse")}>
                                 <div className="space-y-1">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                        <User className="h-4 w-4" /> Manager
+                                    <span className={cn("text-sm text-muted-foreground flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                        <User className="h-4 w-4" /> {t("projects.manager") || "Manager"}
                                     </span>
-                                    <div className="flex items-center gap-2">
+                                    <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
                                             {project.manager?.name?.substring(0, 2).toUpperCase() || "NA"}
                                         </div>
                                         <div>
-                                            <p className="font-medium text-sm">{project.manager?.name || "Unassigned"}</p>
+                                            <p className="font-medium text-sm">{project.manager?.name || t("common.unassigned") || "Unassigned"}</p>
                                             <p className="text-xs text-muted-foreground">{project.manager?.email}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                        <Banknote className="h-4 w-4" /> Budget
-                                    </span>
-                                    <p className="font-display text-xl font-bold">{project.budget?.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">TND</span></p>
-                                </div>
-                            </div>
-                            <Separator />
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                        <Calendar className="h-4 w-4" /> Timeline
+                                    <span className={cn("text-sm text-muted-foreground flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                        <Calendar className="h-4 w-4" /> {t("projects.timeline") || "Timeline"}
                                     </span>
                                     <p className="font-medium">{new Date(project.startDate).toLocaleDateString()}  →  {new Date(project.endDate).toLocaleDateString()}</p>
                                 </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Completion</span>
-                                        <span className="font-medium text-primary">{project.progress || 0}%</span>
-                                    </div>
-                                    <Progress value={project.progress || 0} className="h-2" />
+                            </div>
+                            <Separator />
+                            <div className="space-y-2">
+                                <div className={cn("flex justify-between items-center text-sm", isRTL && "flex-row-reverse")}>
+                                    <span className="text-muted-foreground">{t("projects.completion") || "Completion"}</span>
+                                    <span className="font-medium text-primary">{project.progress || 0}%</span>
                                 </div>
+                                <Progress value={project.progress || 0} className="h-2" />
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Team Members */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                    <Card className={isRTL ? "text-right" : "text-left"}>
+                        <CardHeader className={cn(isRTL && "flex-row-reverse")}>
+                            <CardTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                                 <Users className="h-5 w-5 text-primary" />
-                                Project Team
+                                {t("projects.team") || "Project Team"}
                             </CardTitle>
-                            <CardDescription>Active workers currently assigned to this site.</CardDescription>
+                            <CardDescription>{t("projects.team_desc") || "Active workers currently assigned to this site."}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {team.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-                                    No workers currently scheduled.
+                                    {t("projects.no_workers") || "No workers currently scheduled."}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     {team.map((worker: any) => (
-                                        <div key={worker._id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                                        <div key={worker._id} className={cn("flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors", isRTL && "flex-row-reverse")}>
                                             <Avatar>
                                                 <AvatarFallback className="bg-primary/10 text-primary">
                                                     {worker.name.charAt(0)}
@@ -369,23 +335,25 @@ export default function ProjectDetailsPage() {
                     </Card>
 
                     {/* History */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                    <Card className={isRTL ? "text-right" : "text-left"}>
+                        <CardHeader className={cn(isRTL && "flex-row-reverse")}>
+                            <CardTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                                 <History className="h-5 w-5 text-muted-foreground" />
-                                Activity Log
+                                {t("common.activity_log") || "Activity Log"}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-6 relative pl-4 border-l-2 border-muted ml-2">
+                            <div className={cn("space-y-6 relative ml-2", isRTL ? "pr-4 border-r-2 border-muted" : "pl-4 border-l-2 border-muted ")}>
                                 {history.length === 0 ? (
-                                    <div className="text-sm text-muted-foreground pl-4">No recent activity.</div>
+                                    <div className={cn("text-sm text-muted-foreground", isRTL ? "pr-4" : "pl-4")}>
+                                        {t("common.no_activity") || "No recent activity."}
+                                    </div>
                                 ) : (
                                     history.slice(0, 5).map((log: any) => (
-                                        <div key={log._id} className="relative pl-4">
-                                            <div className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-background border-2 border-primary" />
+                                        <div key={log._id} className="relative">
+                                            <div className={cn("absolute top-1 h-3 w-3 rounded-full bg-background border-2 border-primary", isRTL ? "-right-[25px]" : "-left-[25px]")} />
                                             <p className="text-sm font-medium">
-                                                <span className="capitalize">{log.action}</span> by <span className="text-primary">{log.userId?.name || "System"}</span>
+                                                <span className="capitalize">{log.action}</span> {t("common.by") || "by"} <span className="text-primary">{log.userId?.name || "System"}</span>
                                             </p>
                                             <p className="text-xs text-muted-foreground mt-0.5">
                                                 {new Date(log.createdAt).toLocaleString()}
@@ -400,52 +368,17 @@ export default function ProjectDetailsPage() {
 
                 {/* Sidebar Column */}
                 <div className="space-y-6">
-                    {/* Task Analytics Chart */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <PieChartIcon className="h-5 w-5 text-primary" />
-                                Task Distribution
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[250px]">
-                            {taskData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={taskData}
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {taskData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                                    No tasks to analyze
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Quick Stats</CardTitle>
+                    <Card className={isRTL ? "text-right" : "text-left"}>
+                        <CardHeader className={cn(isRTL && "flex-row-reverse")}>
+                            <CardTitle>{t("common.quick_stats") || "Quick Stats"}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
-                                <p className="text-sm text-muted-foreground mb-1">Total Tasks</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t("projects.total_tasks") || "Total Tasks"}</p>
                                 <p className="text-3xl font-bold text-primary">{project.tasks?.length || 0}</p>
                             </div>
                             <div className="p-4 bg-muted/40 rounded-lg">
-                                <p className="text-sm text-muted-foreground mb-1">Team Size</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t("projects.team_size") || "Team Size"}</p>
                                 <p className="text-2xl font-bold">{team.length}</p>
                             </div>
                         </CardContent>
@@ -463,20 +396,21 @@ export default function ProjectDetailsPage() {
                 }}
             />
 
-            <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the project
-                            <span className="font-semibold"> {project.name} </span>
-                            and remove all associated data.
+                        <AlertDialogTitle className={isRTL ? "text-right" : ""}>
+                            {t("projects.delete_confirm_title") || "Are you absolutely sure?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className={isRTL ? "text-right" : ""}>
+                            {t("projects.delete_confirm_desc") || "This action cannot be undone. This will permanently delete the project and remove all associated data."}
+                            <span className="font-bold block mt-2 text-primary">{project.name}</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleArchive} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Archive Project
+                    <AlertDialogFooter className={isRTL ? "flex-row-reverse gap-2" : ""}>
+                        <AlertDialogCancel>{t("common.cancel") || "Cancel"}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("common.delete") || "Delete Project"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -491,6 +425,7 @@ export default function ProjectDetailsPage() {
         </div>
     )
 }
+
 
 // Add fetchWeatherByCoords helper inside component
 // ... (Actually, I need to insert it inside the component body, not here at the end)
