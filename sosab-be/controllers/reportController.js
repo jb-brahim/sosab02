@@ -29,10 +29,10 @@ exports.generateReport = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check permissions: If not Admin, must be manager of the project
-  const isAdmin = req.user.role === 'Admin' || req.user.role === 'admin';
+  // Check permissions: If not Admin or Gérant, must be manager of the project
+  const isAdminOrGerant = req.user.role === 'Admin' || req.user.role === 'admin' || req.user.role === 'Gérant';
   const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
-  if (!isAdmin && !isManager) {
+  if (!isAdminOrGerant && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to generate reports for this project'
@@ -582,7 +582,7 @@ exports.getReport = asyncHandler(async (req, res) => {
   if (week) query.week = week;
   if (type) query.type = type;
 
-  if (req.user.role !== 'Admin') {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     const managedProjects = await Project.find({ managers: req.user._id });
     const managedProjectIds = managedProjects.map(p => p._id);
     if (query.projectId) {
@@ -616,12 +616,12 @@ exports.deleteReport = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Report not found' });
   }
 
-  // Check permissions: Admin, Project Manager, or Report Creator
-  const isAdmin = req.user.role === 'Admin';
+  // Check permissions: Admin, Gérant, Project Manager, or Report Creator
+  const isAdminOrGerant = req.user.role === 'Admin' || req.user.role === 'Gérant';
   const isCreator = report.generatedBy && report.generatedBy.toString() === req.user._id.toString();
   const isManager = report.projectId && report.projectId.managers && report.projectId.managers.some(m => m.toString() === req.user._id.toString());
 
-  if (!isAdmin && !isCreator && !isManager) {
+  if (!isAdminOrGerant && !isCreator && !isManager) {
     return res.status(403).json({ success: false, message: 'Not authorized to delete reports' });
   }
 

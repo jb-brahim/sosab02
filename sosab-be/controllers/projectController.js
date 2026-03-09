@@ -108,9 +108,9 @@ exports.updateProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access
+  // Check access: Admin and Gérant can update any project; PM must be a manager
   const isManager = project.managers.some(m => m.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to update this project'
@@ -156,12 +156,11 @@ exports.updateProject = asyncHandler(async (req, res) => {
 // @route   DELETE /api/projects/:id
 // @access  Private/Admin
 exports.deleteProject = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
-
-  if (!project) {
-    return res.status(404).json({
+  // Check access: Only Admin and Gérant can hard delete projects
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
+    return res.status(403).json({
       success: false,
-      message: 'Project not found'
+      message: 'Not authorized to delete projects'
     });
   }
 
@@ -187,9 +186,9 @@ exports.getProjectHistory = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access
+  // Check access: Admin and Gérant can see any project history; PM must be a manager
   const isManager = project.managers.some(m => m.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view this project history'

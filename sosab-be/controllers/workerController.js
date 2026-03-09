@@ -18,9 +18,9 @@ exports.addWorker = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check strict authorization: Only Project Manager of THIS project or Admin can add worker
+  // Check strict authorization: Only Project Manager of THIS project, Admin or Gérant can add worker
   const isManager = project.managers && project.managers.some(id => id.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to add workers to this project'
@@ -137,9 +137,9 @@ exports.updateWorker = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check authorization
+  // Check authorization: Admin and Gérant can update any worker; PM must be a manager
   const isManager = worker.projectId.managers && worker.projectId.managers.some(id => id.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && !isManager) {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to update this worker'
@@ -183,21 +183,19 @@ exports.deleteWorker = asyncHandler(async (req, res) => {
     }
 
     // Check access
-    // If worker is assigned to a project, check if user is manager of that project
-    if (worker.projectId) {
-      const isManager = worker.projectId.managers && worker.projectId.managers.some(id => id.toString() === req.user._id.toString());
-      if (req.user.role !== 'Admin' && !isManager) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to delete this worker'
-        });
-      }
-    } else {
-      // If worker is not assigned to any project, only Admin can delete? 
-      // Or maybe just let it slide if checks pass. 
-      // Let's enforce Admin only for unassigned workers if we want strictness, 
-      // but usually existing logic implies manager check is only for assigned ones.
-      if (req.user.role !== 'Admin') {
+    // Gérant and Admin can delete any worker
+    if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
+      // If worker is assigned to a project, check if user is manager of that project
+      if (worker.projectId) {
+        const isManager = worker.projectId.managers && worker.projectId.managers.some(id => id.toString() === req.user._id.toString());
+        if (!isManager) {
+          return res.status(403).json({
+            success: false,
+            message: 'Not authorized to delete this worker'
+          });
+        }
+      } else {
+        // If worker is not assigned to any project, only Admin/Gérant can delete
         return res.status(403).json({
           success: false,
           message: 'Not authorized to delete unassigned worker'
