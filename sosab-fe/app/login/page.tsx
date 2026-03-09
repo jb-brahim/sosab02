@@ -78,7 +78,7 @@ export default function LoginPage() {
             {error && (
               <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
+                <span>{error}</span>
               </div>
             )}
 
@@ -125,10 +125,10 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  <span>Signing in...</span>
                 </>
               ) : (
-                "Sign In"
+                <span>Sign In</span>
               )}
             </Button>
           </form>

@@ -84,7 +84,7 @@ export default function WorkersPage() {
                                 {projects.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
-                                            No active projects found.
+                                            <span>No active projects found.</span>
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -128,7 +128,7 @@ export default function WorkersPage() {
                                                     }}
                                                 >
                                                     <Users className="h-4 w-4 mr-2" />
-                                                    View Workers
+                                                    <span>View Workers</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
