@@ -502,6 +502,8 @@ exports.generateReport = asyncHandler(async (req, res) => {
       const subcontractors = projectWorkers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
       const directWorkers = projectWorkers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
 
+      const projectGroups = [];
+
       if (directWorkers.length > 0) {
         const { payments, groupTotal } = await processPayments(directWorkers);
         groups.push({
@@ -511,6 +513,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
           projectName: project.name
         });
         projectTotal += groupTotal;
+        projectGroups.push({ name: 'Équipe Directe', total: groupTotal });
       }
 
       for (const sub of subcontractors) {
@@ -524,11 +527,13 @@ exports.generateReport = asyncHandler(async (req, res) => {
           projectName: project.name
         });
         projectTotal += groupTotal;
+        projectGroups.push({ name: sub.name, total: groupTotal });
       }
 
       projectSummaries.push({
         name: project.name,
-        total: projectTotal
+        total: projectTotal,
+        groups: projectGroups
       });
       grandTotalPayment += projectTotal;
     }
