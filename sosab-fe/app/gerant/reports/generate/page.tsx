@@ -152,7 +152,7 @@ export default function GerantGenerateReportPage() {
                                 value={formData.projectId}
                                 onValueChange={(val) => setFormData({ ...formData, projectId: val })}
                             >
-                                <SelectTrigger className="h-14 text-base bg-background border-white/10 rounded-xl">
+                                <SelectTrigger className="min-h-14 h-auto text-base bg-background border-white/10 rounded-xl">
                                     <SelectValue placeholder={t("reports.select_project")} />
                                 </SelectTrigger>
                                 <SelectContent>
