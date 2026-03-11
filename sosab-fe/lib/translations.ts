@@ -222,6 +222,7 @@ export const translations = {
             delivery_timeline: "الجدول الزمني للتوصيل",
             entries_plural: "مدخلات",
             logged_by: "تم التسجيل بواسطة",
+            delivery_note_label: "N° Bon Livraison (Optionnel)",
         },
         stock: {
             title: "المخزون",
@@ -515,6 +516,7 @@ export const translations = {
             delivery_timeline: "Chronologie des Livraisons",
             entries_plural: "ENTRÉES",
             logged_by: "Enregistré par",
+            delivery_note_label: "N° Bon Livraison (Optionnel)",
         },
         stock: {
             title: "Stock",

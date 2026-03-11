@@ -279,7 +279,7 @@ export default function MaterialDetailsPage() {
                                             {log.bonLivraison && (
                                                 <div className="col-span-2 space-y-1">
                                                     <div className="text-[9px] uppercase font-black text-muted-foreground/50 flex items-center gap-1">
-                                                        <FileText className="w-2.5 h-2.5" /> N° Bon de Livraison
+                                                        <FileText className="w-2.5 h-2.5" /> {t("materials.delivery_note_label")}
                                                     </div>
                                                     <div className="text-[11px] font-bold font-mono">{log.bonLivraison}</div>
                                                 </div>
@@ -404,7 +404,7 @@ export default function MaterialDetailsPage() {
                             </div>
                             {/* Bon de Livraison */}
                             <div className="space-y-1">
-                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">N° Bon de Livraison</Label>
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.delivery_note_label")}</Label>
                                 <Input
                                     value={logEditForm.bonLivraison}
                                     onChange={e => setLogEditForm({ ...logEditForm, bonLivraison: e.target.value })}

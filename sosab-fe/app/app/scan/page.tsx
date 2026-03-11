@@ -442,7 +442,7 @@ export default function ScanPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">N° Bon de Livraison</Label>
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t("materials.delivery_note_label")}</Label>
                   <Input
                     className="bg-background h-11 border-border/50 text-sm"
                     placeholder="Ex: BL-2024-0123"
