@@ -4,8 +4,12 @@ const reportSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: [true, 'Project is required']
+    required: false
   },
+  projectIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
+  }],
   type: {
     type: String,
     required: [true, 'Report type is required'],

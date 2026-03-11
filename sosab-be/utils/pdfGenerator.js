@@ -687,6 +687,35 @@ exports.generatePaymentReportHTML = (data) => {
     .page-break:last-child { page-break-after: auto; }
     .footer { margin-top: 40px; display: flex; justify-content: space-around; font-size: 12px; font-weight: bold; }
     .footer div { flex: 1; text-align: center; border-top: 1px solid #333; padding-top: 10px; }
+    
+    /* Recap Styles */
+    .recap-container { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100%; 
+      padding-top: 50px;
+    }
+    .recap-table { 
+      width: 70%; 
+      border: 3px solid #1e293b; 
+    }
+    .recap-table th, .recap-table td { 
+      padding: 20px; 
+      font-size: 16px; 
+    }
+    .recap-table th { 
+      font-size: 18px; 
+    }
+    .recap-title { 
+      font-size: 32px; 
+      font-weight: 900; 
+      margin-bottom: 40px; 
+      color: #1e293b; 
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
@@ -694,10 +723,11 @@ exports.generatePaymentReportHTML = (data) => {
   ${data.groups.map(group => `
     <div class="page-break">
       <div class="header">
-        <h1>POINTAGE CHANTIER: ${project.name}</h1>
+        <h1>POINTAGE CHANTIER: ${group.projectName || project.name}</h1>
         <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
         <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 16px;">
           ${group.subcontractor ? `SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})` : 'EQUIPE DIRECTE'}
+          ${data.projectSummaries ? ` - <span style="color: #2563EB;">[${group.projectName}]</span>` : ''}
         </h3>
       </div>
       
@@ -740,35 +770,44 @@ exports.generatePaymentReportHTML = (data) => {
     </div>
   `).join('')}
   
-  ${data.groups.length > 1 ? `
-    <div class="page-break" style="page-break-before: auto;">
-      <div class="header" style="border-bottom: 2px solid #1e293b;">
-        <h1>RESUME GLOBAL DE PAIEMENT</h1>
-        <h2>PROJET: ${project.name} - ${headerLabel}</h2>
-      </div>
-      <div style="margin: 0 auto; width: 60%;">
-        <table style="width: 100%; border: 2px solid #1e293b;">
+  ${data.projectSummaries ? `
+    <div class="page-break" style="page-break-before: always;">
+      <div class="recap-container">
+        <h1 class="recap-title">RÉCAPITULATIF GLOBAL DES PAIEMENTS</h1>
+        <h2 style="margin-bottom: 20px; color: #64748b;">${headerLabel}</h2>
+        
+        <table class="recap-table">
           <thead>
             <tr>
-              <th>GROUPE / SOUS-TRAITANT</th>
-              <th>TOTAL NET A PAYER</th>
+              <th style="width: 60%; text-align: left; padding-left: 30px;">CHANTIER (PROJET)</th>
+              <th style="width: 40%;">TOTAL NET À PAYER</th>
             </tr>
           </thead>
           <tbody>
-            ${data.groups.map(g => `
+            ${data.projectSummaries.map(p => `
               <tr>
-                <td style="text-align: left; padding-left: 20px; font-weight: bold;">
-                  ${g.subcontractor ? g.subcontractor.name : 'EQUIPE DIRECTE'}
+                <td style="text-align: left; padding-left: 30px; font-weight: bold; color: #1e293b;">
+                  ${p.name}
                 </td>
-                <td class="currency" style="font-size: 14px;">${formatTND(g.totalPayment)}</td>
+                <td class="currency" style="font-size: 18px; color: #10b981;">
+                  ${formatTND(p.total)} د.ت
+                </td>
               </tr>
             `).join('')}
-            <tr class="total-row" style="background: #dcfce7;">
-              <td style="text-align: right; padding-right: 20px; font-size: 16px;">TOTAL GENERAL</td>
-              <td class="grand-total" style="font-size: 20px;">${formatTND(data.totalPayment)}</td>
+            <tr style="background-color: #1e293b; color: white;">
+              <td style="text-align: right; padding-right: 30px; font-size: 22px; font-weight: 800;">
+                TOTAL GÉNÉRAL
+              </td>
+              <td style="font-size: 26px; font-weight: 900; color: #10b981;">
+                ${formatTND(data.totalPayment)} د.ت
+              </td>
             </tr>
           </tbody>
         </table>
+        
+        <div style="margin-top: 60px; font-style: italic; color: #94a3b8; font-size: 14px;">
+          Document généré automatiquement par SOSAB - ${formatDateTN(new Date())}
+        </div>
       </div>
     </div>
   ` : ''}

@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useLanguage } from "@/lib/language-context"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 export default function GenerateReportPage() {
     const { t } = useLanguage()
@@ -21,7 +22,7 @@ export default function GenerateReportPage() {
     const [generating, setGenerating] = useState(false)
 
     const [formData, setFormData] = useState({
-        projectId: "",
+        projectIds: [] as string[],
         type: "attendance",
         startDate: "",
         endDate: "",
@@ -48,7 +49,7 @@ export default function GenerateReportPage() {
 
     const handleGenerate = async () => {
         // Validation
-        if (!formData.projectId) {
+        if (formData.projectIds.length === 0) {
             toast.error(t("reports.select_project"))
             return
         }
@@ -75,7 +76,10 @@ export default function GenerateReportPage() {
 
         try {
             setGenerating(true)
-            const res = await api.post('/reports/generate', formData)
+            const res = await api.post('/reports/generate', {
+                ...formData,
+                projectId: formData.projectIds[0], // Keep for backward compat if any logic needs it, but backend uses projectIds
+            })
 
             if (res.data.success) {
                 toast.success(`${formData.type === 'attendance' ? t("reports.attendance_grid") : t("reports.payment_summary")} ${t("materials.arrival_success")}`)
@@ -118,21 +122,12 @@ export default function GenerateReportPage() {
                     {/* Project Selection */}
                     <div className="space-y-2">
                         <Label htmlFor="project">{t("materials.site_label")}</Label>
-                        <Select
-                            value={formData.projectId}
-                            onValueChange={(value) => setFormData({ ...formData, projectId: value })}
-                        >
-                            <SelectTrigger id="project">
-                                <SelectValue placeholder={t("reports.select_project")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {projects.map((project) => (
-                                    <SelectItem key={project._id} value={project._id}>
-                                        {project.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <MultiSelect
+                            options={projects.map(p => ({ label: p.name, value: p._id }))}
+                            selected={formData.projectIds}
+                            onChange={(vals) => setFormData({ ...formData, projectIds: vals })}
+                            placeholder={t("reports.select_project")}
+                        />
                     </div>
 
                     {/* Report Type */}
@@ -206,7 +201,7 @@ export default function GenerateReportPage() {
                     {/* Generate Button */}
                     <Button
                         onClick={handleGenerate}
-                        disabled={generating || loading}
+                        disabled={generating || loading || formData.projectIds.length === 0}
                         className="w-full"
                         size="lg"
                     >

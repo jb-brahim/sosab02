@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation"
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, format } from "date-fns"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 export default function GerantGenerateReportPage() {
     const { t } = useLanguage()
@@ -33,7 +34,7 @@ export default function GerantGenerateReportPage() {
     const [generating, setGenerating] = useState(false)
 
     const [formData, setFormData] = useState({
-        projectId: "",
+        projectIds: [] as string[],
         type: "attendance",
         startDate: "",
         endDate: "",
@@ -50,7 +51,7 @@ export default function GerantGenerateReportPage() {
                 if (res.data.success) {
                     setProjects(res.data.data)
                     if (res.data.data.length > 0) {
-                        setFormData(prev => ({ ...prev, projectId: res.data.data[0]._id }))
+                        setFormData(prev => ({ ...prev, projectIds: [res.data.data[0]._id] }))
                     }
                 }
             } catch (error) {
@@ -96,7 +97,7 @@ export default function GerantGenerateReportPage() {
     }, [dateRangeType])
 
     const handleGenerate = async () => {
-        if (!formData.projectId) {
+        if (formData.projectIds.length === 0) {
             toast.error(t("reports.select_project") || "Please select a project")
             return
         }
@@ -148,19 +149,13 @@ export default function GerantGenerateReportPage() {
                     </div>
                     <Card className="border-white/5 bg-muted/20">
                         <CardContent className="p-4">
-                            <Select
-                                value={formData.projectId}
-                                onValueChange={(val) => setFormData({ ...formData, projectId: val })}
-                            >
-                                <SelectTrigger className="min-h-14 h-auto text-base bg-background border-white/10 rounded-xl">
-                                    <SelectValue placeholder={t("reports.select_project")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {projects.map(p => (
-                                        <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <MultiSelect
+                                options={projects.map(p => ({ label: p.name, value: p._id }))}
+                                selected={formData.projectIds}
+                                onChange={(vals) => setFormData({ ...formData, projectIds: vals })}
+                                placeholder={t("reports.select_project")}
+                                className="min-h-14 h-auto text-base bg-background border-white/10 rounded-xl"
+                            />
                         </CardContent>
                     </Card>
                 </section>
@@ -303,7 +298,7 @@ export default function GerantGenerateReportPage() {
                 </div>
                 <Button
                     onClick={handleGenerate}
-                    disabled={generating || !formData.projectId}
+                    disabled={generating || formData.projectIds.length === 0}
                     className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20"
                     size="lg"
                 >

@@ -16,28 +16,50 @@ const fs = require('fs').promises;
 // @route   POST /api/reports/generate
 // @access  Private
 exports.generateReport = asyncHandler(async (req, res) => {
-  const { projectId, type, week, startDate, endDate, format = 'pdf' } = req.body;
+  const { projectId, projectIds, type, week, startDate, endDate, format = 'pdf' } = req.body;
 
-  console.log('[Report Generation] Request received:', { projectId, type, week, startDate, endDate });
+  // Use projectIds if provided, otherwise fallback to projectId wrapped in array
+  const selectedProjectIds = projectIds || (projectId ? [projectId] : []);
 
-  // Verify project
-  const project = await Project.findById(projectId);
-  if (!project) {
+  if (selectedProjectIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please select at least one project'
+    });
+  }
+
+  console.log('[Report Generation] Request received:', { selectedProjectIds, type, week, startDate, endDate });
+
+  // Verify projects
+  const projects = await Project.find({ _id: { $in: selectedProjectIds } });
+  if (projects.length !== selectedProjectIds.length) {
     return res.status(404).json({
       success: false,
-      message: 'Project not found'
+      message: 'One or more projects not found'
     });
   }
 
-  // Check permissions: If not Admin or Gérant, must be manager of the project
+  // Check permissions: If not Admin or Gérant, must be manager of ALL projects
   const isAdminOrGerant = req.user.role === 'Admin' || req.user.role === 'admin' || req.user.role === 'Gérant';
-  const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
-  if (!isAdminOrGerant && !isManager) {
-    return res.status(403).json({
-      success: false,
-      message: 'Not authorized to generate reports for this project'
-    });
+
+  if (!isAdminOrGerant) {
+    for (const project of projects) {
+      const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+      if (!isManager) {
+        return res.status(403).json({
+          success: false,
+          message: `Not authorized to generate reports for project: ${project.name}`
+        });
+      }
+    }
   }
+
+  // Use the first project as a primary reference for metadata if needed, 
+  // or define a combined project name
+  const primaryProject = projects[0];
+  const combinedProjectName = projects.length > 1
+    ? `${primaryProject.name} + ${projects.length - 1} more`
+    : primaryProject.name;
 
   let start, end;
   let dateLabel;
@@ -155,7 +177,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // DECISION: For 'salary' type with custom dates, if we can't be accurate, we return error or empty.
     // However, let's try to support checking 'Salary' model for weeks.
 
-    const workers = await Worker.find({ projectId, active: true });
+    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true });
     const salaryData = [];
 
     // If weekly mode or loose matching
@@ -194,7 +216,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // IF WEEK IS PROVIDED, use old robust logic
     if (week) {
       // ... existing logic ...
-      const workers = await Worker.find({ projectId, active: true });
+      const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true });
       const realSalaryData = [];
       for (const worker of workers) {
         const salary = await Salary.findOne({ workerId: worker._id, week: week });
@@ -210,18 +232,18 @@ exports.generateReport = asyncHandler(async (req, res) => {
           });
         }
       }
-      reportData = { project, headerLabel: dateLabel, workers: realSalaryData, totalSalary: realSalaryData.reduce((s, w) => s + w.total, 0) };
+      reportData = { project: primaryProject, projects, headerLabel: dateLabel, workers: realSalaryData, totalSalary: realSalaryData.reduce((s, w) => s + w.total, 0) };
       htmlContent = generateSalaryReportHTML(reportData);
     } else {
       // Custom range salary - currently placeholder/empty to prevent crash
-      reportData = { project, headerLabel: dateLabel, workers: [], totalSalary: 0 };
+      reportData = { project: primaryProject, projects, headerLabel: dateLabel, workers: [], totalSalary: 0 };
       // We'll insert a note in HTML says "Salary detail valid for full weeks only"
       htmlContent = generateSalaryReportHTML(reportData);
     }
 
   } else if (type === 'material') {
     // Generate material report - ACCURATE for any range
-    const materials = await Material.find({ projectId });
+    const materials = await Material.find({ projectId: { $in: selectedProjectIds } });
     const materialData = [];
     const movementLogs = [];
 
@@ -262,17 +284,18 @@ exports.generateReport = asyncHandler(async (req, res) => {
       });
     }
 
-    reportData = { project, headerLabel: dateLabel, materials: materialData, movements: movementLogs.sort((a, b) => a.date - b.date) };
+    reportData = { project: primaryProject, projects, headerLabel: dateLabel, materials: materialData, movements: movementLogs.sort((a, b) => a.date - b.date) };
 
     if (format === 'excel') {
       const outputDir = path.join(__dirname, '../uploads/reports');
       await fs.mkdir(outputDir, { recursive: true });
-      const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-material-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
+      const filename = `${combinedProjectName.replace(/[^a-z0-9]/gi, '_')}-material-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
       const outputPath = path.join(outputDir, filename);
       await generateMaterialExcel(reportData, outputPath);
 
       const report = await Report.create({
-        projectId,
+        projectId: primaryProject._id,
+        projectIds: selectedProjectIds,
         type,
         week: week || 'CUSTOM',
         startDate: start,
@@ -293,7 +316,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
   } else if (type === 'activity') {
     // Generate activity report - fetched from real DailyReports
     const dailyReports = await require('../models/DailyReport').find({
-      projectId,
+      projectId: { $in: selectedProjectIds },
       date: { $gte: start, $lte: end }
     }).populate('materialsUsed.materialId', 'name unit')
       .sort({ date: 1 });
@@ -314,7 +337,8 @@ exports.generateReport = asyncHandler(async (req, res) => {
     }
 
     reportData = {
-      project,
+      project: primaryProject,
+      projects,
       headerLabel: dateLabel,
       activities,
       generatedBy: req.user.name
@@ -323,7 +347,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'attendance') {
     // Generate attendance report
-    const workers = await Worker.find({ projectId, active: true }).sort({ name: 1 });
+    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true }).sort({ name: 1 });
     const attendanceGrid = [];
 
     // Calculate days in range for dynamic columns
@@ -395,18 +419,19 @@ exports.generateReport = asyncHandler(async (req, res) => {
       });
     }
 
-    reportData = { project, headerLabel: dateLabel, groups, rangeLabels };
+    reportData = { project: primaryProject, projects, headerLabel: dateLabel, groups, rangeLabels };
 
     if (format === 'excel') {
       // Generate Excel
       const outputDir = path.join(__dirname, '../uploads/reports');
       await fs.mkdir(outputDir, { recursive: true });
-      const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-attendance-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
+      const filename = `${combinedProjectName.replace(/[^a-z0-9]/gi, '_')}-attendance-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
       const outputPath = path.join(outputDir, filename);
       await generateAttendanceExcel(reportData, outputPath);
 
       const report = await Report.create({
-        projectId,
+        projectId: primaryProject._id,
+        projectIds: selectedProjectIds,
         type,
         week: week || 'CUSTOM',
         startDate: start,
@@ -426,13 +451,8 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'payment') {
     // Generate payment report
-    const workers = await Worker.find({ projectId, active: true }).sort({ name: 1 });
-    const workerPayments = [];
-    let totalPayment = 0;
-
+    const projectSummaries = [];
     const groups = [];
-    const subcontractors = workers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
-    const directWorkers = workers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
     let grandTotalPayment = 0;
 
     const processPayments = async (workerList) => {
@@ -472,40 +492,67 @@ exports.generateReport = asyncHandler(async (req, res) => {
       return { payments, groupTotal };
     };
 
-    if (directWorkers.length > 0) {
-      const { payments, groupTotal } = await processPayments(directWorkers);
-      groups.push({
-        subcontractor: null,
-        workers: payments,
-        totalPayment: groupTotal
+    // For multi-site recap, we need to know the total per project
+    for (const pId of selectedProjectIds) {
+      const project = projects.find(p => p._id.toString() === pId.toString()) || primaryProject;
+      const projectWorkers = await Worker.find({ projectId: pId, active: true }).sort({ name: 1 });
+
+      let projectTotal = 0;
+
+      const subcontractors = projectWorkers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
+      const directWorkers = projectWorkers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
+
+      if (directWorkers.length > 0) {
+        const { payments, groupTotal } = await processPayments(directWorkers);
+        groups.push({
+          subcontractor: null,
+          workers: payments,
+          totalPayment: groupTotal,
+          projectName: project.name
+        });
+        projectTotal += groupTotal;
+      }
+
+      for (const sub of subcontractors) {
+        const subTeam = projectWorkers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
+        const allSubWorkers = [sub, ...subTeam];
+        const { payments, groupTotal } = await processPayments(allSubWorkers);
+        groups.push({
+          subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+          workers: payments,
+          totalPayment: groupTotal,
+          projectName: project.name
+        });
+        projectTotal += groupTotal;
+      }
+
+      projectSummaries.push({
+        name: project.name,
+        total: projectTotal
       });
-      grandTotalPayment += groupTotal;
+      grandTotalPayment += projectTotal;
     }
 
-    for (const sub of subcontractors) {
-      const subTeam = workers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
-      const allSubWorkers = [sub, ...subTeam];
-      const { payments, groupTotal } = await processPayments(allSubWorkers);
-      groups.push({
-        subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
-        workers: payments,
-        totalPayment: groupTotal
-      });
-      grandTotalPayment += groupTotal;
-    }
-
-    reportData = { project, headerLabel: dateLabel, groups, totalPayment: grandTotalPayment };
+    reportData = {
+      project: primaryProject,
+      projects,
+      headerLabel: dateLabel,
+      groups,
+      totalPayment: grandTotalPayment,
+      projectSummaries: selectedProjectIds.length > 1 ? projectSummaries : null
+    };
 
     if (format === 'excel') {
       // Generate Excel
       const outputDir = path.join(__dirname, '../uploads/reports');
       await fs.mkdir(outputDir, { recursive: true });
-      const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-payment-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
+      const filename = `${combinedProjectName.replace(/[^a-z0-9]/gi, '_')}-payment-${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}-${Date.now()}.xlsx`;
       const outputPath = path.join(outputDir, filename);
       await generatePaymentExcel(reportData, outputPath);
 
       const report = await Report.create({
-        projectId,
+        projectId: primaryProject._id,
+        projectIds: selectedProjectIds,
         type,
         week: week || 'CUSTOM',
         startDate: start,
@@ -543,7 +590,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     datePart = `${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}`;
   }
   const fileExtension = format === 'excel' ? 'xlsx' : 'pdf';
-  const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-${type}-${datePart}-${Date.now()}.${fileExtension}`;
+  const filename = `${combinedProjectName.replace(/[^a-z0-9]/gi, '_')}-${type}-${datePart}-${Date.now()}.${fileExtension}`;
   const outputPath = path.join(outputDir, filename);
 
   try {
@@ -551,7 +598,8 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
     // Store report in database
     const report = await Report.create({
-      projectId,
+      projectId: primaryProject._id,
+      projectIds: selectedProjectIds,
       type,
       week: week || 'CUSTOM',
       startDate: start,
@@ -578,24 +626,33 @@ exports.getReport = asyncHandler(async (req, res) => {
   const { projectId, week, type } = req.query;
 
   let query = {};
-  if (projectId) query.projectId = projectId;
+  if (projectId) {
+    query.$or = [
+      { projectId: projectId },
+      { projectIds: projectId }
+    ];
+  }
   if (week) query.week = week;
   if (type) query.type = type;
 
   if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     const managedProjects = await Project.find({ managers: req.user._id });
     const managedProjectIds = managedProjects.map(p => p._id);
-    if (query.projectId) {
-      if (!managedProjectIds.some(id => id.toString() === query.projectId.toString())) {
+    if (projectId) {
+      if (!managedProjectIds.some(id => id.toString() === projectId.toString())) {
         return res.status(403).json({ success: false, message: 'Not authorized' });
       }
     } else {
-      query.projectId = { $in: managedProjectIds };
+      query.$or = [
+        { projectId: { $in: managedProjectIds } },
+        { projectIds: { $in: managedProjectIds } }
+      ];
     }
   }
 
   const reports = await Report.find(query)
     .populate('projectId', 'name location')
+    .populate('projectIds', 'name location')
     .populate('generatedBy', 'name email')
     .sort({ createdAt: -1 });
 
@@ -619,7 +676,11 @@ exports.deleteReport = asyncHandler(async (req, res) => {
   // Check permissions: Admin, Gérant, Project Manager, or Report Creator
   const isAdminOrGerant = req.user.role === 'Admin' || req.user.role === 'Gérant';
   const isCreator = report.generatedBy && report.generatedBy.toString() === req.user._id.toString();
-  const isManager = report.projectId && report.projectId.managers && report.projectId.managers.some(m => m.toString() === req.user._id.toString());
+
+  let isManager = false;
+  if (report.projectId && report.projectId.managers) {
+    isManager = report.projectId.managers.some(m => m.toString() === req.user._id.toString());
+  }
 
   if (!isAdminOrGerant && !isCreator && !isManager) {
     return res.status(403).json({ success: false, message: 'Not authorized to delete reports' });
