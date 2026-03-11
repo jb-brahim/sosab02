@@ -31,6 +31,13 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project'
   }],
+  pushSubscriptions: [{
+    endpoint: String,
+    keys: {
+      p256dh: String,
+      auth: String
+    }
+  }],
   active: {
     type: Boolean,
     default: true

@@ -3,7 +3,8 @@ const router = express.Router();
 const {
   getNotifications,
   markAsRead,
-  createNotification
+  createNotification,
+  subscribe
 } = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -21,6 +22,10 @@ router
 router
   .route('/')
   .post(authorize('Admin'), createNotification);
+
+router
+  .route('/subscribe')
+  .post(subscribe);
 
 module.exports = router;
 

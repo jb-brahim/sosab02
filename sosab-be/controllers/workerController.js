@@ -44,7 +44,8 @@ exports.addWorker = asyncHandler(async (req, res) => {
     ['Admin', 'Gérant'],
     'system',
     `Nouveau travailleur ajouté : ${req.user.name} a ajouté ${worker.name} (${worker.trade}) au projet ${project.name}`,
-    `/admin/projects/${project._id}`
+    `/admin/projects/${project._id}`,
+    'Nouveau Travailleur'
   );
 
   res.status(201).json({
@@ -205,6 +206,15 @@ exports.deleteWorker = asyncHandler(async (req, res) => {
 
     worker.active = false;
     await worker.save();
+
+    // Notify Admins and Gérants
+    await sendNotificationToRoles(
+      ['Admin', 'Gérant'],
+      'system',
+      `Travailleur retiré : ${req.user.name} a désactivé le travailleur ${worker.name} du projet ${worker.projectId ? worker.projectId.name : 'Non assigné'}`,
+      '/admin/workers',
+      'Travailleur Désactivé'
+    );
 
     res.status(200).json({
       success: true,

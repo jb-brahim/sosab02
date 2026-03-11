@@ -11,6 +11,10 @@ const notificationSchema = new mongoose.Schema({
     required: [true, 'Notification type is required'],
     enum: ['report', 'salary', 'material', 'task', 'attendance', 'system', 'alert']
   },
+  title: {
+    type: String,
+    default: 'Notification'
+  },
   message: {
     type: String,
     required: [true, 'Message is required']

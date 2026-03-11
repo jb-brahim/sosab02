@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/lib/language-context"
+import { PushSubscriptionManager } from "@/components/push-subscription-manager"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -46,25 +47,13 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <LanguageProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              {children}
+              <PushSubscriptionManager />
+            </AuthProvider>
             <Toaster position="top-center" />
           </LanguageProvider>
         </ThemeProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister();
-                    }
-                  });
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )

@@ -1,6 +1,44 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const asyncHandler = require('../middleware/asyncHandler');
+const webpush = require('web-push');
+
+// Configure VAPID keys
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:admin@sosab.tn',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+// Helper to send push to Gérant
+const sendPushToGerant = async (userId, title, message, link) => {
+  try {
+    const user = await User.findById(userId);
+    if (user && user.role === 'Gérant' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+      const payload = JSON.stringify({
+        title,
+        body: message,
+        link: link || '/',
+        icon: '/logo.png'
+      });
+
+      for (const sub of user.pushSubscriptions) {
+        try {
+          await webpush.sendNotification(sub, payload);
+        } catch (error) {
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            user.pushSubscriptions = user.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+            await user.save();
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Push error:', err);
+  }
+};
 
 // @desc    Get notifications for user
 // @route   GET /api/notifications/:userId
@@ -74,8 +112,12 @@ exports.createNotification = asyncHandler(async (req, res) => {
     userId,
     type,
     message,
-    link
+    link,
+    title: req.body.title || 'Notification'
   });
+
+  // Send push
+  await sendPushToGerant(userId, req.body.title || 'Notification', message, link);
 
   res.status(201).json({
     success: true,
@@ -85,7 +127,7 @@ exports.createNotification = asyncHandler(async (req, res) => {
 
 // @desc    Send notification to users with specific roles
 // @access  Internal
-exports.sendNotificationToRoles = async (roles, type, message, link) => {
+exports.sendNotificationToRoles = async (roles, type, message, link, title = 'Alerte Système') => {
   try {
     const users = await User.find({ role: { $in: roles }, active: true });
     if (users.length === 0) return;
@@ -94,11 +136,46 @@ exports.sendNotificationToRoles = async (roles, type, message, link) => {
       userId: user._id,
       type,
       message,
-      link
+      link,
+      title
     }));
 
     await Notification.insertMany(notifications);
+
+    // Send push to each user if they are Gérant
+    for (const user of users) {
+      if (user.role === 'Gérant') {
+        await sendPushToGerant(user._id, title, message, link);
+      }
+    }
   } catch (error) {
     console.error('Error sending role-based notifications:', error);
   }
 };
+
+// @desc    Subscribe to push notifications
+// @route   POST /api/notifications/subscribe
+// @access  Private
+exports.subscribe = asyncHandler(async (req, res) => {
+  const subscription = req.body;
+
+  // Find user and update subscriptions
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  // Check if subscription already exists
+  const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
+
+  if (!exists) {
+    user.pushSubscriptions.push(subscription);
+    await user.save();
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Push subscription registered'
+  });
+});

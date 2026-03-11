@@ -2,6 +2,17 @@ const Notification = require('../models/Notification');
 const Material = require('../models/Material');
 const Attendance = require('../models/Attendance');
 const Worker = require('../models/Worker');
+const User = require('../models/User');
+const webpush = require('web-push');
+
+// Configure VAPID keys
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        'mailto:admin@sosab.tn',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+}
 
 // Create notification
 exports.createNotification = async (userId, type, title, message, data = {}, link = '', priority = 'medium') => {
@@ -16,6 +27,30 @@ exports.createNotification = async (userId, type, title, message, data = {}, lin
             priority,
             read: false
         });
+
+        // Send Push Notification if Gérant
+        const user = await User.findById(userId);
+        if (user && user.role === 'Gérant' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+            const payload = JSON.stringify({
+                title,
+                body: message,
+                link: link || '/',
+                icon: '/logo.png' // Adjust based on project icon
+            });
+
+            for (const sub of user.pushSubscriptions) {
+                try {
+                    await webpush.sendNotification(sub, payload);
+                } catch (error) {
+                    console.error('Error sending push notification:', error);
+                    // Optionally remove invalid subscription
+                    if (error.statusCode === 410 || error.statusCode === 404) {
+                        user.pushSubscriptions = user.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+                        await user.save();
+                    }
+                }
+            }
+        }
 
         return notification;
     } catch (error) {
