@@ -80,15 +80,18 @@ export default function ScanPage() {
   }, [selectedProjectId])
 
   // Fetch project's existing DB materials for search suggestions
+  const fetchProjectMaterials = async (projectId: string) => {
+    if (!projectId) return
+    try {
+      const res = await api.get(`/materials/${projectId}`)
+      if (res.data.success) {
+        setDbProjectMaterials(res.data.data.map((m: any) => ({ name: m.name, unit: m.unit })))
+      }
+    } catch { }
+  }
+
   useEffect(() => {
-    if (!selectedProjectId) return
-    api.get(`/materials/${selectedProjectId}`)
-      .then(res => {
-        if (res.data.success) {
-          setDbProjectMaterials(res.data.data.map((m: any) => ({ name: m.name, unit: m.unit })))
-        }
-      })
-      .catch(() => { })
+    fetchProjectMaterials(selectedProjectId)
   }, [selectedProjectId])
 
   // Handlers
@@ -169,6 +172,8 @@ export default function ScanPage() {
         setSelectedClassification("")
         setIsCustomMaterial(false)
         setClassQuery("")
+        // Refresh the project materials list so the new material shows up in suggestions
+        fetchProjectMaterials(selectedProjectId)
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to log arrival")
