@@ -46,33 +46,37 @@ export function MultiSelect({
                     role="combobox"
                     aria-expanded={open}
                     className={cn(
-                        "w-full justify-between min-h-10 h-auto py-2",
+                        "w-full justify-between min-h-10 h-auto py-2 block",
                         className
                     )}
                 >
-                    <div className="flex flex-wrap gap-1">
-                        {selected.length > 0 ? (
-                            options
-                                .filter((option) => selected.includes(option.value))
-                                .map((option) => (
-                                    <Badge
-                                        key={option.value}
-                                        variant="secondary"
-                                        className="mr-1 mb-1"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleUnselect(option.value)
-                                        }}
-                                    >
-                                        {option.label}
-                                        <X className="ml-1 h-3 w-3 cursor-pointer" />
-                                    </Badge>
-                                ))
-                        ) : (
-                            <span className="text-muted-foreground">{placeholder}</span>
-                        )}
+                    <div className="flex flex-wrap gap-1 items-center justify-between w-full">
+                        <div className="flex flex-wrap gap-1 flex-1 overflow-hidden">
+                            {selected.length > 0 ? (
+                                options
+                                    .filter((option) => selected.includes(option.value))
+                                    .map((option) => (
+                                        <Badge
+                                            key={option.value}
+                                            variant="secondary"
+                                            className="max-w-full inline-flex items-center"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleUnselect(option.value)
+                                            }}
+                                        >
+                                            <span className="truncate text-left" style={{ maxWidth: 'calc(100vw - 150px)' }}>
+                                                {option.label}
+                                            </span>
+                                            <X className="ml-1 h-3 w-3 shrink-0 cursor-pointer" />
+                                        </Badge>
+                                    ))
+                            ) : (
+                                <span className="text-muted-foreground">{placeholder}</span>
+                            )}
+                        </div>
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
                     </div>
-                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0" align="start">
@@ -94,7 +98,7 @@ export function MultiSelect({
                                 checked={selected.includes(option.value)}
                                 onCheckedChange={() => { }} // Controlled by parent div click
                             />
-                            <span className="flex-1">{option.label}</span>
+                            <span className="flex-1 text-sm leading-tight text-left">{option.label}</span>
                         </div>
                     ))}
                     {options.length === 0 && (
