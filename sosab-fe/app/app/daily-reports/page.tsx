@@ -363,7 +363,6 @@ export default function DailyReportsPage() {
                                     <tr className="bg-muted border-b border-border shadow-sm">
                                         <th className="p-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-40">Calendrier</th>
                                         <th className="p-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Description du Travail</th>
-                                        <th className="p-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center w-32">Ouvriers</th>
                                         <th className="p-5 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right w-24">Actions</th>
                                     </tr>
                                 </thead>
@@ -406,11 +405,6 @@ export default function DailyReportsPage() {
                                                                 {expandedRows.has(log._id) ? <><ChevronUp className="w-3.5 h-3.5"/> Réduire</> : <><ChevronDown className="w-3.5 h-3.5"/> Lire la suite</>}
                                                             </button>
                                                         )}
-                                                    </div>
-                                                </td>
-                                                <td className="p-5 align-top text-center">
-                                                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-secondary font-black text-foreground shadow-inner">
-                                                        {log.workersPresent}
                                                     </div>
                                                 </td>
                                                 <td className="p-5 align-top text-right">
