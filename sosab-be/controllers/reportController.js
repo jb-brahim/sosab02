@@ -66,9 +66,9 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   if (startDate && endDate) {
     start = new Date(startDate);
+    start.setUTCHours(0, 0, 0, 0);
     end = new Date(endDate);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    end.setUTCHours(23, 59, 59, 999);
 
     // Validate dates
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
