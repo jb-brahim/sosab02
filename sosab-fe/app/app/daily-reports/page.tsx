@@ -348,94 +348,97 @@ export default function DailyReportsPage() {
                         <p className="text-xs font-medium">Aucune donnée pour cette période</p>
                     </div>
                 ) : (
-                    <div className="border border-white/5 rounded-2xl overflow-hidden bg-zinc-900/30 backdrop-blur-sm">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-zinc-800/50 border-b border-white/5">
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-32">Date</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Travaux réalisés</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center w-24">Ouvriers</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right w-24">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logs.map((log) => {
-                                    const dateStr = format(new Date(log.date), 'yyyy-MM-dd')
-                                    const isDuplicate = groupedLogs[dateStr].length > 1
-                                    
-                                    return (
-                                        <tr key={log._id} className={cn(
-                                            "border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors group",
-                                            isDuplicate && "bg-amber-500/[0.03]"
-                                        )}>
-                                            <td className="p-4 align-top">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-bold text-foreground/90">{format(new Date(log.date), 'dd/MM/yyyy')}</span>
-                                                    {isDuplicate && (
-                                                        <Badge className="text-[8px] bg-amber-500 text-black py-0 px-1 font-black w-fit">DOUBLON</Badge>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="p-4 align-top">
-                                                <div className="space-y-1">
-                                                    <p className={cn(
-                                                        "text-sm leading-relaxed text-foreground/70",
-                                                        !expandedRows.has(log._id) && "line-clamp-2"
-                                                    )}>
-                                                        {log.workCompleted || "N/A"}
-                                                    </p>
-                                                    {log.workCompleted && log.workCompleted.length > 140 && (
-                                                        <button 
-                                                            onClick={() => toggleRow(log._id)}
-                                                            className="text-[10px] font-black text-yellow-500 uppercase tracking-tighter hover:opacity-80 flex items-center gap-1"
+                    <div className="border border-white/5 rounded-2xl overflow-hidden bg-zinc-900/30 backdrop-blur-sm shadow-2xl">
+                        {/* Scrollable Container - Approx 8 items height */}
+                        <div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="sticky top-0 z-10 bg-zinc-800 backdrop-blur-md shadow-sm">
+                                    <tr className="border-b border-white/5">
+                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-32 bg-zinc-800">Date</th>
+                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-zinc-800">Travaux réalisés</th>
+                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center w-24 bg-zinc-800">Ouvriers</th>
+                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right w-24 bg-zinc-800">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {logs.map((log) => {
+                                        const dateStr = format(new Date(log.date), 'yyyy-MM-dd')
+                                        const isDuplicate = groupedLogs[dateStr].length > 1
+                                        
+                                        return (
+                                            <tr key={log._id} className={cn(
+                                                "border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors group",
+                                                isDuplicate && "bg-amber-500/[0.03]"
+                                            )}>
+                                                <td className="p-4 align-top">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-sm font-bold text-foreground/90">{format(new Date(log.date), 'dd/MM/yyyy')}</span>
+                                                        {isDuplicate && (
+                                                            <Badge className="text-[8px] bg-amber-500 text-black py-0 px-1 font-black w-fit">DOUBLON</Badge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 align-top">
+                                                    <div className="space-y-1">
+                                                        <p className={cn(
+                                                            "text-sm leading-relaxed text-foreground/70",
+                                                            !expandedRows.has(log._id) && "line-clamp-2"
+                                                        )}>
+                                                            {log.workCompleted || "N/A"}
+                                                        </p>
+                                                        {log.workCompleted && log.workCompleted.length > 140 && (
+                                                            <button 
+                                                                onClick={() => toggleRow(log._id)}
+                                                                className="text-[10px] font-black text-yellow-500 uppercase tracking-tighter hover:opacity-80 flex items-center gap-1"
+                                                            >
+                                                                {expandedRows.has(log._id) ? <><ChevronUp className="w-3 h-3"/> Voir moins</> : <><ChevronDown className="w-3 h-3"/> Voir tout</>}
+                                                            </button>
+                                                        )}
+                                                        {log.issues && (
+                                                            <div className="pt-2 flex items-start gap-2">
+                                                                <AlertTriangle className="w-3.5 h-3.5 text-amber-500/80 flex-shrink-0 mt-0.5" />
+                                                                <span className="text-[10px] font-medium text-amber-500/80 italic">{log.issues}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 align-top text-center text-sm font-black text-foreground/90 bg-white/[0.01]">
+                                                    {log.workersPresent}
+                                                </td>
+                                                <td className="p-4 align-top text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-500"
+                                                            onClick={() => {
+                                                                setEditLog(log)
+                                                                setEditForm({
+                                                                    workCompleted: log.workCompleted || "",
+                                                                    issues: log.issues || "",
+                                                                    notes: log.notes || "",
+                                                                    workersPresent: log.workersPresent || 0
+                                                                })
+                                                            }}
                                                         >
-                                                            {expandedRows.has(log._id) ? <><ChevronUp className="w-3 h-3"/> Voir moins</> : <><ChevronDown className="w-3 h-3"/> Voir tout</>}
-                                                        </button>
-                                                    )}
-                                                    {log.issues && (
-                                                        <div className="pt-2 flex items-start gap-2">
-                                                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500/80 flex-shrink-0 mt-0.5" />
-                                                            <span className="text-[10px] font-medium text-amber-500/80 italic">{log.issues}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="p-4 align-top text-center text-sm font-black text-foreground/90 bg-white/[0.01]">
-                                                {log.workersPresent}
-                                            </td>
-                                            <td className="p-4 align-top text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-500"
-                                                        onClick={() => {
-                                                            setEditLog(log)
-                                                            setEditForm({
-                                                                workCompleted: log.workCompleted || "",
-                                                                issues: log.issues || "",
-                                                                notes: log.notes || "",
-                                                                workersPresent: log.workersPresent || 0
-                                                            })
-                                                        }}
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-                                                        onClick={() => setDeleteId(log._id)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                                                            onClick={() => setDeleteId(log._id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
