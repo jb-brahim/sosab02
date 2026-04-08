@@ -9,10 +9,11 @@ const formatTND = (num) => {
 };
 
 const formatDateTN = (date) => {
-  return new Date(date).toLocaleDateString('fr-TN', {
+  return new Date(date).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'UTC'
   });
 };
 
