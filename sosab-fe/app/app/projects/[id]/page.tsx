@@ -55,6 +55,7 @@ export default function MobileProjectDetails() {
     const [materialSearch, setMaterialSearch] = useState('')
     const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false)
     const [submittingReport, setSubmittingReport] = useState(false)
+    const [showReportPreview, setShowReportPreview] = useState(false)
 
     const [showRegisterUsage, setShowRegisterUsage] = useState(false)
     const [usageForm, setUsageForm] = useState({ materialId: '', quantity: '', notes: '', name: '', unit: '', category: '' })
@@ -736,7 +737,14 @@ export default function MobileProjectDetails() {
                                         </label>
                                     </div>
                                 </div>
-                                <Button className="w-full h-11 mt-2 text-sm font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={handleSubmitReport} disabled={submittingReport}>
+                                <Button 
+                                    className="w-full h-11 mt-2 text-sm font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" 
+                                    onClick={() => {
+                                        if (!reportForm.workCompleted && !reportForm.issues) return toast.error("Please enter details")
+                                        setShowReportPreview(true)
+                                    }} 
+                                    disabled={submittingReport}
+                                >
                                     {submittingReport ? <Spinner className="w-4 h-4 mr-2" /> : <SendIcon className="w-4 h-4 mr-2" />}
                                     {submittingReport ? t("projects.sending") : t("projects.submit_report")}
                                 </Button>
@@ -1343,6 +1351,92 @@ export default function MobileProjectDetails() {
                     </Card>
                 </div>
             )}
+
+            {/* Daily Report Preview Dialog */}
+            <AlertDialog open={showReportPreview} onOpenChange={setShowReportPreview}>
+                <AlertDialogContent className="rounded-[2.5rem] border-white/10 bg-background/95 backdrop-blur-3xl shadow-2xl max-w-lg overflow-hidden p-0">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
+                    
+                    <div className="p-8 space-y-6">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="font-display text-2xl font-black tracking-tight text-center uppercase italic">
+                                Récapitulatif du Rapport
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-center text-muted-foreground font-medium">
+                                Veuillez vérifier les informations avant l'envoi définitif.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1 custom-scrollbar pr-2">
+                            {/* Work Summary Card */}
+                            <div className="p-4 rounded-2xl bg-secondary/30 border border-white/5 space-y-2">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                    <CheckSquare className="w-3 h-3" /> Travaux Réalisés
+                                </div>
+                                <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                                    {reportForm.workCompleted || "Aucune description fournie."}
+                                </p>
+                            </div>
+
+                            {/* Materials Summary Card */}
+                            {reportForm.materialsUsed.length > 0 && (
+                                <div className="p-4 rounded-2xl bg-secondary/30 border border-white/5 space-y-2">
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                        <Package className="w-3 h-3" /> Matériaux Utilisés
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {reportForm.materialsUsed.map((m, i) => (
+                                            <Badge key={i} variant="secondary" className="bg-primary/10 text-primary border-primary/20 py-1 font-bold">
+                                                {m.name}: {m.quantity} {m.unit}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Issues Summary Card */}
+                            {reportForm.issues && (
+                                <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2">
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500">
+                                        <AlertCircle className="w-3 h-3" /> Problèmes / Retards
+                                    </div>
+                                    <p className="text-sm font-medium leading-relaxed text-amber-600 dark:text-amber-500/90 whitespace-pre-wrap">
+                                        {reportForm.issues}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Metadata Footer */}
+                            <div className="flex items-center justify-between px-2 pt-2 border-t border-white/5">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-muted-foreground uppercase">Date du Rapport</span>
+                                    <span className="text-sm font-bold">{format(selectedDate, 'dd/MM/yyyy')}</span>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] font-black text-muted-foreground uppercase">Photos jointes</span>
+                                    <span className="text-sm font-bold text-primary">{reportForm.photos?.length || 0} image(s)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <AlertDialogFooter className="flex gap-3 pt-4 border-t border-white/5">
+                            <AlertDialogCancel className="rounded-2xl h-14 flex-1 uppercase font-black text-[10px] tracking-widest border-white/5 hover:bg-secondary">
+                                Modifier
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setShowReportPreview(false);
+                                    handleSubmitReport();
+                                }}
+                                className="rounded-2xl h-14 flex-[2] bg-primary text-primary-foreground font-black text-[10px] tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
+                            >
+                                {submittingReport ? <Spinner className="w-5 h-5" /> : "CONFIRMER L'ENVOI"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
