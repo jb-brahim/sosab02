@@ -89,7 +89,7 @@ export default function DailyReportsPage() {
 
     // Edit state
     const [editLog, setEditLog] = useState<DailyLog | null>(null)
-    const [editForm, setEditForm] = useState({ workCompleted: "", issues: "", notes: "", workersPresent: 0 })
+    const [editForm, setEditForm] = useState({ workCompleted: "", date: "" })
     const [saving, setSaving] = useState(false)
 
     // Expanded rows for long text
@@ -209,7 +209,7 @@ export default function DailyReportsPage() {
             setSaving(true)
             const res = await api.patch(`/daily-reports/report/${editLog._id}`, editForm)
             if (res.data.success) {
-                setLogs(prev => prev.map(l => l._id === editLog._id ? { ...l, ...editForm } : l))
+                setLogs(prev => prev.map(l => l._id === editLog._id ? { ...l, ...editForm, date: new Date(editForm.date).toISOString() } : l))
                 toast.success("Rapport mis à jour")
                 setEditLog(null)
             }
@@ -415,9 +415,7 @@ export default function DailyReportsPage() {
                                                                 setEditLog(log)
                                                                 setEditForm({
                                                                     workCompleted: log.workCompleted || "",
-                                                                    issues: log.issues || "",
-                                                                    notes: log.notes || "",
-                                                                    workersPresent: log.workersPresent || 0
+                                                                    date: format(new Date(log.date), 'yyyy-MM-dd')
                                                                 })
                                                             }}
                                                         >
@@ -511,42 +509,21 @@ export default function DailyReportsPage() {
                     
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Travaux réalisés</Label>
-                            <Textarea 
-                                value={editForm.workCompleted}
-                                onChange={e => setEditForm(f => ({ ...f, workCompleted: e.target.value }))}
-                                className="min-h-[160px] bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 text-sm leading-relaxed"
-                                placeholder="..."
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Date</Label>
+                            <Input 
+                                type="date"
+                                value={editForm.date}
+                                onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))}
+                                className="h-12 bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 px-4 font-bold"
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Ouvriers présents</Label>
-                                <Input 
-                                    type="number"
-                                    value={editForm.workersPresent}
-                                    onChange={e => setEditForm(f => ({ ...f, workersPresent: parseInt(e.target.value) || 0 }))}
-                                    className="h-12 bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 px-4 font-bold"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observations / Problèmes</Label>
-                                <Input 
-                                    value={editForm.issues}
-                                    onChange={e => setEditForm(f => ({ ...f, issues: e.target.value }))}
-                                    className="h-12 bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 px-4 text-sm"
-                                    placeholder="Aucun point particulier"
-                                />
-                            </div>
-                        </div>
-
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Notes (internes)</Label>
-                            <Input 
-                                value={editForm.notes}
-                                onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
-                                className="h-12 bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 px-4 text-sm"
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Travaux réalisés (Texte)</Label>
+                            <Textarea 
+                                value={editForm.workCompleted}
+                                onChange={e => setEditForm(f => ({ ...f, workCompleted: e.target.value }))}
+                                className="min-h-[200px] bg-zinc-800/50 border-white/5 rounded-2xl focus:ring-yellow-500/20 text-sm leading-relaxed"
                                 placeholder="..."
                             />
                         </div>

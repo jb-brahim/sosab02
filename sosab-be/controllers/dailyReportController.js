@@ -129,8 +129,9 @@ exports.updateDailyReport = asyncHandler(async (req, res) => {
         });
     }
 
-    const { progress, workCompleted, issues, workersPresent, weather, notes } = req.body;
+    const { date, progress, workCompleted, issues, workersPresent, weather, notes } = req.body;
 
+    if (date) report.date = new Date(date);
     if (progress !== undefined) report.progress = parseInt(progress);
     if (workCompleted) report.workCompleted = workCompleted;
     if (issues) report.issues = issues;
