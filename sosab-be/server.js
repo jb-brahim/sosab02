@@ -48,17 +48,18 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'https://57-131-35-75.sslip.io',
-  'https://sosab02.vercel.app/' 
+  'https://sosab02.vercel.app'
 ];
 app.use(cors({
   origin: function(origin, callback) {
     if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      return callback(new Error('CORS policy violation'), false);
+    if(allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')){
+      return callback(null, true);
     }
-    return callback(null, true);
+    return callback(null, false);
   },
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Body parser
