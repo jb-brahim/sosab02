@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Create an axios instance
-export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sosab02-3.onrender.com';
+export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://57-131-35-75.sslip.io/sosab02';
 const api = axios.create({
     baseURL: `${BACKEND_URL}/api`,
     timeout: 60000, // 60 seconds to accommodate PDF generation
