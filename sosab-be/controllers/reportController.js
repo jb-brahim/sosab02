@@ -82,10 +82,6 @@ exports.generateReport = asyncHandler(async (req, res) => {
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays > 32) { // Allow slightly more than 30 days just in case, say 31 days + buffer
-      return res.status(400).json({ success: false, message: 'Date range cannot exceed 1 month' });
-    }
-
     dateLabel = `Du ${start.toLocaleDateString('fr-FR')} au ${end.toLocaleDateString('fr-FR')}`;
 
   } else if (week) {

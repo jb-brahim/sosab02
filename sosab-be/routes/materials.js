@@ -9,6 +9,7 @@ const {
   getProjectMaterialLogs,
   getProjectMaterialSummary,
   getAllMaterialsSummary,
+  getAllMaterialLogs,
   transferMaterial,
   directReception,
   quickLog
@@ -29,6 +30,7 @@ router.use(protect);
 
 router.get('/depot/all', getDepotMaterials);
 router.get('/manager/summary', getAllMaterialsSummary);
+router.get('/manager/logs', getAllMaterialLogs);
 router.post('/transfer', authorize('Admin'), logAction('transfer', 'Material'), transferMaterial);
 router.post('/direct-reception', authorize('Admin', 'Project Manager'), uploadReceptionPhotos, handleUploadError, logAction('arrival', 'Material'), directReception);
 router.post('/quick-log', authorize('Admin', 'Project Manager'), logAction('quick-log', 'Material'), quickLog);

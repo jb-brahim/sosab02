@@ -64,11 +64,6 @@ export default function GenerateReportPage() {
         const diffTime = Math.abs(end.getTime() - start.getTime())
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-        if (diffDays > 31) {
-            toast.error(t("reports.date_range_error"))
-            return
-        }
-
         if (start > end) {
             toast.error(t("reports.date_order_error"))
             return

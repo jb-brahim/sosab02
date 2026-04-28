@@ -62,11 +62,6 @@ export default function AdminGenerateReportPage() {
         const diffTime = Math.abs(end.getTime() - start.getTime())
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-        if (diffDays > 31) {
-            toast.error("Date range cannot exceed 31 days")
-            return
-        }
-
         if (start > end) {
             toast.error("Start date must be before end date")
             return

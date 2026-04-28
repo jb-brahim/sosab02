@@ -310,6 +310,44 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get all material logs for all projects managed by user
+// @route   GET /api/materials/manager/logs
+// @access  Private
+exports.getAllMaterialLogs = asyncHandler(async (req, res) => {
+  let query = {};
+
+  // If PM, only show materials from their projects
+  if (req.user.role === 'Project Manager') {
+    const projects = await Project.find({ managers: req.user._id });
+    const projectIds = projects.map(p => p._id);
+    query = { projectId: { $in: projectIds } };
+  }
+
+  // Find all materials matching the projects
+  const materials = await Material.find(query);
+  const materialIds = materials.map(m => m._id);
+
+  // Find all logs for these materials
+  const logs = await MaterialLog.find({ materialId: { $in: materialIds } })
+    .populate({
+      path: 'materialId',
+      select: 'name unit category projectId',
+      populate: {
+        path: 'projectId',
+        select: 'name'
+      }
+    })
+    .populate('loggedBy', 'name')
+    .sort({ createdAt: -1 })
+    .limit(100);
+
+  res.status(200).json({
+    success: true,
+    count: logs.length,
+    data: logs
+  });
+});
+
 // @desc    Transfer material between projects
 // @route   POST /api/materials/transfer
 // @access  Private/Admin

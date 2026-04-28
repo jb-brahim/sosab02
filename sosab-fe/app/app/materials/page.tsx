@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Package, Search, ArrowDownLeft, Box, Filter } from "lucide-react"
+import { Package, Search, ArrowDownLeft, ArrowUpRight, Box, Filter } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/lib/language-context"
@@ -20,7 +20,7 @@ export default function MaterialsPage() {
         const fetchSummary = async () => {
             try {
                 setLoading(true)
-                const res = await api.get('/materials/manager/summary')
+                const res = await api.get('/materials/manager/logs')
                 if (res.data.success) {
                     setMaterials(res.data.data)
                 }
@@ -35,7 +35,12 @@ export default function MaterialsPage() {
     }, [])
 
     const filteredMaterials = materials
-        .filter(item => item.supplier.toLowerCase().includes(searchQuery.toLowerCase()) || item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(item => {
+            const supplierName = item.supplier || ''
+            const materialName = item.materialId?.name || ''
+            const query = searchQuery.toLowerCase()
+            return supplierName.toLowerCase().includes(query) || materialName.toLowerCase().includes(query)
+        })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return (
@@ -100,21 +105,26 @@ export default function MaterialsPage() {
                     <div className="grid gap-3 animate-in delay-300" style={{ contentVisibility: 'auto' } as any}>
                         {filteredMaterials.map((item, index) => (
                             <div
-                                key={item.materialId}
+                                key={item._id}
                                 className="glass-card rounded-xl p-0 overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-transform gpu will-change-transform"
-                                onClick={() => router.push(`/app/materials/${item.materialId}`)}
+                                onClick={() => item.materialId?._id && router.push(`/app/materials/${item.materialId._id}`)}
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
                                 <div className="p-4 flex flex-col gap-3">
                                     <div className="flex justify-between items-start">
                                         <div className="space-y-1">
-                                            <div className="font-display font-bold text-lg leading-none group-hover:text-primary transition-colors">{item.name}</div>
+                                            <div className="font-display font-bold text-lg leading-none group-hover:text-primary transition-colors">{item.materialId?.name || 'Matériel'}</div>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 <Badge variant="secondary" className="bg-white/5 text-[9px] uppercase font-bold text-muted-foreground border-white/5 px-1.5 h-5 hover:bg-white/10">
-                                                    {item.projectName}
+                                                    {item.materialId?.projectId?.name || 'Projet'}
                                                 </Badge>
+                                                {item.supplier && (
+                                                    <Badge variant="outline" className="text-[9px] uppercase font-bold text-muted-foreground border-white/10 px-1.5 h-5">
+                                                        {item.supplier}
+                                                    </Badge>
+                                                )}
                                                 <Badge variant="outline" className="text-[9px] uppercase font-bold text-muted-foreground border-white/10 px-1.5 h-5">
-                                                    {item.supplier}
+                                                    {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -122,11 +132,12 @@ export default function MaterialsPage() {
 
                                     <div className="bg-black/20 rounded-lg p-2.5 flex items-center justify-between border border-white/5 group-hover:border-primary/20 transition-colors">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] uppercase font-black text-white/40 tracking-wider flex items-center gap-1">
-                                                <ArrowDownLeft className="w-3 h-3 text-green-500" /> {t("materials.total_received")}
+                                            <span className={`text-[9px] uppercase font-black tracking-wider flex items-center gap-1 ${item.type === 'IN' ? 'text-green-500' : 'text-red-500'}`}>
+                                                {item.type === 'IN' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />} 
+                                                {item.type === 'IN' ? (t("materials.arrival") || "Reçu") : (t("materials.out") || "Sorti")}
                                             </span>
                                             <span className="text-lg font-display font-bold text-foreground">
-                                                {item.totalIn} <span className="text-[10px] opacity-50 ml-0.5">{item.unit}</span>
+                                                {item.quantity} <span className="text-[10px] opacity-50 ml-0.5">{item.materialId?.unit || 'pcs'}</span>
                                             </span>
                                         </div>
                                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

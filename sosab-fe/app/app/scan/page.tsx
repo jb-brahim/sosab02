@@ -22,7 +22,7 @@ export default function ScanPage() {
   const { t } = useLanguage()
 
   const [projects, setProjects] = useState<any[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("")
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(searchParams?.get('projectId') || "")
 
   const [materialName, setMaterialName] = useState("")
   const [materialUnit, setMaterialUnit] = useState("pcs")
@@ -68,16 +68,14 @@ export default function ScanPage() {
         const res = await api.get('/projects')
         if (res.data.success) {
           setProjects(res.data.data)
-          if (res.data.data.length > 0 && !selectedProjectId) {
-            setSelectedProjectId(res.data.data[0]._id)
-          }
+          setSelectedProjectId(prev => prev || (res.data.data.length > 0 ? res.data.data[0]._id : ""))
         }
       } catch (error) {
         toast.error("Failed to load project details")
       }
     }
     fetchProjects()
-  }, [selectedProjectId])
+  }, [])
 
   // Fetch project's existing DB materials for search suggestions
   const fetchProjectMaterials = async (projectId: string) => {
