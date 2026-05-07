@@ -33,11 +33,11 @@ router.get('/manager/summary', getAllMaterialsSummary);
 router.get('/manager/logs', getAllMaterialLogs);
 router.post('/transfer', authorize('Admin'), logAction('transfer', 'Material'), transferMaterial);
 router.post('/direct-reception', authorize('Admin', 'Project Manager'), uploadReceptionPhotos, handleUploadError, logAction('arrival', 'Material'), directReception);
-router.post('/quick-log', authorize('Admin', 'Project Manager'), logAction('quick-log', 'Material'), quickLog);
+router.post('/quick-log', authorize('Admin', 'Project Manager', 'Accountant'), logAction('quick-log', 'Material'), quickLog);
 
 router
   .route('/')
-  .post(authorize('Admin'), logAction('create', 'Material'), addMaterial);
+  .post(authorize('Admin', 'Accountant'), logAction('create', 'Material'), addMaterial);
 
 router
   .route('/:projectId')
@@ -53,14 +53,14 @@ router
 
 router
   .route('/item/:id')
-  .patch(authorize('Admin', 'Project Manager'), logAction('update', 'Material'), updateMaterial)
-  .delete(authorize('Admin', 'Project Manager'), logAction('delete', 'Material'), deleteMaterial);
+  .patch(authorize('Admin', 'Project Manager', 'Accountant'), logAction('update', 'Material'), updateMaterial)
+  .delete(authorize('Admin', 'Project Manager', 'Accountant'), logAction('delete', 'Material'), deleteMaterial);
 
 // Material Log routes
 router
   .route('/log')
   .post(
-    authorize('Admin', 'Project Manager'),
+    authorize('Admin', 'Project Manager', 'Accountant'),
     uploadMaterialPhoto,
     handleUploadError,
     logAction('create', 'MaterialLog'),

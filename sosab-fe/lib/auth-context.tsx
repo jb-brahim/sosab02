@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
-export type UserRole = "admin" | "pm" | "gerant" | "worker"
+export type UserRole = "admin" | "pm" | "gerant" | "worker" | "accountant"
 
 export interface User {
   id: string
@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const r = parsed.role.toLowerCase();
           parsed.role = r === "admin" ? "admin" :
             (r.includes("manager") || r === "pm") ? "pm" :
-              (r === "gérant" || r === "gerant") ? "gerant" : "worker"
+              (r === "gérant" || r === "gerant") ? "gerant" :
+                r === "accountant" ? "accountant" : "worker"
         }
 
         setUser(parsed)
@@ -76,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const r = res.data.user.role.toLowerCase()
         const normalizedRole = r === "admin" ? "admin" :
           (r.includes("manager") || r === "pm") ? "pm" :
-            (r === "gérant" || r === "gerant") ? "gerant" : "worker"
+            (r === "gérant" || r === "gerant") ? "gerant" :
+              r === "accountant" ? "accountant" : "worker"
 
         const userData = {
           ...res.data.user,

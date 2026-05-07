@@ -28,6 +28,10 @@ export function LoginForm() {
       const user = useAuthStore.getState().user
       if (user?.role === "admin") {
         router.push("/admin")
+      } else if (user?.role === "gerant") {
+        router.push("/gerant")
+      } else if (user?.role === "accountant") {
+        router.push("/accountant")
       } else {
         router.push("/app")
       }

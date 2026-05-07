@@ -26,6 +26,10 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       if (!allowedRoles.includes(user.role)) {
         if (user.role === "admin") {
           router.push("/admin")
+        } else if (user.role === "gerant") {
+          router.push("/gerant")
+        } else if (user.role === "accountant") {
+          router.push("/accountant")
         } else {
           router.push("/app")
         }

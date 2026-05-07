@@ -260,6 +260,10 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
     const projectIds = projects.map(p => p._id);
     query = { projectId: { $in: projectIds } };
   }
+  // If Accountant, only show materials from assigned projects
+  if (req.user.role === 'Accountant') {
+    query = { projectId: { $in: req.user.assignedProjects } };
+  }
 
   // Find all materials matching the projects
   const materials = await Material.find(query)
@@ -321,6 +325,10 @@ exports.getAllMaterialLogs = asyncHandler(async (req, res) => {
     const projects = await Project.find({ managers: req.user._id });
     const projectIds = projects.map(p => p._id);
     query = { projectId: { $in: projectIds } };
+  }
+  // If Accountant, only show materials from assigned projects
+  if (req.user.role === 'Accountant') {
+    query = { projectId: { $in: req.user.assignedProjects } };
   }
 
   // Find all materials matching the projects
