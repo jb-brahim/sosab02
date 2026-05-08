@@ -126,6 +126,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
                             <SelectContent>
                                 <SelectItem value="Project Manager">{t("users.roles.pm") || "Project Manager"}</SelectItem>
                                 <SelectItem value="Gérant">{t("users.roles.gerant") || "Gérant"}</SelectItem>
+                                <SelectItem value="Accountant">{t("users.roles.accountant") || "Accountant"}</SelectItem>
                                 <SelectItem value="Worker">{t("users.roles.worker") || "Worker"}</SelectItem>
                             </SelectContent>
                         </Select>
