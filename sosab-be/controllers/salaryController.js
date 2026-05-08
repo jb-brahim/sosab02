@@ -78,8 +78,17 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
     });
   }
 
-  // Calculate total
-  const totalSalary = salaryData.reduce((sum, item) => sum + item.salary.totalSalary, 0);
+  // Format data for frontend
+  const formattedWorkers = salaryData.map(item => ({
+    workerId: item.worker.id,
+    workerName: item.worker.name,
+    daysWorked: item.salary.breakdown?.daysWorked || 0,
+    dailyRate: item.worker.dailySalary || 0,
+    totalSalary: item.salary.totalSalary,
+    approved: item.salary.status === 'Approved'
+  }));
+
+  const totalSalary = formattedWorkers.reduce((sum, w) => sum + w.totalSalary, 0);
 
   res.status(200).json({
     success: true,
@@ -89,8 +98,10 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
       name: project.name
     },
     totalSalary,
-    count: salaryData.length,
-    data: salaryData
+    count: formattedWorkers.length,
+    data: {
+      workers: formattedWorkers
+    }
   });
 });
 

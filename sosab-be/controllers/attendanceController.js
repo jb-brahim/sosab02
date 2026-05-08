@@ -111,24 +111,53 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
 
   const { startDate, endDate } = getWeekDates(week);
 
+  // Get all active workers for the project
+  const workers = await Worker.find({ projectId, active: true });
+
+  // Get attendance records for the week
   const attendances = await Attendance.find({
     projectId,
     date: {
       $gte: startDate,
       $lte: endDate
     }
-  })
-    .populate('workerId', 'name dailySalary')
-    .populate('markedBy', 'name email')
-    .sort({ date: 1 });
+  });
+
+  // Group attendance by worker
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  
+  const groupedData = workers.map(worker => {
+    const workerRecords = attendances.filter(a => a.workerId.toString() === worker._id.toString());
+    
+    const record = {
+      workerId: worker._id,
+      workerName: worker.name,
+      monday: false,
+      tuesday: false,
+      wednesday: false,
+      thursday: false,
+      friday: false,
+      saturday: false
+    };
+
+    workerRecords.forEach(a => {
+      const dayIndex = new Date(a.date).getDay();
+      const dayName = dayNames[dayIndex];
+      if (record.hasOwnProperty(dayName)) {
+        record[dayName] = a.present;
+      }
+    });
+
+    return record;
+  });
 
   res.status(200).json({
     success: true,
     week,
     startDate,
     endDate,
-    count: attendances.length,
-    data: attendances
+    count: groupedData.length,
+    data: groupedData
   });
 });
 

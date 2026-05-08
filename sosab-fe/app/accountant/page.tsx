@@ -86,60 +86,22 @@ export default function AccountantDashboard() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: "Projets assignés",
-            value: projects.length,
-            icon: FolderKanban,
-            color: "text-amber-500",
-            bg: "bg-amber-500/10",
-            sub: "actifs",
-          },
-          {
-            label: "Matériaux",
-            value: "—",
-            icon: Package,
-            color: "text-blue-500",
-            bg: "bg-blue-500/10",
-            sub: "par projet",
-          },
-          {
-            label: "Présences",
-            value: "—",
-            icon: CalendarDays,
-            color: "text-green-500",
-            bg: "bg-green-500/10",
-            sub: "cette semaine",
-          },
-          {
-            label: "Salaires",
-            value: "—",
-            icon: DollarSign,
-            color: "text-purple-500",
-            bg: "bg-purple-500/10",
-            sub: "en attente",
-          },
-        ].map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4 hover:border-amber-500/30 transition-all duration-200 group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {card.label}
-              </span>
-              <div className={`h-9 w-9 rounded-xl ${card.bg} flex items-center justify-center`}>
-                <card.icon className={`h-4.5 w-4.5 ${card.color}`} />
-              </div>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold font-mono">{card.value}</span>
-              <span className="text-xs text-muted-foreground mb-1">{card.sub}</span>
+        <div className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4 hover:border-amber-500/30 transition-all duration-200 group">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Projets assignés
+            </span>
+            <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <FolderKanban className="h-4.5 w-4.5 text-amber-500" />
             </div>
           </div>
-        ))}
+          <div className="flex items-end gap-2">
+            <span className="text-3xl font-bold font-mono">{projects.length}</span>
+            <span className="text-xs text-muted-foreground mb-1">actifs</span>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
