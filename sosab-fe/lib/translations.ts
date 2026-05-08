@@ -173,6 +173,7 @@ export const translations = {
                 admin: "مدير نظام",
                 pm: "مدير مشروع",
                 gerant: "Gérant",
+                accountant: "محاسب",
                 worker: "عامل",
             }
         },
@@ -467,6 +468,7 @@ export const translations = {
                 admin: "Administrateur",
                 pm: "Chef de Projet",
                 gerant: "Gérant",
+                accountant: "Comptable",
                 worker: "Ouvrier",
             }
         },

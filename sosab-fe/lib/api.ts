@@ -10,7 +10,7 @@ const api = axios.create({
 // Add a request interceptor to inject the token
 api.interceptors.request.use(
     (config) => {
-        // Get token from localStorage
+        // Get token from localStor
         // Note: auth-context saves the user object which might contain the token, 
         // or we might save the token separately. 
         // For now, let's assume we'll modify auth-context to save 'token' in localStorage

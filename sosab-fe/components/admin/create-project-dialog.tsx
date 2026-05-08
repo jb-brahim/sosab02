@@ -198,7 +198,7 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
                                 ) : users.length === 0 ? (
                                     <div className="p-2 text-center text-sm text-muted-foreground">No users found</div>
                                 ) : (
-                                    users.filter(u => u.role === 'Project Manager').map((user) => (
+                                    users.filter(u => ['Project Manager', 'Accountant', 'Gérant'].includes(u.role)).map((user) => (
                                         <label key={user._id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded p-1">
                                             <input
                                                 type="checkbox"
