@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-export type UserRole = "admin" | "pm" | "worker"
+export type UserRole = "admin" | "pm" | "worker" | "gerant" | "accountant"
 
 export interface User {
   id: string
@@ -41,6 +41,8 @@ export const useAuthStore = create<AuthState>()(
           "admin@sosab.com": { id: "1", email: "admin@sosab.com", name: "Admin User", role: "admin" },
           "pm@sosab.com": { id: "2", email: "pm@sosab.com", name: "Project Manager", role: "pm" },
           "worker@sosab.com": { id: "3", email: "worker@sosab.com", name: "Field Worker", role: "worker" },
+          "gerant@sosab.com": { id: "4", email: "gerant@sosab.com", name: "Gerant", role: "gerant" },
+          "accountant@sosab.com": { id: "5", email: "accountant@sosab.com", name: "Accountant", role: "accountant" },
         }
 
         const user = demoUsers[email]
