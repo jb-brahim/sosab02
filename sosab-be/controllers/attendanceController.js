@@ -96,9 +96,12 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access: Admin and Gérant can see any project; PM must be manager; Accountant must have assignedProjects
+  // Check access: Admin and Gérant can see any project; PM must be manager; Accountant must have assignedProjects or be a manager
   const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
-  const isAssignedAccountant = req.user.role === 'Accountant' && req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === projectId);
+  const isAssignedAccountant = req.user.role === 'Accountant' && (
+    (req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === projectId)) ||
+    isManager
+  );
   if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager && !isAssignedAccountant) {
     return res.status(403).json({
       success: false,

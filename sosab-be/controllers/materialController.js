@@ -261,9 +261,12 @@ exports.getAllMaterialsSummary = asyncHandler(async (req, res) => {
     const projectIds = projects.map(p => p._id);
     query = { projectId: { $in: projectIds } };
   }
-  // If Accountant, only show materials from assigned projects
+  // If Accountant, only show materials from assigned or managed projects
   if (req.user.role === 'Accountant') {
-    query = { projectId: { $in: req.user.assignedProjects } };
+    const managedProjects = await Project.find({ managers: req.user._id });
+    const managedIds = managedProjects.map(p => p._id);
+    const assignedIds = req.user.assignedProjects || [];
+    query = { projectId: { $in: [...new Set([...managedIds, ...assignedIds])] } };
   }
 
   // Find all materials matching the projects
@@ -327,9 +330,12 @@ exports.getAllMaterialLogs = asyncHandler(async (req, res) => {
     const projectIds = projects.map(p => p._id);
     query = { projectId: { $in: projectIds } };
   }
-  // If Accountant, only show materials from assigned projects
+  // If Accountant, only show materials from assigned or managed projects
   if (req.user.role === 'Accountant') {
-    query = { projectId: { $in: req.user.assignedProjects } };
+    const managedProjects = await Project.find({ managers: req.user._id });
+    const managedIds = managedProjects.map(p => p._id);
+    const assignedIds = req.user.assignedProjects || [];
+    query = { projectId: { $in: [...new Set([...managedIds, ...assignedIds])] } };
   }
 
   // Find all materials matching the projects

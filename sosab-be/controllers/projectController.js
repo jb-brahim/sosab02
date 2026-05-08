@@ -40,11 +40,14 @@ exports.createProject = asyncHandler(async (req, res) => {
 exports.getProjects = asyncHandler(async (req, res) => {
   let query = {};
 
-  // Admin and Gérant see all projects; PM sees only their assigned ones; Accountant sees their assignedProjects
+  // Admin and Gérant see all projects; PM sees only their assigned ones; Accountant sees their assignedProjects + managed ones
   if (req.user.role === 'Accountant') {
-    // Accountant sees projects listed in their assignedProjects array
+    // Accountant sees projects listed in their assignedProjects array OR where they are a manager
     const assignedIds = req.user.assignedProjects || [];
-    query._id = { $in: assignedIds };
+    query.$or = [
+      { _id: { $in: assignedIds } },
+      { managers: req.user._id }
+    ];
   } else if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     query.managers = req.user._id;
   }
@@ -82,9 +85,12 @@ exports.getProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access: Admin and Gérant can see any project; PM must be a manager; Accountant must have assignedProjects
+  // Check access: Admin and Gérant can see any project; PM must be a manager; Accountant must have assignedProjects or be a manager
   const isManager = project.managers.some(m => m._id.toString() === req.user._id.toString());
-  const isAssignedAccountant = req.user.role === 'Accountant' && req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === req.params.id);
+  const isAssignedAccountant = req.user.role === 'Accountant' && (
+    (req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === req.params.id)) ||
+    isManager
+  );
   if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager && !isAssignedAccountant) {
     return res.status(403).json({
       success: false,
