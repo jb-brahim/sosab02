@@ -39,10 +39,10 @@ exports.generateReport = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check permissions: If not Admin or Gérant, must be manager of ALL projects
-  const isAdminOrGerant = req.user.role === 'Admin' || req.user.role === 'admin' || req.user.role === 'Gérant';
+  // Check permissions: If not Admin, Gérant, or Accountant, must be manager of ALL projects
+  const isAuthorizedRole = ['Admin', 'admin', 'Gérant', 'Accountant', 'accountant'].includes(req.user.role);
 
-  if (!isAdminOrGerant) {
+  if (!isAuthorizedRole) {
     for (const project of projects) {
       const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
       if (!isManager) {

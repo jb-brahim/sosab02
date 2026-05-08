@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import api from "@/lib/api"
+import api, { BACKEND_URL } from "@/lib/api"
 import { toast } from "sonner"
 import {
   Package,
@@ -249,7 +249,7 @@ function AttendanceTab({ projectId }: { projectId: string }) {
             <tbody className="divide-y divide-border">
               {attendance.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground text-sm">
+                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground text-sm">
                     Aucune présence enregistrée pour cette semaine
                   </td>
                 </tr>
@@ -378,6 +378,14 @@ function SalaryTab({ projectId }: { projectId: string }) {
 function ReportsTab({ projectId, projectName }: { projectId: string; projectName: string }) {
   const [generating, setGenerating] = useState<string | null>(null)
   const [reports, setReports] = useState<any[]>([])
+  const [week, setWeek] = useState(() => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const oneJan = new Date(year, 0, 1)
+    const numberOfDays = Math.floor((d.getTime() - oneJan.getTime()) / (24 * 60 * 60 * 1000))
+    const weekNum = Math.ceil((numberOfDays + oneJan.getDay() + 1) / 7)
+    return `${year}-W${weekNum.toString().padStart(2, '0')}`
+  })
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -392,7 +400,7 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
   const generateReport = async (type: string, label: string) => {
     setGenerating(type)
     try {
-      const res = await api.post("/reports/generate", { projectId, type }, { responseType: "blob" })
+      const res = await api.post("/reports/generate", { projectId, type, week }, { responseType: "blob" })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement("a")
       link.href = url
@@ -416,6 +424,22 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass p-4 rounded-2xl border border-amber-500/10">
+        <div>
+          <h3 className="font-bold text-lg tracking-tight">Générer un Rapport</h3>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">Sélectionnez la période</p>
+        </div>
+        <div className="flex items-center gap-3 bg-background/50 p-2 rounded-xl border border-border">
+          <CalendarDays className="h-4 w-4 text-amber-500" />
+          <input
+            type="week"
+            value={week}
+            onChange={(e) => setWeek(e.target.value)}
+            className="bg-transparent border-none text-sm font-medium focus:outline-none"
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {reportTypes.map(({ type, label, icon: Icon, desc }) => (
           <div
@@ -467,7 +491,7 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
                     <td className="px-4 py-3 font-medium capitalize">{r.type}</td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(r.createdAt).toLocaleDateString("fr-FR")}</td>
                     <td className="px-4 py-3">
-                      <a href={r.fileUrl} target="_blank" rel="noopener noreferrer">
+                      <a href={`${BACKEND_URL}${r.pdfUrl}`} target="_blank" rel="noopener noreferrer">
                         <Button variant="ghost" size="sm" className="gap-2 hover:text-amber-500">
                           <FileDown className="h-3.5 w-3.5" />
                           Télécharger
