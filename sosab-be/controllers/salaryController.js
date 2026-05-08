@@ -40,53 +40,45 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
     });
   }
 
-  // Get all workers for the project
+  // Get all active workers for the project
   const workers = await Worker.find({ projectId, active: true });
 
-  const salaryData = [];
+  const formattedWorkers = [];
 
   for (const worker of workers) {
-    // Check if salary already calculated
+    // Check if salary already exists
     let salary = await Salary.findOne({ workerId: worker._id, week });
 
-    if (!salary) {
-      // Calculate salary
+    // Recalculate if missing or still pending (to reflect new attendance)
+    if (!salary || salary.status === 'Pending') {
       const breakdown = await calculateWeeklySalary(worker._id, projectId, week);
-
-      // Create salary record
-      salary = await Salary.create({
-        workerId: worker._id,
-        projectId,
-        week,
-        totalSalary: breakdown.totalSalary,
-        breakdown
-      });
+      
+      if (!salary) {
+        salary = await Salary.create({
+          workerId: worker._id,
+          projectId,
+          week,
+          totalSalary: breakdown.totalSalary,
+          breakdown,
+          status: 'Pending'
+        });
+      } else {
+        // Update existing pending salary with latest calculation
+        salary.totalSalary = breakdown.totalSalary;
+        salary.breakdown = breakdown;
+        await salary.save();
+      }
     }
 
-    const workerData = await Worker.findById(worker._id);
-    salaryData.push({
-      worker: {
-        id: workerData._id,
-        name: workerData.name
-      },
-      salary: {
-        id: salary._id,
-        totalSalary: salary.totalSalary,
-        breakdown: salary.breakdown,
-        status: salary.status
-      }
+    formattedWorkers.push({
+      workerId: worker._id,
+      workerName: worker.name,
+      daysWorked: salary.breakdown?.daysWorked || 0,
+      dailyRate: worker.dailySalary || 0,
+      totalSalary: salary.totalSalary,
+      approved: salary.status === 'Approved'
     });
   }
-
-  // Format data for frontend
-  const formattedWorkers = salaryData.map(item => ({
-    workerId: item.worker.id,
-    workerName: item.worker.name,
-    daysWorked: item.salary.breakdown?.daysWorked || 0,
-    dailyRate: item.worker.dailySalary || 0,
-    totalSalary: item.salary.totalSalary,
-    approved: item.salary.status === 'Approved'
-  }));
 
   const totalSalary = formattedWorkers.reduce((sum, w) => sum + w.totalSalary, 0);
 

@@ -241,7 +241,7 @@ function AttendanceTab({ projectId }: { projectId: string }) {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                {["Travailleur", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Total"].map(h => (
+                {["Travailleur", "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Total"].map(h => (
                   <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -257,7 +257,7 @@ function AttendanceTab({ projectId }: { projectId: string }) {
                 attendance.map((record: any) => (
                   <tr key={record.workerId} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-3 font-medium">{record.workerName}</td>
-                    {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map(day => (
+                    {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map(day => (
                       <td key={day} className="px-3 py-3 text-center">
                         {record[day] ? (
                           <Check className="h-4 w-4 text-green-500 mx-auto" />
@@ -268,7 +268,7 @@ function AttendanceTab({ projectId }: { projectId: string }) {
                     ))}
                     <td className="px-3 py-3">
                       <Badge variant="outline" className="text-amber-600 border-amber-500/30 bg-amber-500/5 font-semibold">
-                        {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].filter(d => record[d]).length}j
+                        {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].filter(d => record[d]).length}j
                       </Badge>
                     </td>
                   </tr>
