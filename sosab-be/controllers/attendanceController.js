@@ -96,9 +96,10 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access: Admin and Gérant can see any project; PM must be manager
+  // Check access: Admin and Gérant can see any project; PM must be manager; Accountant must have assignedProjects
   const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
+  const isAssignedAccountant = req.user.role === 'Accountant' && req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === projectId);
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager && !isAssignedAccountant) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view attendance for this project'

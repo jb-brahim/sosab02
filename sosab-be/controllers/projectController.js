@@ -40,8 +40,12 @@ exports.createProject = asyncHandler(async (req, res) => {
 exports.getProjects = asyncHandler(async (req, res) => {
   let query = {};
 
-  // Admin and Gérant see all projects; PM sees only their assigned ones
-  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
+  // Admin and Gérant see all projects; PM sees only their assigned ones; Accountant sees their assignedProjects
+  if (req.user.role === 'Accountant') {
+    // Accountant sees projects listed in their assignedProjects array
+    const assignedIds = req.user.assignedProjects || [];
+    query._id = { $in: assignedIds };
+  } else if (req.user.role !== 'Admin' && req.user.role !== 'Gérant') {
     query.managers = req.user._id;
   }
 
@@ -78,9 +82,10 @@ exports.getProject = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check access: Admin and Gérant can see any project; PM must be a manager
+  // Check access: Admin and Gérant can see any project; PM must be a manager; Accountant must have assignedProjects
   const isManager = project.managers.some(m => m._id.toString() === req.user._id.toString());
-  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager) {
+  const isAssignedAccountant = req.user.role === 'Accountant' && req.user.assignedProjects && req.user.assignedProjects.some(p => p.toString() === req.params.id);
+  if (req.user.role !== 'Admin' && req.user.role !== 'Gérant' && !isManager && !isAssignedAccountant) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to access this project'

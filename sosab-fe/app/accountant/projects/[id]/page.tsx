@@ -241,7 +241,7 @@ function AttendanceTab({ projectId }: { projectId: string }) {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                {["Travailleur", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Total"].map(h => (
+                {["Travailleur", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Total"].map(h => (
                   <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
