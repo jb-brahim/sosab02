@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { UpdateProjectStatusDialog } from "@/components/admin/update-project-status-dialog"
 import { UpdateLocationDialog } from "@/components/admin/update-location-dialog"
+import { EditProjectManagersDialog } from "@/components/admin/edit-project-managers-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useLanguage } from "@/lib/language-context"
@@ -25,7 +26,7 @@ interface Project {
     status: "active" | "completed" | "on-hold" | "planning"
     startDate: string
     endDate: string
-    manager: { name: string; email: string } | null
+    managers: { _id: string; name: string; email: string }[]
     progress: number
     description?: string
     tasks: any[]
@@ -53,6 +54,7 @@ export default function ProjectDetailsPage() {
     const [statusDialogOpen, setStatusDialogOpen] = useState(false)
     const [locationDialogOpen, setLocationDialogOpen] = useState(false)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [managersDialogOpen, setManagersDialogOpen] = useState(false)
 
     const fetchProject = async () => {
         try {
@@ -269,17 +271,30 @@ export default function ProjectDetailsPage() {
                         <CardContent className="space-y-6">
                             <div className={cn("grid grid-cols-2 gap-6", isRTL && "flex-row-reverse")}>
                                 <div className="space-y-1">
-                                    <span className={cn("text-sm text-muted-foreground flex items-center gap-2", isRTL && "flex-row-reverse")}>
-                                        <User className="h-4 w-4" /> {t("projects.manager") || "Manager"}
-                                    </span>
-                                    <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
-                                            {project.manager?.name?.substring(0, 2).toUpperCase() || "NA"}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm">{project.manager?.name || t("common.unassigned") || "Unassigned"}</p>
-                                            <p className="text-xs text-muted-foreground">{project.manager?.email}</p>
-                                        </div>
+                                    <div className={cn("flex justify-between items-center")}>
+                                        <span className={cn("text-sm text-muted-foreground flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                            <User className="h-4 w-4" /> Team Leaders
+                                        </span>
+                                        <Button variant="ghost" size="sm" onClick={() => setManagersDialogOpen(true)}>
+                                            <Pencil className="h-3 w-3 mr-1" /> Edit
+                                        </Button>
+                                    </div>
+                                    <div className={cn("flex flex-col gap-2", isRTL && "items-end")}>
+                                        {project.managers && project.managers.length > 0 ? (
+                                            project.managers.map(manager => (
+                                                <div key={manager._id} className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
+                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
+                                                        {manager.name?.substring(0, 2).toUpperCase() || "NA"}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-sm">{manager.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground leading-none">{manager.email}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">{t("common.unassigned") || "Unassigned"}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-1">
@@ -421,6 +436,16 @@ export default function ProjectDetailsPage() {
                 open={locationDialogOpen}
                 onOpenChange={setLocationDialogOpen}
                 onLocationUpdated={fetchProject}
+            />
+
+            <EditProjectManagersDialog
+                project={project}
+                open={managersDialogOpen}
+                onOpenChange={setManagersDialogOpen}
+                onManagersUpdated={() => {
+                    fetchProject()
+                    fetchHistory()
+                }}
             />
         </div>
     )
