@@ -25,7 +25,7 @@ export default function SalaryReportPage() {
         const now = new Date()
         const onejan = new Date(now.getFullYear(), 0, 1)
         const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7)
-        return `${now.getFullYear()}-W${week.toString().padStart(2, '0')}`
+        return `DZD {now.getFullYear()}-WDZD {week.toString().padStart(2, '0')}`
     })
 
     const [reportData, setReportData] = useState<any>(null)
@@ -55,7 +55,7 @@ export default function SalaryReportPage() {
 
             try {
                 setLoading(true)
-                const res = await api.get(`/salary/${selectedProject}/${selectedWeek}`)
+                const res = await api.get(`/salary/DZD {selectedProject}/DZD {selectedWeek}`)
                 if (res.data.success) {
                     setReportData(res.data)
                 }
@@ -129,7 +129,7 @@ export default function SalaryReportPage() {
                         <CardContent className="text-center">
                             <span className="text-xs text-muted-foreground uppercase">{t("reports.total_payout")}</span>
                             <div className="text-4xl font-bold text-primary mt-1">
-                                ${reportData.totalSalary.toLocaleString()}
+                                {reportData.totalSalary.toLocaleString()} Dinar
                             </div>
                         </CardContent>
                     </Card>
@@ -159,9 +159,9 @@ export default function SalaryReportPage() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold">${item.salary.totalSalary.toLocaleString()}</p>
+                                            <p className="font-bold">{item.salary.totalSalary.toLocaleString()} Dinar</p>
                                             <p className="text-[10px] text-muted-foreground">
-                                                {t("reports.base_salary_label")}: ${item.salary.breakdown.baseSalary}
+                                                {t("reports.base_salary_label")}: {item.salary.breakdown.baseSalary} Dinar
                                             </p>
                                         </div>
                                     </CardContent>

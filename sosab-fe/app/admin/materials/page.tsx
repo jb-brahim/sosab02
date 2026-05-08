@@ -40,6 +40,7 @@ interface Material {
     projectId?: string
     totalIn: number
     totalOut: number
+    createdAt: string
 }
 
 export default function MaterialsPage() {
@@ -97,8 +98,7 @@ export default function MaterialsPage() {
             const matchesProject = filterProject === "all" || m.projectId === filterProject;
             const matchesSupplier = filterSupplier === "all" || m.supplier === filterSupplier;
 
-            return matchesSearch && matchesProject && matchesSupplier;
-        })
+        }).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     }, [materials, searchTerm, filterProject, filterSupplier])
 
     const handleDelete = async () => {

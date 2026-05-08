@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Users, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { format, startOfWeek } from "date-fns"
 
 interface Project {
@@ -27,7 +28,12 @@ interface AttendanceRecord {
 export default function AttendancePage() {
     const [projects, setProjects] = useState<Project[]>([])
     const [selectedProjectId, setSelectedProjectId] = useState<string>("")
-    const [selectedWeek, setSelectedWeek] = useState<string>(format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"))
+    const [selectedWeek, setSelectedWeek] = useState<string>(() => {
+        const now = new Date()
+        const onejan = new Date(now.getFullYear(), 0, 1)
+        const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7)
+        return `${now.getFullYear()}-W${week.toString().padStart(2, '0')}`
+    })
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isLoadingProjects, setIsLoadingProjects] = useState(true)
@@ -80,7 +86,12 @@ export default function AttendancePage() {
                     <p className="text-muted-foreground mt-1">Worker attendance logs.</p>
                 </div>
                 <div className="flex gap-4">
-                    {/* Week Selector (Simplified for now - just uses current week default) */}
+                    <Input
+                        type="week"
+                        value={selectedWeek}
+                        onChange={(e) => setSelectedWeek(e.target.value)}
+                        className="w-[180px]"
+                    />
                     {/* Project Selector */}
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={isLoadingProjects}>
                         <SelectTrigger className="w-[200px]">

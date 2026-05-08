@@ -63,7 +63,7 @@ exports.getMaterials = asyncHandler(async (req, res) => {
     });
   }
 
-  const materials = await Material.find({ projectId }).lean();
+  const materials = await Material.find({ projectId }).sort({ createdAt: -1 }).lean();
   const materialIds = materials.map(m => m._id);
 
   // Compute totalIn / totalOut from logs for accuracy
@@ -105,6 +105,7 @@ exports.getDepotMaterials = asyncHandler(async (req, res) => {
   const materials = await Material.find({
     $or: [{ projectId: { $exists: false } }, { projectId: null }]
   })
+    .sort({ createdAt: -1 })
     .populate('logs');
 
   res.status(200).json({
