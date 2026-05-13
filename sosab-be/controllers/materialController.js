@@ -87,7 +87,7 @@ exports.getMaterials = asyncHandler(async (req, res) => {
       ...m,
       totalIn,
       totalOut,
-      stockQuantity: Math.max(0, totalIn - totalOut)
+      stockQuantity: totalIn - totalOut
     };
   });
 
@@ -537,27 +537,6 @@ exports.quickLog = asyncHandler(async (req, res) => {
     });
   }
 
-  // For OUT: check current computed balance from logs
-  if (type === 'OUT') {
-    const stats = await MaterialLog.aggregate([
-      { $match: { materialId: material._id } },
-      {
-        $group: {
-          _id: null,
-          totalIn: { $sum: { $cond: [{ $eq: ['$type', 'IN'] }, '$quantity', 0] } },
-          totalOut: { $sum: { $cond: [{ $eq: ['$type', 'OUT'] }, '$quantity', 0] } }
-        }
-      }
-    ]);
-    const balance = stats.length > 0 ? Math.max(0, stats[0].totalIn - stats[0].totalOut) : 0;
-    if (qty > balance) {
-      return res.status(400).json({
-        success: false,
-        message: `Stock insuffisant. Disponible: ${balance} ${material.unit}`
-      });
-    }
-  }
-
   // Create log
   await MaterialLog.create({
     materialId: material._id,
@@ -572,7 +551,7 @@ exports.quickLog = asyncHandler(async (req, res) => {
   if (type === 'IN') {
     material.stockQuantity += qty;
   } else {
-    material.stockQuantity = Math.max(0, material.stockQuantity - qty);
+    material.stockQuantity -= qty;
   }
   material.updatedAt = new Date();
   await material.save();

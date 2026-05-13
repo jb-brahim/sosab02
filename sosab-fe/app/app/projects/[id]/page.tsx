@@ -245,8 +245,8 @@ export default function MobileProjectDetails() {
             if (logsRes.data.success) setMaterialLogs(logsRes.data.data)
             const matRes = await api.get(`/materials/${id}`)
             if (matRes.data.success) setProjectMaterials(matRes.data.data)
-        } catch (error) {
-            toast.error("Failed to register usage")
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to register usage")
         }
     }
 
@@ -275,8 +275,8 @@ export default function MobileProjectDetails() {
             if (logsRes.data.success) setMaterialLogs(logsRes.data.data)
             const matRes = await api.get(`/materials/${id}`)
             if (matRes.data.success) setProjectMaterials(matRes.data.data)
-        } catch (error) {
-            toast.error("Failed to log material out")
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to log material out")
         } finally {
             setSubmittingOut(false)
         }

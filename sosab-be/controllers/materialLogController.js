@@ -70,10 +70,6 @@ exports.addMaterialLog = asyncHandler(async (req, res) => {
         material.stockQuantity += parseFloat(quantity);
     } else if (type === 'OUT') {
         material.stockQuantity -= parseFloat(quantity);
-        // Prevent negative stock
-        if (material.stockQuantity < 0) {
-            material.stockQuantity = 0;
-        }
     }
     material.updatedAt = new Date();
     await material.save();
@@ -174,7 +170,6 @@ exports.updateMaterialLog = asyncHandler(async (req, res) => {
             material.stockQuantity += quantityDiff;
         } else {
             material.stockQuantity -= quantityDiff;
-            if (material.stockQuantity < 0) material.stockQuantity = 0;
         }
 
         await material.save();
@@ -228,7 +223,6 @@ exports.deleteMaterialLog = asyncHandler(async (req, res) => {
         } else {
             material.stockQuantity += log.quantity;
         }
-        if (material.stockQuantity < 0) material.stockQuantity = 0;
         await material.save();
     }
 
