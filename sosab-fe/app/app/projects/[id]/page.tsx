@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, MapPin, Calendar as CalendarIcon, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft, Search, ChevronRight, Package, X } from "lucide-react"
+import { ChevronLeft, MapPin, Calendar as CalendarIcon, CheckSquare, Users as UsersIcon, Clock, AlertCircle, Trash2, ChevronDown, ChevronUp, HardHat, FileText, ArrowUpRight, ArrowDownLeft, Search, ChevronRight, Package, X, Eye, EyeOff } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -95,6 +95,19 @@ export default function MobileProjectDetails() {
     const [attendanceMap, setAttendanceMap] = useState<Record<string, any>>({})
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
     const [showDatePicker, setShowDatePicker] = useState(false)
+    const [showMasked, setShowMasked] = useState(false)
+
+    const handleToggleMask = async (workerId: string, currentMasked: boolean) => {
+        try {
+            const nextMasked = !currentMasked
+            await api.patch(`/workers/${workerId}`, { masked: nextMasked })
+            setTeam(prev => prev.map(w => w._id === workerId ? { ...w, masked: nextMasked } : w))
+            toast.success(nextMasked ? "Travailleur masqué avec succès" : "Travailleur démasqué avec succès")
+        } catch (error) {
+            console.error("Failed to toggle mask status", error)
+            toast.error("Échec du changement de statut de masquage")
+        }
+    }
 
     useEffect(() => {
         const fetchProjectData = async () => {
@@ -768,8 +781,19 @@ export default function MobileProjectDetails() {
                                     </p>
                                 </div>
                             </div>
-                            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                                <PopoverTrigger asChild>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowMasked(!showMasked)}
+                                    className={`text-xs font-black uppercase tracking-widest px-2.5 py-2 h-auto border-white/5 transition-all ${
+                                        showMasked ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'bg-background/50 hover:bg-background/80 hover:border-primary/30'
+                                    }`}
+                                >
+                                    {showMasked ? <Eye className="w-3.5 h-3.5 mr-1.5" /> : <EyeOff className="w-3.5 h-3.5 mr-1.5" />}
+                                    {showMasked ? "Masqués (On)" : "Masqués"}
+                                </Button>
+                                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                                    <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
                                         className="bg-background/50 text-xs font-black uppercase tracking-widest px-3 py-2 h-auto border-white/5 hover:bg-background/80 hover:border-primary/30 transition-all"
@@ -793,12 +817,13 @@ export default function MobileProjectDetails() {
                                 </PopoverContent>
                             </Popover>
                         </div>
+                    </div>
 
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
                         <div className="space-y-4 pb-12" style={{ contentVisibility: 'auto' } as any}>
-                            {team.filter(w => !w.supervisorId).map((worker) => {
+                            {team.filter(w => (showMasked || !w.masked) && !w.supervisorId).map((worker) => {
                                 const isSousTraitant = worker.isSubcontractor || worker.trade === 'Sous Traitant';
-                                const subWorkers = team.filter(sw => sw.supervisorId === worker._id);
+                                const subWorkers = team.filter(sw => (showMasked || !sw.masked) && sw.supervisorId === worker._id);
 
                                 return (
                                     <div key={worker._id}>
@@ -844,6 +869,7 @@ export default function MobileProjectDetails() {
                                                                     status={attendanceMap[worker._id]}
                                                                     onMark={handleMarkAttendance}
                                                                     setMap={setAttendanceMap}
+                                                                    onToggleMask={handleToggleMask}
                                                                     isLeader
                                                                 />
                                                             </div>
@@ -859,6 +885,7 @@ export default function MobileProjectDetails() {
                                                                                 status={attendanceMap[sw._id]}
                                                                                 onMark={handleMarkAttendance}
                                                                                 setMap={setAttendanceMap}
+                                                                                onToggleMask={handleToggleMask}
                                                                             />
                                                                         ))}
                                                                     </div>
@@ -874,6 +901,7 @@ export default function MobileProjectDetails() {
                                                 status={attendanceMap[worker._id]}
                                                 onMark={handleMarkAttendance}
                                                 setMap={setAttendanceMap}
+                                                onToggleMask={handleToggleMask}
                                                 className="mb-1.5"
                                             />
                                         )}
@@ -1442,7 +1470,7 @@ export default function MobileProjectDetails() {
 }
 
 // Component for Worker Attendance Item
-function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLeader }: any) {
+function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLeader, onToggleMask }: any) {
     const { t } = useLanguage()
     const isPresentMarked = status?.present === true
     const isAbsentMarked = status?.present === false
@@ -1491,6 +1519,20 @@ function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLea
                             onBlur={(e) => status?.present && onMark(worker._id, true, parseFloat(e.target.value || '1'))}
                         />
                     </div>
+
+                    {/* Mask Button */}
+                    {onToggleMask && (
+                        <button
+                            title={worker.masked ? "Afficher (Démasquer)" : "Masquer l'ouvrier"}
+                            className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${worker.masked
+                                ? 'bg-amber-500 text-white shadow-md hover:bg-amber-600'
+                                : 'bg-background/80 border border-border/40 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/40'
+                                }`}
+                            onClick={() => onToggleMask(worker._id, worker.masked)}
+                        >
+                            {worker.masked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+                    )}
 
                     {/* Presence Buttons */}
                     <button

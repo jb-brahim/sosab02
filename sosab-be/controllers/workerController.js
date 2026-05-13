@@ -127,7 +127,7 @@ exports.getAllWorkers = asyncHandler(async (req, res) => {
 // @route   PATCH /api/workers/:id
 // @access  Private/Admin or Project Manager
 exports.updateWorker = asyncHandler(async (req, res) => {
-  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, active, supervisorId, isSubcontractor } = req.body;
+  const { name, trade, projectId, dailySalary, documents, contact, assignedTasks, active, masked, supervisorId, isSubcontractor } = req.body;
 
   const worker = await Worker.findById(req.params.id).populate('projectId');
 
@@ -155,6 +155,7 @@ exports.updateWorker = asyncHandler(async (req, res) => {
   if (contact) worker.contact = contact;
   if (assignedTasks) worker.assignedTasks = assignedTasks;
   if (active !== undefined) worker.active = active;
+  if (masked !== undefined) worker.masked = masked;
   if (supervisorId !== undefined) worker.supervisorId = supervisorId;
   if (isSubcontractor !== undefined) worker.isSubcontractor = isSubcontractor;
   worker.updatedAt = new Date();

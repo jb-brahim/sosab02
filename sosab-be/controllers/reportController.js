@@ -173,7 +173,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // DECISION: For 'salary' type with custom dates, if we can't be accurate, we return error or empty.
     // However, let's try to support checking 'Salary' model for weeks.
 
-    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true });
+    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true, masked: { $ne: true } });
     const salaryData = [];
 
     // If weekly mode or loose matching
@@ -212,7 +212,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // IF WEEK IS PROVIDED, use old robust logic
     if (week) {
       // ... existing logic ...
-      const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true });
+      const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true, masked: { $ne: true } });
       const realSalaryData = [];
       for (const worker of workers) {
         const salary = await Salary.findOne({ workerId: worker._id, week: week });
@@ -343,7 +343,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'attendance') {
     // Generate attendance report
-    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true }).sort({ name: 1 });
+    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true, masked: { $ne: true } }).sort({ name: 1 });
     const attendanceGrid = [];
 
     // Calculate days in range for dynamic columns
@@ -491,7 +491,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // For multi-site recap, we need to know the total per project
     for (const pId of selectedProjectIds) {
       const project = projects.find(p => p._id.toString() === pId.toString()) || primaryProject;
-      const projectWorkers = await Worker.find({ projectId: pId, active: true }).sort({ name: 1 });
+      const projectWorkers = await Worker.find({ projectId: pId, active: true, masked: { $ne: true } }).sort({ name: 1 });
 
       let projectTotal = 0;
 
