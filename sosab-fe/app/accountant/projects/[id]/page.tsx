@@ -10,6 +10,9 @@ import {
   DollarSign,
   FileBarChart,
   Plus,
+  Minus,
+  ArrowDownLeft,
+  ArrowUpRight,
   Trash2,
   Pencil,
   ArrowLeft,
@@ -24,6 +27,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { CreateMaterialDialog } from "@/components/admin/create-material-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 type Tab = "materials" | "attendance" | "salary" | "reports"
 
@@ -42,6 +53,27 @@ function MaterialsTab({ projectId }: { projectId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", unit: "", price: "", stockQuantity: "", category: "Standard" })
   const [saving, setSaving] = useState(false)
+
+  // Quick stock log state (IN/OUT)
+  const [logModal, setLogModal] = useState<{
+    isOpen: boolean
+    type: "IN" | "OUT" | null
+    material: any | null
+    quantity: string
+    notes: string
+    deliveredBy: string
+    supplier: string
+    bonLivraison: string
+  }>({
+    isOpen: false,
+    type: null,
+    material: null,
+    quantity: "",
+    notes: "",
+    deliveredBy: "",
+    supplier: "",
+    bonLivraison: ""
+  })
 
   const fetchMaterials = async () => {
     try {
@@ -73,6 +105,38 @@ function MaterialsTab({ projectId }: { projectId: string }) {
       fetchMaterials()
     } catch {
       toast.error("Erreur lors de la sauvegarde")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleQuickLogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!logModal.material || !logModal.type || !logModal.quantity) return
+
+    setSaving(true)
+    try {
+      const res = await api.post("/materials/quick-log", {
+        projectId,
+        materialId: logModal.material._id,
+        materialName: logModal.material.name,
+        unit: logModal.material.unit,
+        category: logModal.material.category,
+        type: logModal.type,
+        quantity: parseFloat(logModal.quantity),
+        notes: logModal.notes,
+        deliveredBy: logModal.type === "IN" ? logModal.deliveredBy : undefined,
+        supplier: logModal.type === "IN" ? logModal.supplier : undefined,
+        bonLivraison: logModal.type === "IN" ? logModal.bonLivraison : undefined
+      })
+
+      if (res.data.success) {
+        toast.success(logModal.type === "IN" ? "Arrivage enregistré !" : "Sortie enregistrée !")
+        setLogModal({ isOpen: false, type: null, material: null, quantity: "", notes: "", deliveredBy: "", supplier: "", bonLivraison: "" })
+        fetchMaterials()
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erreur lors de l'enregistrement")
     } finally {
       setSaving(false)
     }
@@ -180,6 +244,24 @@ function MaterialsTab({ projectId }: { projectId: string }) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-600"
+                        title="Arrivage (Entrée)"
+                        onClick={() => setLogModal({ isOpen: true, type: "IN", material: m, quantity: "", notes: "", deliveredBy: "", supplier: "", bonLivraison: "" })}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                        title="Sortie (Sortie)"
+                        onClick={() => setLogModal({ isOpen: true, type: "OUT", material: m, quantity: "", notes: "", deliveredBy: "", supplier: "", bonLivraison: "" })}
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => handleEdit(m)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -194,6 +276,140 @@ function MaterialsTab({ projectId }: { projectId: string }) {
           </tbody>
         </table>
       </div>
+
+      {/* Quick Log Modal (IN/OUT) */}
+      <Dialog open={logModal.isOpen} onOpenChange={(open) => !open && setLogModal(prev => ({ ...prev, isOpen: false }))}>
+        <DialogContent className={cn("transition-all duration-300", logModal.type === "IN" ? "sm:max-w-[460px]" : "sm:max-w-[420px]")}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              {logModal.type === "IN" ? (
+                <div className="flex items-center gap-2 text-emerald-500">
+                  <ArrowDownLeft className="h-5 w-5" />
+                  <span>Nouvel arrivage (Entrée de stock)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-rose-500">
+                  <ArrowUpRight className="h-5 w-5" />
+                  <span>Nouvelle sortie (Retrait de stock)</span>
+                </div>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Enregistrer un mouvement de stock pour le matériau <strong className="text-foreground">{logModal.material?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleQuickLogSubmit} className="space-y-4 pt-2">
+            <div className="rounded-xl bg-muted/50 p-3 border border-border/40 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Catégorie:</span>
+                <span className="font-semibold">{logModal.material?.category || "Standard"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Stock Actuel:</span>
+                <span className="font-semibold">{logModal.material?.stockQuantity} {logModal.material?.unit}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Prix Unitaire:</span>
+                <span className="font-semibold">{logModal.material?.price ? `${logModal.material.price.toLocaleString()} DA` : "—"}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="log-qty" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Quantité ({logModal.material?.unit})
+              </label>
+              <input
+                id="log-qty"
+                type="number"
+                step="any"
+                min="0.001"
+                placeholder="Entrez la quantité"
+                value={logModal.quantity}
+                onChange={(e) => setLogModal(prev => ({ ...prev, quantity: e.target.value }))}
+                required
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
+
+            {logModal.type === "IN" && (
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-muted/20 border border-border/40">
+                <div className="space-y-1.5">
+                  <label htmlFor="log-supplier" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Fournisseur
+                  </label>
+                  <input
+                    id="log-supplier"
+                    type="text"
+                    placeholder="Nom du fournisseur"
+                    value={logModal.supplier}
+                    onChange={(e) => setLogModal(prev => ({ ...prev, supplier: e.target.value }))}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="log-livreur" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Livreur (Livreur)
+                  </label>
+                  <input
+                    id="log-livreur"
+                    type="text"
+                    placeholder="Nom du livreur"
+                    value={logModal.deliveredBy}
+                    onChange={(e) => setLogModal(prev => ({ ...prev, deliveredBy: e.target.value }))}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <label htmlFor="log-bon" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Bon de livraison (Bon de livraison)
+                  </label>
+                  <input
+                    id="log-bon"
+                    type="text"
+                    placeholder="N° de bon de livraison"
+                    value={logModal.bonLivraison}
+                    onChange={(e) => setLogModal(prev => ({ ...prev, bonLivraison: e.target.value }))}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="log-notes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Notes (Optionnel)
+              </label>
+              <textarea
+                id="log-notes"
+                placeholder="Détails supplémentaires..."
+                value={logModal.notes}
+                onChange={(e) => setLogModal(prev => ({ ...prev, notes: e.target.value }))}
+                className="w-full min-h-[70px] rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+              />
+            </div>
+
+            <DialogFooter className="pt-2 gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setLogModal(prev => ({ ...prev, isOpen: false }))}>
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={saving}
+                className={cn(
+                  "text-white font-medium",
+                  logModal.type === "IN"
+                    ? "bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/10"
+                    : "bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/10"
+                )}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

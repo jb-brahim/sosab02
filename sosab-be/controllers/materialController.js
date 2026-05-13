@@ -504,7 +504,7 @@ exports.directReception = asyncHandler(async (req, res) => {
 // @route   POST /api/materials/quick-log
 // @access  Private (Manager/Admin)
 exports.quickLog = asyncHandler(async (req, res) => {
-  const { projectId, materialName, unit, category, quantity, type, notes } = req.body;
+  const { projectId, materialName, unit, category, quantity, type, notes, deliveredBy, supplier, bonLivraison } = req.body;
 
   if (!projectId || !materialName || !unit || !quantity || !type) {
     return res.status(400).json({ success: false, message: 'projectId, materialName, unit, quantity and type are required' });
@@ -543,6 +543,9 @@ exports.quickLog = asyncHandler(async (req, res) => {
     type,
     quantity: qty,
     notes: notes || '',
+    deliveredBy: deliveredBy || '',
+    supplier: supplier || '',
+    bonLivraison: bonLivraison || '',
     loggedBy: req.user._id,
     date: new Date()
   });

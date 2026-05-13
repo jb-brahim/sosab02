@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Loader2, ChevronRight, Search, ArrowLeft, LayoutGrid } from "lucide-react"
+import { Plus, Loader2, ChevronRight, Search, ArrowLeft, LayoutGrid, Package } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { MATERIAL_CATALOG, ALL_CLASSIFICATION_NAMES, type MaterialEntry } from "@/lib/material-catalog"
@@ -28,9 +28,9 @@ const LOCALIZED_TEXT = {
         addMaterial: "Add Material",
         newMaterial: "New Material",
         materialDetails: "Material Details",
-        searchClassification: "Search classification…",
+        searchClassification: "Search classification or material name…",
         noMatch: "No match found",
-        chooseClassification: "Type or choose a classification",
+        chooseClassification: "Type or choose a category/material",
         chooseMaterial: "Choose a material or add a custom one",
         fillDetails: "Fill in the remaining details",
         autre: "Autre (custom material)",
@@ -42,15 +42,17 @@ const LOCALIZED_TEXT = {
         initialStock: "Initial Stock",
         supplier: "Supplier",
         supplierOptional: "Supplier name (optional)",
-        cancel: "Cancel"
+        cancel: "Cancel",
+        matchingMaterials: "Matching Materials",
+        categories: "Categories"
     },
     fr: {
         addMaterial: "Ajouter un matériau",
         newMaterial: "Nouveau matériau",
         materialDetails: "Détails du matériau",
-        searchClassification: "Rechercher une catégorie…",
+        searchClassification: "Rechercher une catégorie ou un matériau…",
         noMatch: "Aucune correspondance trouvée",
-        chooseClassification: "Saisissez ou choisissez une catégorie",
+        chooseClassification: "Saisissez ou choisissez une catégorie ou un matériau",
         chooseMaterial: "Choisissez un matériau ou ajoutez-en un personnalisé",
         fillDetails: "Remplissez les détails restants",
         autre: "Autre (matériau personnalisé)",
@@ -62,7 +64,9 @@ const LOCALIZED_TEXT = {
         initialStock: "Quantité initiale",
         supplier: "Fournisseur",
         supplierOptional: "Nom du fournisseur (optionnel)",
-        cancel: "Annuler"
+        cancel: "Annuler",
+        matchingMaterials: "Matériaux correspondants",
+        categories: "Catégories"
     }
 }
 
@@ -99,6 +103,15 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
             c.toLowerCase().includes(classQuery.toLowerCase())
         )
 
+    // Filter matching materials inside the catalog directly
+    const matchingMaterials = classQuery.trim() === ""
+        ? []
+        : MATERIAL_CATALOG.flatMap(cat =>
+            cat.items.map(item => ({ ...item, classification: cat.classification }))
+        ).filter(item =>
+            item.name.toLowerCase().includes(classQuery.toLowerCase())
+        ).slice(0, 8)
+
     // Items under selected classification
     const classificationItems: MaterialEntry[] = MATERIAL_CATALOG.find(
         c => c.classification === selectedClassification
@@ -117,6 +130,19 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
             unit: item.unit,
             category: selectedClassification,
         }))
+        setStep("form")
+    }
+
+    const handleSelectDirectMaterial = (item: { name: string, unit: string, classification: string }) => {
+        setFormData({
+            name: item.name,
+            unit: item.unit,
+            category: item.classification,
+            price: "",
+            stockQuantity: "",
+            supplier: ""
+        })
+        setIsAutre(false)
         setStep("form")
     }
 
@@ -222,25 +248,58 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                                 className="pl-9"
                             />
                         </div>
-                        <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
-                            {suggestions.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">{t.noMatch}</p>
-                            ) : (
-                                suggestions.map(name => (
-                                    <button
-                                        key={name}
-                                        type="button"
-                                        onClick={() => handleSelectClassification(name)}
-                                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-primary/10 hover:text-primary transition-colors text-left group"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                            {name}
-                                        </span>
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                                    </button>
-                                ))
+                        <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                            {/* Matching Materials Section */}
+                            {matchingMaterials.length > 0 && (
+                                <div className="space-y-1">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary px-3 mb-1">
+                                        {t.matchingMaterials}
+                                    </h4>
+                                    {matchingMaterials.map((item, idx) => (
+                                        <button
+                                            key={`${item.name}-${idx}`}
+                                            type="button"
+                                            onClick={() => handleSelectDirectMaterial(item)}
+                                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm hover:bg-primary/10 hover:text-primary transition-all text-left"
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold">{item.name}</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold mt-0.5">{item.classification}</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-muted-foreground bg-white/5 px-2 py-0.5 rounded">
+                                                {item.unit}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             )}
+
+                            {/* Category Suggestions Section */}
+                            <div className="space-y-1">
+                                {classQuery.trim() !== "" && suggestions.length > 0 && (
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-3 mb-1 mt-2">
+                                        {t.categories}
+                                    </h4>
+                                )}
+                                {suggestions.length === 0 && matchingMaterials.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">{t.noMatch}</p>
+                                ) : (
+                                    suggestions.map(name => (
+                                        <button
+                                            key={name}
+                                            type="button"
+                                            onClick={() => handleSelectClassification(name)}
+                                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-primary/10 hover:text-primary transition-colors text-left group"
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                {name}
+                                            </span>
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                        </button>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
