@@ -420,8 +420,9 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
 
   const generateReport = async (type: string, label: string) => {
     setGenerating(type)
+    const apiType = type === "materials" ? "material" : type
     try {
-      const res = await api.post("/reports/generate", { projectId, type, week }, { responseType: "blob" })
+      const res = await api.post("/reports/generate", { projectId, type: apiType, week }, { responseType: "blob" })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement("a")
       link.href = url

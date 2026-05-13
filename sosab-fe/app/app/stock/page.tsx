@@ -105,11 +105,11 @@ export default function StockPage() {
         try {
             setIsExporting(true)
             const now = new Date()
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+            const startOfTime = "2020-01-01"
+            const endOfTime = now.toISOString().split('T')[0]
             const res = await api.post('/reports/generate', {
                 projectId: selectedProjectId, type: 'material',
-                startDate: startOfMonth, endDate: endOfMonth, format: 'excel'
+                startDate: startOfTime, endDate: endOfTime, format: 'excel'
             })
             if (res.data.success) {
                 toast.success("Excel generated!")

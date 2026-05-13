@@ -239,7 +239,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'material') {
     // Generate material report - ACCURATE for any range
-    const materials = await Material.find({ projectId: { $in: selectedProjectIds } });
+    const materials = await Material.find({ projectId: { $in: selectedProjectIds } }).sort({ createdAt: 1 });
     const materialData = [];
     const movementLogs = [];
 
