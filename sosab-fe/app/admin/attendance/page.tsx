@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Users, Calendar } from "lucide-react"
+import { Loader2, Users, Calendar, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -15,14 +15,6 @@ import { format, startOfWeek } from "date-fns"
 interface Project {
     _id: string
     name: string
-}
-
-interface AttendanceRecord {
-    _id: string
-    date: string
-    workerId: { name: string }
-    present: boolean
-    overtime: number
 }
 
 export default function AttendancePage() {
@@ -34,7 +26,7 @@ export default function AttendancePage() {
         const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7)
         return `${now.getFullYear()}-W${week.toString().padStart(2, '0')}`
     })
-    const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
+    const [attendance, setAttendance] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isLoadingProjects, setIsLoadingProjects] = useState(true)
 
@@ -82,7 +74,7 @@ export default function AttendancePage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="font-display text-3xl font-bold tracking-tight">Attendance</h1>
+                    <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Attendance</h1>
                     <p className="text-muted-foreground mt-1">Worker attendance logs.</p>
                 </div>
                 <div className="flex gap-4">
@@ -90,11 +82,11 @@ export default function AttendancePage() {
                         type="week"
                         value={selectedWeek}
                         onChange={(e) => setSelectedWeek(e.target.value)}
-                        className="w-[180px]"
+                        className="w-[180px] bg-background"
                     />
                     {/* Project Selector */}
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={isLoadingProjects}>
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-[200px] bg-background">
                             <SelectValue placeholder="Select Project" />
                         </SelectTrigger>
                         <SelectContent>
@@ -106,17 +98,17 @@ export default function AttendancePage() {
                 </div>
             </div>
 
-            <Card>
+            <Card className="border border-border bg-card">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
+                        <Users className="h-5 w-5 text-amber-500" />
                         Weekly Records
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoadingProjects ? (
                         <div className="flex h-40 items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
                         </div>
                     ) : !selectedProjectId ? (
                         <div className="text-center h-24 flex items-center justify-center text-muted-foreground">
@@ -124,39 +116,48 @@ export default function AttendancePage() {
                         </div>
                     ) : isLoading ? (
                         <div className="flex h-40 items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
                                     <TableHead>Worker</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Overtime (h)</TableHead>
+                                    <TableHead className="text-center">Sun</TableHead>
+                                    <TableHead className="text-center">Mon</TableHead>
+                                    <TableHead className="text-center">Tue</TableHead>
+                                    <TableHead className="text-center">Wed</TableHead>
+                                    <TableHead className="text-center">Thu</TableHead>
+                                    <TableHead className="text-center">Fri</TableHead>
+                                    <TableHead className="text-center">Sat</TableHead>
+                                    <TableHead className="text-center">Total</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {attendance.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                        <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
                                             No attendance records found for this week.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     attendance.map((record) => (
-                                        <TableRow key={record._id}>
-                                            <TableCell className="font-medium flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                {new Date(record.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                                            </TableCell>
-                                            <TableCell>{record.workerId?.name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={record.present ? "success" : "destructive"}>
-                                                    {record.present ? "Present" : "Absent"}
+                                        <TableRow key={record.workerId} className="hover:bg-muted/30 transition-colors">
+                                            <TableCell className="font-medium">{record.workerName}</TableCell>
+                                            {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map(day => (
+                                                <TableCell key={day} className="text-center">
+                                                    {record[day] ? (
+                                                        <Check className="h-4 w-4 text-green-500 mx-auto" />
+                                                    ) : (
+                                                        <X className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                                                    )}
+                                                </TableCell>
+                                            ))}
+                                            <TableCell className="text-center">
+                                                <Badge variant="outline" className="text-amber-600 border-amber-500/30 bg-amber-500/5 font-semibold">
+                                                    {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].filter(d => record[d]).length}d
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>{record.overtime > 0 ? `+${record.overtime}` : "-"}</TableCell>
                                         </TableRow>
                                     ))
                                 )}

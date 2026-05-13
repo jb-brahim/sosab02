@@ -25,7 +25,7 @@ export default function SalaryReportPage() {
         const now = new Date()
         const onejan = new Date(now.getFullYear(), 0, 1)
         const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7)
-        return `DZD {now.getFullYear()}-WDZD {week.toString().padStart(2, '0')}`
+        return `${now.getFullYear()}-W${week.toString().padStart(2, '0')}`
     })
 
     const [reportData, setReportData] = useState<any>(null)
@@ -55,13 +55,13 @@ export default function SalaryReportPage() {
 
             try {
                 setLoading(true)
-                const res = await api.get(`/salary/DZD {selectedProject}/DZD {selectedWeek}`)
+                const res = await api.get(`/salary/${selectedProject}/${selectedWeek}`)
                 if (res.data.success) {
                     setReportData(res.data)
                 }
             } catch (error) {
                 console.error("Failed to fetch salary report", error)
-                toast.error(t("reports.delete_failed"))
+                toast.error("Impossible de charger le rapport de salaire")
             } finally {
                 setLoading(false)
             }

@@ -20,6 +20,7 @@ import {
   Loader2,
   ChevronDown,
   FileDown,
+  FileSpreadsheet,
   Check,
   X,
 } from "lucide-react"
@@ -399,13 +400,12 @@ function SalaryTab({ projectId }: { projectId: string }) {
 function ReportsTab({ projectId, projectName }: { projectId: string; projectName: string }) {
   const [generating, setGenerating] = useState<string | null>(null)
   const [reports, setReports] = useState<any[]>([])
-  const [week, setWeek] = useState(() => {
-    const d = new Date()
-    const year = d.getFullYear()
-    const oneJan = new Date(year, 0, 1)
-    const numberOfDays = Math.floor((d.getTime() - oneJan.getTime()) / (24 * 60 * 60 * 1000))
-    const weekNum = Math.ceil((numberOfDays + oneJan.getDay() + 1) / 7)
-    return `${year}-W${weekNum.toString().padStart(2, '0')}`
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+  })
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split('T')[0]
   })
 
   useEffect(() => {
@@ -422,17 +422,24 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
     setGenerating(type)
     const apiType = type === "materials" ? "material" : type
     try {
-      const res = await api.post("/reports/generate", { projectId, type: apiType, week }, { responseType: "blob" })
-      const url = window.URL.createObjectURL(new Blob([res.data]))
-      const link = document.createElement("a")
-      link.href = url
-      link.setAttribute("download", `${label}-${projectName}-${new Date().toISOString().slice(0, 10)}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      toast.success(`Rapport ${label} généré`)
-    } catch {
-      toast.error("Erreur lors de la génération du rapport")
+      const res = await api.post("/reports/generate", {
+        projectId,
+        type: apiType,
+        startDate,
+        endDate,
+        format: "excel"
+      })
+      if (res.data.success) {
+        toast.success(`Rapport ${label} Excel généré`)
+        window.open(`${BACKEND_URL}${res.data.data.pdfUrl}`, '_blank')
+        
+        // Refresh past reports list
+        const reportsRes = await api.get(`/reports?projectId=${projectId}`)
+        if (reportsRes.data.success) setReports(reportsRes.data.data)
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.response?.data?.message || "Erreur lors de la génération du rapport")
     } finally {
       setGenerating(null)
     }
@@ -440,8 +447,8 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
 
   const reportTypes = [
     { type: "materials", label: "Matériaux", icon: Package, desc: "Liste complète des matériaux, stocks et mouvements" },
-    { type: "salary", label: "Salaires", icon: DollarSign, desc: "Récapitulatif hebdomadaire des salaires par travailleur" },
-    { type: "attendance", label: "Présences", icon: CalendarDays, desc: "Tableau de présence hebdomadaire des travailleurs" },
+    { type: "salary", label: "Salaires", icon: DollarSign, desc: "Récapitulatif des salaires par travailleur" },
+    { type: "attendance", label: "Présences", icon: CalendarDays, desc: "Tableau de présence des travailleurs" },
   ]
 
   return (
@@ -449,16 +456,27 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass p-4 rounded-2xl border border-amber-500/10">
         <div>
           <h3 className="font-bold text-lg tracking-tight">Générer un Rapport</h3>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">Sélectionnez la période</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">Période personnalisée</p>
         </div>
-        <div className="flex items-center gap-3 bg-background/50 p-2 rounded-xl border border-border">
-          <CalendarDays className="h-4 w-4 text-amber-500" />
-          <input
-            type="week"
-            value={week}
-            onChange={(e) => setWeek(e.target.value)}
-            className="bg-transparent border-none text-sm font-medium focus:outline-none"
-          />
+        <div className="flex flex-wrap items-center gap-4 bg-background/50 p-2.5 rounded-xl border border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-semibold uppercase">Du</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-background border border-border rounded-lg px-2 py-1 text-sm font-medium focus:outline-none text-foreground"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-semibold uppercase">Au</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-background border border-border rounded-lg px-2 py-1 text-sm font-medium focus:outline-none text-foreground"
+            />
+          </div>
         </div>
       </div>
 
@@ -478,7 +496,7 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
               </div>
             </div>
             <Button
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2 font-medium"
               size="sm"
               disabled={generating === type}
               onClick={() => generateReport(type, label)}
@@ -486,9 +504,9 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
               {generating === type ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <FileDown className="h-4 w-4" />
+                <FileSpreadsheet className="h-4 w-4" />
               )}
-              Télécharger PDF
+              Télécharger Excel
             </Button>
           </div>
         ))}
