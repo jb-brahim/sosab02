@@ -128,14 +128,6 @@ function MaterialsTab({ projectId }: { projectId: string }) {
             onSuccess={fetchMaterials}
             locale="fr"
           />
-          {/* Create Catalog Material Dialog */}
-          <CreateMaterialDialog
-            projectId={projectId}
-            onMaterialCreated={fetchMaterials}
-            locale="fr"
-            triggerLabel="Créer Matériau"
-            triggerClassName="bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2 h-9 px-4 text-xs font-semibold shadow-md shadow-amber-500/10"
-          />
         </div>
       </div>
 

@@ -34,7 +34,12 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
         unit: string
         category: string
         isNew: boolean
+        isCustom?: boolean
     } | null>(null)
+
+    // Dynamic states for unit and category in details form
+    const [customUnit, setCustomUnit] = useState("unité")
+    const [customCategory, setCustomCategory] = useState("Standard")
 
     // Form inputs
     const [formData, setFormData] = useState({
@@ -84,8 +89,10 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
             !projectMaterials.some(pm => pm.name.toLowerCase() === item.name.toLowerCase())
         ).slice(0, 5)
 
-    const handleSelectMaterial = (name: string, unit: string, category: string, isNew: boolean) => {
-        setSelectedMaterial({ name, unit, category, isNew })
+    const handleSelectMaterial = (name: string, unit: string, category: string, isNew: boolean, isCustom = false) => {
+        setSelectedMaterial({ name, unit, category, isNew, isCustom })
+        setCustomUnit(unit)
+        setCustomCategory(category)
         setStep("details")
     }
 
@@ -98,8 +105,8 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
             const res = await api.post("/materials/quick-log", {
                 projectId,
                 materialName: selectedMaterial.name,
-                unit: selectedMaterial.unit,
-                category: selectedMaterial.category,
+                unit: customUnit,
+                category: customCategory,
                 type,
                 quantity: parseFloat(formData.quantity),
                 notes: formData.notes,
@@ -130,6 +137,8 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
             setStep("select")
             setSearchQuery("")
             setSelectedMaterial(null)
+            setCustomUnit("unité")
+            setCustomCategory("Standard")
             setFormData({
                 quantity: "",
                 notes: "",
@@ -263,11 +272,31 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                                 </div>
                             )}
 
-                            {matchedProjectMaterials.length === 0 && matchedCatalogMaterials.length === 0 && (
+                            {/* Custom Material option if search query doesn't match completely */}
+                            {searchQuery.trim() !== "" && (
+                                <div className="space-y-1">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-500 px-3 mb-1 mt-2">
+                                        {locale === "fr" ? "Matériau personnalisé" : "Custom Material"}
+                                    </h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelectMaterial(searchQuery, "unité", "Standard", true, true)}
+                                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold bg-amber-500/10 text-amber-500 border border-dashed border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors text-left group animate-in fade-in zoom-in-95 duration-150"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <Plus className="h-4 w-4 text-amber-500" />
+                                            <span>{locale === "fr" ? `Créer & ajouter "${searchQuery}"` : `Create & add "${searchQuery}"`}</span>
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 text-amber-500 font-bold" />
+                                    </button>
+                                </div>
+                            )}
+
+                            {matchedProjectMaterials.length === 0 && matchedCatalogMaterials.length === 0 && searchQuery.trim() === "" && (
                                 <div className="text-center py-8 text-muted-foreground space-y-2">
                                     <Package className="h-8 w-8 mx-auto opacity-30" />
                                     <p className="text-sm">{locale === "fr" ? "Aucun matériau trouvé" : "No materials found"}</p>
-                                    <p className="text-xs opacity-60">{locale === "fr" ? "Essayez de rechercher un autre mot-clé." : "Try searching for a different keyword."}</p>
+                                    <p className="text-xs opacity-60">{locale === "fr" ? "Saisissez un nom pour créer un matériau personnalisé." : "Type a name to create a custom material."}</p>
                                 </div>
                             )}
                         </div>
@@ -283,21 +312,63 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                                 <span className="text-muted-foreground">{locale === "fr" ? "Matériau :" : "Material:"}</span>
                                 <span className="font-bold text-foreground">{selectedMaterial.name}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">{locale === "fr" ? "Catégorie :" : "Category:"}</span>
-                                <span className="font-semibold">{selectedMaterial.category}</span>
-                            </div>
-                            {selectedMaterial.isNew && (
+                            {!selectedMaterial.isCustom && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">{locale === "fr" ? "Catégorie :" : "Category:"}</span>
+                                    <span className="font-semibold">{selectedMaterial.category}</span>
+                                </div>
+                            )}
+                            {selectedMaterial.isNew && !selectedMaterial.isCustom && (
                                 <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide mt-1 text-center">
                                     ✨ {locale === "fr" ? "Sera ajouté automatiquement au projet" : "Will be added auto-created in project"}
                                 </div>
                             )}
                         </div>
 
+                        {/* Custom editable unit and category if creating custom material */}
+                        {selectedMaterial.isCustom && (
+                            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/25">
+                                <div className="space-y-1.5 col-span-2">
+                                    <div className="text-[10px] font-bold text-amber-500 uppercase tracking-wider text-center">
+                                        ✨ Nouveau matériau personnalisé
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="custom-category" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        {locale === "fr" ? "Catégorie" : "Category"}
+                                    </Label>
+                                    <select
+                                        id="custom-category"
+                                        value={customCategory}
+                                        onChange={e => setCustomCategory(e.target.value)}
+                                        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                    >
+                                        {["Standard", "BÉTON", "LIANTS", "PRODUITS DE CARRIERE", "PRODUITS ROUGES", "ARMATURES", "Sable", "Agglos", "Divers"].map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="custom-unit" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        {locale === "fr" ? "Unité" : "Unit"}
+                                    </Label>
+                                    <input
+                                        id="custom-unit"
+                                        type="text"
+                                        placeholder="Ex: sac, m³, kg"
+                                        value={customUnit}
+                                        onChange={e => setCustomUnit(e.target.value)}
+                                        required
+                                        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         {/* Quantity input */}
                         <div className="space-y-2">
                             <Label htmlFor="mov-qty" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                {locale === "fr" ? `Quantité (${selectedMaterial.unit})` : `Quantity (${selectedMaterial.unit})`}
+                                {locale === "fr" ? `Quantité (${customUnit})` : `Quantity (${customUnit})`}
                             </Label>
                             <Input
                                 id="mov-qty"
