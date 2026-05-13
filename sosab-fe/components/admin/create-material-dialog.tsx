@@ -14,16 +14,64 @@ interface CreateMaterialDialogProps {
     projectId: string
     onMaterialCreated: () => void
     disabled?: boolean
+    locale?: "en" | "fr"
+    triggerLabel?: string
+    triggerClassName?: string
 }
 
 type Step = "classification" | "material-pick" | "form"
 
 const UNITS = ['kg', 'T', 'm', 'ml', 'm²', 'm³', 'U', 'L', 'box', 'bag', 'liter']
 
-export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }: CreateMaterialDialogProps) {
+const LOCALIZED_TEXT = {
+    en: {
+        addMaterial: "Add Material",
+        newMaterial: "New Material",
+        materialDetails: "Material Details",
+        searchClassification: "Search classification…",
+        noMatch: "No match found",
+        chooseClassification: "Type or choose a classification",
+        chooseMaterial: "Choose a material or add a custom one",
+        fillDetails: "Fill in the remaining details",
+        autre: "Autre (custom material)",
+        materialName: "Material Name",
+        classification: "Classification",
+        unit: "Unit",
+        selectUnit: "Select unit",
+        unitPrice: "Unit Price (TND)",
+        initialStock: "Initial Stock",
+        supplier: "Supplier",
+        supplierOptional: "Supplier name (optional)",
+        cancel: "Cancel"
+    },
+    fr: {
+        addMaterial: "Ajouter un matériau",
+        newMaterial: "Nouveau matériau",
+        materialDetails: "Détails du matériau",
+        searchClassification: "Rechercher une catégorie…",
+        noMatch: "Aucune correspondance trouvée",
+        chooseClassification: "Saisissez ou choisissez une catégorie",
+        chooseMaterial: "Choisissez un matériau ou ajoutez-en un personnalisé",
+        fillDetails: "Remplissez les détails restants",
+        autre: "Autre (matériau personnalisé)",
+        materialName: "Nom du matériau",
+        classification: "Catégorie",
+        unit: "Unité",
+        selectUnit: "Sélectionner l'unité",
+        unitPrice: "Prix unitaire (DA)",
+        initialStock: "Quantité initiale",
+        supplier: "Fournisseur",
+        supplierOptional: "Nom du fournisseur (optionnel)",
+        cancel: "Annuler"
+    }
+}
+
+export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, locale = "en", triggerLabel, triggerClassName }: CreateMaterialDialogProps) {
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [step, setStep] = useState<Step>("classification")
+
+    const t = LOCALIZED_TEXT[locale]
 
     // Step 1
     const [classQuery, setClassQuery] = useState("")
@@ -101,12 +149,12 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
             }
             const res = await api.post("/materials", payload)
             if (res.data.success) {
-                toast.success("Material added successfully")
+                toast.success(locale === "fr" ? "Matériau ajouté avec succès" : "Material added successfully")
                 handleClose()
                 onMaterialCreated()
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to add material")
+            toast.error(error.response?.data?.message || (locale === "fr" ? "Échec de l'ajout du matériau" : "Failed to add material"))
         } finally {
             setIsLoading(false)
         }
@@ -133,9 +181,9 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true) }}>
             <DialogTrigger asChild>
-                <Button disabled={disabled}>
+                <Button disabled={disabled} className={triggerClassName}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Material
+                    {triggerLabel || t.addMaterial}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[460px]">
@@ -150,14 +198,14 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                                 <ArrowLeft className="h-4 w-4" />
                             </button>
                         )}
-                        {step === "classification" && "Add Material"}
+                        {step === "classification" && t.addMaterial}
                         {step === "material-pick" && selectedClassification}
-                        {step === "form" && (isAutre ? "New Material" : formData.name || "Material Details")}
+                        {step === "form" && (isAutre ? t.newMaterial : formData.name || t.materialDetails)}
                     </DialogTitle>
                     <DialogDescription>
-                        {step === "classification" && "Type or choose a classification"}
-                        {step === "material-pick" && "Choose a material or add a custom one"}
-                        {step === "form" && "Fill in the remaining details"}
+                        {step === "classification" && t.chooseClassification}
+                        {step === "material-pick" && t.chooseMaterial}
+                        {step === "form" && t.fillDetails}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -168,7 +216,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 ref={inputRef}
-                                placeholder="Search classification…"
+                                placeholder={t.searchClassification}
                                 value={classQuery}
                                 onChange={e => setClassQuery(e.target.value)}
                                 className="pl-9"
@@ -176,7 +224,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                         </div>
                         <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
                             {suggestions.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">No match found</p>
+                                <p className="text-sm text-muted-foreground text-center py-4">{t.noMatch}</p>
                             ) : (
                                 suggestions.map(name => (
                                     <button
@@ -222,7 +270,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border border-dashed border-white/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all"
                         >
                             <Plus className="h-4 w-4" />
-                            Autre (custom material)
+                            {t.autre}
                         </button>
                     </div>
                 )}
@@ -232,11 +280,11 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Name — editable only if Autre */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Material Name</Label>
+                            <Label htmlFor="name">{t.materialName}</Label>
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="Material name"
+                                placeholder={t.materialName}
                                 value={formData.name}
                                 onChange={handleChange}
                                 readOnly={!isAutre}
@@ -248,7 +296,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                         <div className="grid grid-cols-2 gap-4">
                             {/* Category — always locked to chosen classification */}
                             <div className="space-y-2">
-                                <Label htmlFor="category">Classification</Label>
+                                <Label htmlFor="category">{t.classification}</Label>
                                 <Input
                                     id="category"
                                     name="category"
@@ -259,7 +307,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                             </div>
                             {/* Unit — editable only if Autre */}
                             <div className="space-y-2">
-                                <Label htmlFor="unit">Unit</Label>
+                                <Label htmlFor="unit">{t.unit}</Label>
                                 {isAutre ? (
                                     <select
                                         id="unit"
@@ -269,7 +317,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                                         required
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                     >
-                                        <option value="">Select unit</option>
+                                        <option value="">{t.selectUnit}</option>
                                         {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                     </select>
                                 ) : (
@@ -286,7 +334,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="price">Unit Price (TND)</Label>
+                                <Label htmlFor="price">{t.unitPrice}</Label>
                                 <Input
                                     id="price"
                                     name="price"
@@ -300,12 +348,11 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="stockQuantity">Initial Stock</Label>
+                                <Label htmlFor="stockQuantity">{t.initialStock}</Label>
                                 <Input
                                     id="stockQuantity"
                                     name="stockQuantity"
                                     type="number"
-                                    min="0"
                                     placeholder="0"
                                     value={formData.stockQuantity}
                                     onChange={handleChange}
@@ -314,11 +361,11 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="supplier">Supplier</Label>
+                            <Label htmlFor="supplier">{t.supplier}</Label>
                             <Input
                                 id="supplier"
                                 name="supplier"
-                                placeholder="Supplier name (optional)"
+                                placeholder={t.supplierOptional}
                                 value={formData.supplier}
                                 onChange={handleChange}
                             />
@@ -326,11 +373,11 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled }:
 
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={handleClose}>
-                                Cancel
+                                {t.cancel}
                             </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Material
+                                {t.addMaterial}
                             </Button>
                         </DialogFooter>
                     </form>

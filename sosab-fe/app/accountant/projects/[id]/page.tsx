@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { CreateMaterialDialog } from "@/components/admin/create-material-dialog"
 
 type Tab = "materials" | "attendance" | "salary" | "reports"
 
@@ -100,20 +101,19 @@ function MaterialsTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{materials.length} matériau{materials.length > 1 ? "x" : ""}</span>
-        <Button
-          size="sm"
-          className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2"
-          onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", unit: "", price: "", stockQuantity: "", category: "Standard" }) }}
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter
-        </Button>
+        <CreateMaterialDialog
+          projectId={projectId}
+          onMaterialCreated={fetchMaterials}
+          locale="fr"
+          triggerLabel="Ajouter"
+          triggerClassName="bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2 h-9 px-4 text-xs font-semibold"
+        />
       </div>
 
-      {/* Form */}
-      {showForm && (
+      {/* Form (only for editing) */}
+      {showForm && editingId && (
         <form onSubmit={handleSubmit} className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          <h3 className="font-semibold text-sm">{editingId ? "Modifier le matériau" : "Nouveau matériau"}</h3>
+          <h3 className="font-semibold text-sm">Modifier le matériau</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: "name", label: "Nom", placeholder: "Ex: Ciment" },
@@ -139,7 +139,7 @@ function MaterialsTab({ projectId }: { projectId: string }) {
               Annuler
             </Button>
             <Button type="submit" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingId ? "Mettre à jour" : "Ajouter")}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour"}
             </Button>
           </div>
         </form>
