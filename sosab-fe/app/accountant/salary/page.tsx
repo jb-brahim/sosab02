@@ -137,31 +137,26 @@ export default function SalaryReportPage() {
                     {/* Worker Breakdown */}
                     <div className="space-y-3">
                         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider ml-1">{t("reports.breakdown")}</h3>
-                        {reportData.data.length === 0 ? (
+                        {!reportData.data?.workers?.length ? (
                             <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                                 {t("reports.no_salary_records")}
                             </div>
                         ) : (
-                            reportData.data.map((item: any) => (
-                                <Card key={item.worker.id} className="print:shadow-none print:border-b print:rounded-none">
+                            reportData.data.workers.map((w: any) => (
+                                <Card key={w.workerId} className="print:shadow-none print:border-b print:rounded-none">
                                     <CardContent className="p-4 flex items-center justify-between">
                                         <div>
-                                            <p className="font-medium">{item.worker.name}</p>
+                                            <p className="font-medium">{w.workerName}</p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                                 <span className="bg-secondary px-1.5 py-0.5 rounded">
-                                                    {item.salary.breakdown.daysWorked} {t("reports.days_worked")}
+                                                    {w.daysWorked} {t("reports.days_worked")}
                                                 </span>
-                                                {item.salary.breakdown.overtime > 0 && (
-                                                    <span className="text-orange-500">
-                                                        +{item.salary.breakdown.overtimeHours}h {t("reports.ot")}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold">{item.salary.totalSalary.toLocaleString()} Dinar</p>
+                                            <p className="font-bold">{w.totalSalary?.toLocaleString() || 0} Dinar</p>
                                             <p className="text-[10px] text-muted-foreground">
-                                                {t("reports.base_salary_label")}: {item.salary.breakdown.baseSalary} Dinar
+                                                Taux journalier: {w.dailyRate?.toLocaleString() || 0} Dinar
                                             </p>
                                         </div>
                                     </CardContent>
