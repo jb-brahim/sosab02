@@ -384,8 +384,14 @@ exports.generateReport = asyncHandler(async (req, res) => {
           if (uniqueRecords.has(dateStr)) {
             return uniqueRecords.get(dateStr);
           }
-          if (worker.masked) {
-            return 'M';
+          if (worker.masked && worker.updatedAt) {
+            const maskedDate = new Date(worker.updatedAt);
+            maskedDate.setHours(0, 0, 0, 0);
+            const currentDay = new Date(dayDate);
+            currentDay.setHours(0, 0, 0, 0);
+            if (currentDay >= maskedDate) {
+              return 'M';
+            }
           }
           return 0;
         });
