@@ -456,7 +456,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
       htmlContent = generateAttendanceReportHTML(reportData);
     }
 
-  } else if (type === 'payment') {
+  } else if (effectiveType === 'payment') {
     // Generate payment report
     const projectSummaries = [];
     const groups = [];

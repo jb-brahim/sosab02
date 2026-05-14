@@ -2,9 +2,14 @@
 exports.getWeekString = (date = new Date()) => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+  const startOfFirstWeek = new Date(firstDayOfYear);
+  startOfFirstWeek.setDate(firstDayOfYear.getDate() - firstDayOfYear.getDay());
+  
+  const startOfThisWeek = new Date(d);
+  startOfThisWeek.setDate(d.getDate() - d.getDay());
+  
+  const weekNum = Math.floor((startOfThisWeek - startOfFirstWeek) / (86400000 * 7)) + 1;
   const year = d.getFullYear();
   return `${year}-${weekNum.toString().padStart(2, '0')}`;
 };
@@ -14,19 +19,17 @@ exports.getWeekDates = (weekString) => {
   const [yearPart, weekPart] = weekString.split('-');
   const year = parseInt(yearPart, 10);
   const week = parseInt(weekPart.replace('W', ''), 10);
-  const simple = new Date(year, 0, 1 + (week - 1) * 7);
-  const dow = simple.getDay();
-  const ISOweekStart = simple;
-  if (dow <= 4) {
-    ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-  } else {
-    ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-  }
-
-  const startDate = new Date(ISOweekStart);
-  const endDate = new Date(ISOweekStart);
-  endDate.setDate(endDate.getDate() + 6);
-
+  
+  const firstDayOfYear = new Date(year, 0, 1);
+  const startOfFirstWeek = new Date(firstDayOfYear);
+  startOfFirstWeek.setDate(firstDayOfYear.getDate() - firstDayOfYear.getDay());
+  
+  const startDate = new Date(startOfFirstWeek);
+  startDate.setDate(startOfFirstWeek.getDate() + (week - 1) * 7);
+  
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+  
   return { startDate, endDate };
 };
 

@@ -49,6 +49,7 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 
 // ─────────────────────── MATERIALS TAB ───────────────────────
 function MaterialsTab({ projectId }: { projectId: string }) {
+  const router = useRouter()
   const [materials, setMaterials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -97,9 +98,16 @@ function MaterialsTab({ projectId }: { projectId: string }) {
           </div>
         ) : (
           materials.map((log: any) => (
-            <div key={log._id} className="rounded-2xl border border-border bg-card p-4 shadow-sm flex items-center justify-between hover:border-amber-500/30 transition-colors">
+            <div
+              key={log._id}
+              onClick={() => log.materialId?._id && router.push(`/accountant/materials/${log.materialId._id}`)}
+              className="rounded-2xl border border-border bg-card p-4 shadow-sm flex items-center justify-between hover:border-amber-500/30 hover:bg-muted/30 transition-all cursor-pointer group"
+            >
               <div className="space-y-1">
-                <div className="font-bold text-base">{log.materialId?.name || log.name || 'Matériel'}</div>
+                <div className="font-bold text-base group-hover:text-amber-500 transition-colors flex items-center gap-2">
+                  {log.materialId?.name || log.name || 'Matériel'}
+                  <ArrowUpRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>{new Date(log.createdAt || log.date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                   {log.supplier && <span>• {log.supplier}</span>}
@@ -125,9 +133,13 @@ function AttendanceTab({ projectId }: { projectId: string }) {
   const [week, setWeek] = useState(() => {
     const now = new Date()
     const year = now.getFullYear()
-    const startOfYear = new Date(year, 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000)
-    return `${year}-W${String(Math.ceil((days + startOfYear.getDay() + 1) / 7)).padStart(2, "0")}`
+    const firstDayOfYear = new Date(year, 0, 1)
+    const startOfFirstWeek = new Date(firstDayOfYear)
+    startOfFirstWeek.setDate(firstDayOfYear.getDate() - firstDayOfYear.getDay())
+    const startOfThisWeek = new Date(now)
+    startOfThisWeek.setDate(now.getDate() - now.getDay())
+    const weekNum = Math.floor((startOfThisWeek.getTime() - startOfFirstWeek.getTime()) / (86400000 * 7)) + 1
+    return `${year}-W${String(weekNum).padStart(2, "0")}`
   })
   const [attendance, setAttendance] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -209,9 +221,13 @@ function SalaryTab({ projectId }: { projectId: string }) {
   const [week, setWeek] = useState(() => {
     const now = new Date()
     const year = now.getFullYear()
-    const startOfYear = new Date(year, 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000)
-    return `${year}-W${String(Math.ceil((days + startOfYear.getDay() + 1) / 7)).padStart(2, "0")}`
+    const firstDayOfYear = new Date(year, 0, 1)
+    const startOfFirstWeek = new Date(firstDayOfYear)
+    startOfFirstWeek.setDate(firstDayOfYear.getDate() - firstDayOfYear.getDay())
+    const startOfThisWeek = new Date(now)
+    startOfThisWeek.setDate(now.getDate() - now.getDay())
+    const weekNum = Math.floor((startOfThisWeek.getTime() - startOfFirstWeek.getTime()) / (86400000 * 7)) + 1
+    return `${year}-W${String(weekNum).padStart(2, "0")}`
   })
   const [salary, setSalary] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -318,8 +334,8 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
     fetchReports()
   }, [projectId])
 
-  const generateReport = async (type: string, label: string) => {
-    setGenerating(type)
+  const generateReport = async (type: string, label: string, formatType: "excel" | "pdf" = "excel") => {
+    setGenerating(`${type}-${formatType}`)
     const apiType = type === "materials" ? "material" : type
     try {
       const res = await api.post("/reports/generate", {
@@ -327,10 +343,10 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
         type: apiType,
         startDate,
         endDate,
-        format: "excel"
+        format: formatType
       })
       if (res.data.success) {
-        toast.success(`Rapport ${label} Excel généré`)
+        toast.success(`Rapport ${label} ${formatType === 'excel' ? 'Excel' : 'PDF'} généré`)
         window.open(`${BACKEND_URL}${res.data.data.pdfUrl}`, '_blank')
         
         // Refresh past reports list
@@ -384,30 +400,65 @@ function ReportsTab({ projectId, projectName }: { projectId: string; projectName
         {reportTypes.map(({ type, label, icon: Icon, desc }) => (
           <div
             key={type}
-            className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-4 hover:border-amber-500/30 transition-all"
+            className="rounded-2xl border border-border bg-card p-5 flex flex-col justify-between gap-4 hover:border-amber-500/30 transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Icon className="h-5 w-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{label}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
               </div>
             </div>
-            <Button
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2 font-medium"
-              size="sm"
-              disabled={generating === type}
-              onClick={() => generateReport(type, label)}
-            >
-              {generating === type ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex flex-col gap-2 mt-auto">
+              {type === "materials" ? (
+                <Button
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-2 font-medium"
+                  size="sm"
+                  disabled={generating === `${type}-excel`}
+                  onClick={() => generateReport(type, label, "excel")}
+                >
+                  {generating === `${type}-excel` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="h-4 w-4" />
+                  )}
+                  Télécharger Excel
+                </Button>
               ) : (
-                <FileSpreadsheet className="h-4 w-4" />
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl gap-1.5 font-medium text-xs"
+                    size="sm"
+                    disabled={generating === `${type}-excel`}
+                    onClick={() => generateReport(type, label, "excel")}
+                  >
+                    {generating === `${type}-excel` ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileSpreadsheet className="h-3.5 w-3.5" />
+                    )}
+                    Excel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/30 rounded-xl gap-1.5 font-medium text-xs"
+                    size="sm" variant="outline"
+                    disabled={generating === `${type}-pdf`}
+                    onClick={() => generateReport(type, label, "pdf")}
+                  >
+                    {generating === `${type}-pdf` ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
+                    PDF
+                  </Button>
+                </div>
               )}
-              Télécharger Excel
-            </Button>
+            </div>
           </div>
         ))}
       </div>
