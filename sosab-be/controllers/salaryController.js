@@ -44,19 +44,18 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
   const workers = await Worker.find({ projectId, active: true });
 
   const { startDate, endDate } = req.query;
-  const formattedWorkers = [];
-
-  for (const worker of workers) {
+  
+  const formattedWorkers = await Promise.all(workers.map(async (worker) => {
     if (startDate && endDate) {
       const breakdown = await calculateWeeklySalary(worker._id, projectId, week, startDate, endDate);
-      formattedWorkers.push({
+      return {
         workerId: worker._id,
         workerName: worker.name,
         daysWorked: breakdown.daysWorked || 0,
         dailyRate: worker.dailySalary || 0,
         totalSalary: breakdown.totalSalary,
         approved: false
-      });
+      };
     } else {
       // Check if salary already exists
       let salary = await Salary.findOne({ workerId: worker._id, week });
@@ -82,16 +81,16 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
         }
       }
 
-      formattedWorkers.push({
+      return {
         workerId: worker._id,
         workerName: worker.name,
         daysWorked: salary.breakdown?.daysWorked || 0,
         dailyRate: worker.dailySalary || 0,
         totalSalary: salary.totalSalary,
         approved: salary.status === 'Approved'
-      });
+      };
     }
-  }
+  }));
 
   const totalSalary = formattedWorkers.reduce((sum, w) => sum + w.totalSalary, 0);
 
