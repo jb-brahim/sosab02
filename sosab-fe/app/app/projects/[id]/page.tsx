@@ -782,16 +782,6 @@ export default function MobileProjectDetails() {
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setShowMasked(!showMasked)}
-                                    className={`text-xs font-black uppercase tracking-widest px-2.5 py-2 h-auto border-white/5 transition-all ${
-                                        showMasked ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'bg-background/50 hover:bg-background/80 hover:border-primary/30'
-                                    }`}
-                                >
-                                    {showMasked ? <Eye className="w-3.5 h-3.5 mr-1.5" /> : <EyeOff className="w-3.5 h-3.5 mr-1.5" />}
-                                    {showMasked ? "Masqués (On)" : "Masqués"}
-                                </Button>
                                 <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
                                     <PopoverTrigger asChild>
                                     <Button
@@ -821,9 +811,9 @@ export default function MobileProjectDetails() {
 
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
                         <div className="space-y-4 pb-12" style={{ contentVisibility: 'auto' } as any}>
-                            {team.filter(w => (showMasked || !w.masked) && !w.supervisorId).map((worker) => {
+                            {team.filter(w => !w.masked && !w.supervisorId).map((worker) => {
                                 const isSousTraitant = worker.isSubcontractor || worker.trade === 'Sous Traitant';
-                                const subWorkers = team.filter(sw => (showMasked || !sw.masked) && sw.supervisorId === worker._id);
+                                const subWorkers = team.filter(sw => !sw.masked && sw.supervisorId === worker._id);
 
                                 return (
                                     <div key={worker._id}>
@@ -869,7 +859,6 @@ export default function MobileProjectDetails() {
                                                                     status={attendanceMap[worker._id]}
                                                                     onMark={handleMarkAttendance}
                                                                     setMap={setAttendanceMap}
-                                                                    onToggleMask={handleToggleMask}
                                                                     isLeader
                                                                 />
                                                             </div>
@@ -885,7 +874,6 @@ export default function MobileProjectDetails() {
                                                                                 status={attendanceMap[sw._id]}
                                                                                 onMark={handleMarkAttendance}
                                                                                 setMap={setAttendanceMap}
-                                                                                onToggleMask={handleToggleMask}
                                                                             />
                                                                         ))}
                                                                     </div>
@@ -901,7 +889,6 @@ export default function MobileProjectDetails() {
                                                 status={attendanceMap[worker._id]}
                                                 onMark={handleMarkAttendance}
                                                 setMap={setAttendanceMap}
-                                                onToggleMask={handleToggleMask}
                                                 className="mb-1.5"
                                             />
                                         )}
@@ -1113,11 +1100,27 @@ export default function MobileProjectDetails() {
                                                     {w.name.charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-sm text-foreground">{w.name}</div>
+                                                    <div className="font-bold text-sm text-foreground flex items-center gap-2">
+                                                        {w.name}
+                                                        {w.masked && <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[9px] px-1.5 py-0 h-4">Masqué</Badge>}
+                                                    </div>
                                                     <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{w.trade}</div>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1">
+                                            <div className="flex gap-1 items-center">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    title={w.masked ? "Démasquer l'ouvrier" : "Masquer l'ouvrier"}
+                                                    className={`h-8 w-8 rounded-lg transition-colors ${
+                                                        w.masked
+                                                            ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
+                                                            : 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10'
+                                                    }`}
+                                                    onClick={() => handleToggleMask(w._id, w.masked)}
+                                                >
+                                                    {w.masked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                </Button>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg" onClick={() => setEditingWorker({ ...w, phone: w.contact?.phone })}>
                                                     {/* Pencil Icon */}
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
@@ -1519,20 +1522,6 @@ function WorkerAttendanceItem({ worker, status, onMark, setMap, className, isLea
                             onBlur={(e) => status?.present && onMark(worker._id, true, parseFloat(e.target.value || '1'))}
                         />
                     </div>
-
-                    {/* Mask Button */}
-                    {onToggleMask && (
-                        <button
-                            title={worker.masked ? "Afficher (Démasquer)" : "Masquer l'ouvrier"}
-                            className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${worker.masked
-                                ? 'bg-amber-500 text-white shadow-md hover:bg-amber-600'
-                                : 'bg-background/80 border border-border/40 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/40'
-                                }`}
-                            onClick={() => onToggleMask(worker._id, worker.masked)}
-                        >
-                            {worker.masked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                        </button>
-                    )}
 
                     {/* Presence Buttons */}
                     <button
