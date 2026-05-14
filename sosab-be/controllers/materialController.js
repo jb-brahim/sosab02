@@ -87,7 +87,7 @@ exports.getMaterials = asyncHandler(async (req, res) => {
       ...m,
       totalIn,
       totalOut,
-      stockQuantity: totalIn - totalOut
+      stockQuantity: m.stockQuantity
     };
   });
 
