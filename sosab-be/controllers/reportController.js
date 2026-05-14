@@ -212,11 +212,14 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // IF WEEK IS PROVIDED, use old robust logic
     if (week) {
       // ... existing logic ...
-      const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true, masked: { $ne: true } });
+      const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true });
       const realSalaryData = [];
       for (const worker of workers) {
         const salary = await Salary.findOne({ workerId: worker._id, week: week });
         if (salary) {
+          if (worker.masked && salary.breakdown.daysWorked === 0) {
+            continue;
+          }
           realSalaryData.push({
             name: worker.name,
             daysWorked: salary.breakdown.daysWorked,
@@ -343,7 +346,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'attendance') {
     // Generate attendance report
-    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true, masked: { $ne: true } }).sort({ name: 1 });
+    const workers = await Worker.find({ projectId: { $in: selectedProjectIds }, active: true }).sort({ name: 1 });
     const attendanceGrid = [];
 
     // Calculate days in range for dynamic columns
@@ -371,19 +374,27 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
         const uniqueRecords = new Map();
         attendanceRecords.forEach(record => {
-          if (record.present) {
-            const d = new Date(record.date);
-            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            uniqueRecords.set(dateStr, record.dayValue || 1);
-          }
+          const d = new Date(record.date);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          uniqueRecords.set(dateStr, record.present ? (record.dayValue || 1) : 0);
         });
 
         const dailyAttendance = daysInRange.map(dayDate => {
           const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
-          return uniqueRecords.get(dateStr) || 0;
+          if (uniqueRecords.has(dateStr)) {
+            return uniqueRecords.get(dateStr);
+          }
+          if (worker.masked) {
+            return 'M';
+          }
+          return 0;
         });
 
-        const totalDays = dailyAttendance.reduce((sum, val) => sum + val, 0);
+        const totalDays = dailyAttendance.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+
+        if (worker.masked && totalDays === 0) {
+          continue;
+        }
 
         grid.push({
           name: worker.name,
@@ -469,6 +480,11 @@ exports.generateReport = asyncHandler(async (req, res) => {
         });
 
         const daysWorked = Array.from(uniqueDays.values()).reduce((sum, val) => sum + val, 0);
+
+        if (worker.masked && daysWorked === 0) {
+          continue;
+        }
+
         const dailyRate = worker.dailySalary || 0;
         const totalAmount = daysWorked * dailyRate;
         const balance = totalAmount; // TODO: PaymentsMade
@@ -491,7 +507,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
     // For multi-site recap, we need to know the total per project
     for (const pId of selectedProjectIds) {
       const project = projects.find(p => p._id.toString() === pId.toString()) || primaryProject;
-      const projectWorkers = await Worker.find({ projectId: pId, active: true, masked: { $ne: true } }).sort({ name: 1 });
+      const projectWorkers = await Worker.find({ projectId: pId, active: true }).sort({ name: 1 });
 
       let projectTotal = 0;
 
