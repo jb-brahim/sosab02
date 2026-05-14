@@ -20,12 +20,20 @@ export default function SalaryReportPage() {
 
     const [projects, setProjects] = useState<any[]>([])
     const [selectedProject, setSelectedProject] = useState<string>("")
+    const [mode, setMode] = useState<"week" | "custom">("custom")
     const [selectedWeek, setSelectedWeek] = useState<string>(() => {
         // Default to current week "YYYY-Www"
         const now = new Date()
         const onejan = new Date(now.getFullYear(), 0, 1)
         const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7)
         return `${now.getFullYear()}-W${week.toString().padStart(2, '0')}`
+    })
+    const [startDate, setStartDate] = useState(() => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    })
+    const [endDate, setEndDate] = useState(() => {
+        return new Date().toISOString().split('T')[0]
     })
 
     const [reportData, setReportData] = useState<any>(null)
@@ -51,24 +59,29 @@ export default function SalaryReportPage() {
     // Fetch report when project or week changes
     useEffect(() => {
         const fetchReport = async () => {
-            if (!selectedProject || !selectedWeek) return
+            if (!selectedProject) return
+            if (mode === "week" && !selectedWeek) return
+            if (mode === "custom" && (!startDate || !endDate)) return
 
             try {
                 setLoading(true)
-                const res = await api.get(`/salary/${selectedProject}/${selectedWeek}`)
+                const url = mode === "custom" 
+                    ? `/salary/${selectedProject}/CUSTOM?startDate=${startDate}&endDate=${endDate}` 
+                    : `/salary/${selectedProject}/${selectedWeek}`
+                const res = await api.get(url)
                 if (res.data.success) {
                     setReportData(res.data)
                 }
             } catch (error) {
                 console.error("Failed to fetch salary report", error)
-                toast.error(t("reports.delete_failed"))
+                toast.error("Impossible de charger le rapport de salaire")
             } finally {
                 setLoading(false)
             }
         }
 
         fetchReport()
-    }, [selectedProject, selectedWeek])
+    }, [selectedProject, selectedWeek, mode, startDate, endDate])
 
     const handlePrint = () => {
         window.print()
@@ -85,9 +98,9 @@ export default function SalaryReportPage() {
             </div>
 
             {/* Controls */}
-            <div className="grid gap-4 mb-6 print:hidden">
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
+            <div className="grid gap-4 mb-6 print:hidden bg-card border border-border p-4 rounded-2xl shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+                    <div className="flex-1 max-w-sm">
                         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("materials.site_label")}</label>
                         <Select value={selectedProject} onValueChange={setSelectedProject}>
                             <SelectTrigger>
@@ -100,14 +113,56 @@ export default function SalaryReportPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("reports.week")}</label>
-                        <Input
-                            type="week"
-                            value={selectedWeek}
-                            onChange={(e) => setSelectedWeek(e.target.value)}
-                        />
+                    <div className="flex items-center gap-2 bg-background p-1.5 rounded-xl border border-border">
+                        <Button 
+                            variant={mode === "week" ? "default" : "ghost"} 
+                            size="sm" 
+                            className="rounded-lg text-xs" 
+                            onClick={() => setMode("week")}
+                        >
+                            Par Semaine
+                        </Button>
+                        <Button 
+                            variant={mode === "custom" ? "default" : "ghost"} 
+                            size="sm" 
+                            className="rounded-lg text-xs" 
+                            onClick={() => setMode("custom")}
+                        >
+                            Période Personnalisée
+                        </Button>
                     </div>
+                </div>
+
+                <div className="pt-2">
+                    {mode === "week" ? (
+                        <div className="max-w-xs">
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("reports.week")}</label>
+                            <Input
+                                type="week"
+                                value={selectedWeek}
+                                onChange={(e) => setSelectedWeek(e.target.value)}
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Date de début</label>
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[150px]">
+                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Date de fin</label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -124,7 +179,9 @@ export default function SalaryReportPage() {
                             <div className="flex items-center justify-center gap-2 mb-1">
                                 <h2 className="text-lg font-bold uppercase tracking-wider">{reportData.project.name}</h2>
                             </div>
-                            <p className="text-sm text-muted-foreground">{t("reports.week")} {reportData.week}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {mode === "custom" ? `Du ${startDate} au ${endDate}` : `${t("reports.week")} ${reportData.week}`}
+                            </p>
                         </CardHeader>
                         <CardContent className="text-center">
                             <span className="text-xs text-muted-foreground uppercase">{t("reports.total_payout")}</span>

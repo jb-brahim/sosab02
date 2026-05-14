@@ -3,14 +3,24 @@ const Worker = require('../models/Worker');
 const { getWeekDates } = require('./weekHelper');
 
 // Calculate weekly salary for a worker
-exports.calculateWeeklySalary = async (workerId, projectId, week) => {
+exports.calculateWeeklySalary = async (workerId, projectId, week, customStartDate, customEndDate) => {
   try {
     const worker = await Worker.findById(workerId);
     if (!worker) {
       throw new Error('Worker not found');
     }
 
-    const { startDate, endDate } = getWeekDates(week);
+    let startDate, endDate;
+    if (customStartDate && customEndDate) {
+      startDate = new Date(customStartDate);
+      endDate = new Date(customEndDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      const dates = getWeekDates(week);
+      startDate = dates.startDate;
+      endDate = dates.endDate;
+    }
 
     // Get all attendance records for the week
     const attendances = await Attendance.find({

@@ -43,41 +43,54 @@ exports.getWeeklySalary = asyncHandler(async (req, res) => {
   // Get all active workers for the project
   const workers = await Worker.find({ projectId, active: true });
 
+  const { startDate, endDate } = req.query;
   const formattedWorkers = [];
 
   for (const worker of workers) {
-    // Check if salary already exists
-    let salary = await Salary.findOne({ workerId: worker._id, week });
+    if (startDate && endDate) {
+      const breakdown = await calculateWeeklySalary(worker._id, projectId, week, startDate, endDate);
+      formattedWorkers.push({
+        workerId: worker._id,
+        workerName: worker.name,
+        daysWorked: breakdown.daysWorked || 0,
+        dailyRate: worker.dailySalary || 0,
+        totalSalary: breakdown.totalSalary,
+        approved: false
+      });
+    } else {
+      // Check if salary already exists
+      let salary = await Salary.findOne({ workerId: worker._id, week });
 
-    // Recalculate if missing or still pending (to reflect new attendance)
-    if (!salary || salary.status === 'Pending') {
-      const breakdown = await calculateWeeklySalary(worker._id, projectId, week);
-      
-      if (!salary) {
-        salary = await Salary.create({
-          workerId: worker._id,
-          projectId,
-          week,
-          totalSalary: breakdown.totalSalary,
-          breakdown,
-          status: 'Pending'
-        });
-      } else {
-        // Update existing pending salary with latest calculation
-        salary.totalSalary = breakdown.totalSalary;
-        salary.breakdown = breakdown;
-        await salary.save();
+      // Recalculate if missing or still pending (to reflect new attendance)
+      if (!salary || salary.status === 'Pending') {
+        const breakdown = await calculateWeeklySalary(worker._id, projectId, week);
+        
+        if (!salary) {
+          salary = await Salary.create({
+            workerId: worker._id,
+            projectId,
+            week,
+            totalSalary: breakdown.totalSalary,
+            breakdown,
+            status: 'Pending'
+          });
+        } else {
+          // Update existing pending salary with latest calculation
+          salary.totalSalary = breakdown.totalSalary;
+          salary.breakdown = breakdown;
+          await salary.save();
+        }
       }
-    }
 
-    formattedWorkers.push({
-      workerId: worker._id,
-      workerName: worker.name,
-      daysWorked: salary.breakdown?.daysWorked || 0,
-      dailyRate: worker.dailySalary || 0,
-      totalSalary: salary.totalSalary,
-      approved: salary.status === 'Approved'
-    });
+      formattedWorkers.push({
+        workerId: worker._id,
+        workerName: worker.name,
+        daysWorked: salary.breakdown?.daysWorked || 0,
+        dailyRate: worker.dailySalary || 0,
+        totalSalary: salary.totalSalary,
+        approved: salary.status === 'Approved'
+      });
+    }
   }
 
   const totalSalary = formattedWorkers.reduce((sum, w) => sum + w.totalSalary, 0);
