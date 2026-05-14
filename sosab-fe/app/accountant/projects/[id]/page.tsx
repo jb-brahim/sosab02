@@ -51,14 +51,10 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 function MaterialsTab({ projectId }: { projectId: string }) {
   const [materials, setMaterials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: "", unit: "", price: "", stockQuantity: "", category: "Standard" })
-  const [saving, setSaving] = useState(false)
 
   const fetchMaterials = async () => {
     try {
-      const res = await api.get(`/materials/${projectId}`)
+      const res = await api.get(`/materials/projects/${projectId}/logs`)
       if (res.data.success) setMaterials(res.data.data)
     } catch {
       toast.error("Impossible de charger les matériaux")
@@ -69,51 +65,12 @@ function MaterialsTab({ projectId }: { projectId: string }) {
 
   useEffect(() => { fetchMaterials() }, [projectId])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      if (editingId) {
-        await api.patch(`/materials/item/${editingId}`, { ...form, price: Number(form.price), stockQuantity: Number(form.stockQuantity) })
-        toast.success("Matériau mis à jour")
-      } else {
-        await api.post("/materials", { ...form, projectId, price: Number(form.price), stockQuantity: Number(form.stockQuantity) })
-        toast.success("Matériau ajouté")
-      }
-      setShowForm(false)
-      setEditingId(null)
-      setForm({ name: "", unit: "", price: "", stockQuantity: "", category: "Standard" })
-      fetchMaterials()
-    } catch {
-      toast.error("Erreur lors de la sauvegarde")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer ce matériau ?")) return
-    try {
-      await api.delete(`/materials/item/${id}`)
-      toast.success("Matériau supprimé")
-      fetchMaterials()
-    } catch {
-      toast.error("Erreur lors de la suppression")
-    }
-  }
-
-  const handleEdit = (m: any) => {
-    setEditingId(m._id)
-    setForm({ name: m.name, unit: m.unit, price: String(m.price || ""), stockQuantity: String(m.stockQuantity || ""), category: m.category || "Standard" })
-    setShowForm(true)
-  }
-
   if (loading) return <LoadingSpinner />
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{materials.length} matériau{materials.length > 1 ? "x" : ""}</span>
+        <span className="text-sm text-muted-foreground">{materials.length} activité{materials.length > 1 ? "s" : ""}</span>
         <div className="flex items-center gap-2">
           {/* Arrivage / Entry */}
           <StockMovementDialog
@@ -132,89 +89,32 @@ function MaterialsTab({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      {/* Form (only for editing) */}
-      {showForm && editingId && (
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          <h3 className="font-semibold text-sm">Modifier le matériau</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { key: "name", label: "Nom", placeholder: "Ex: Ciment" },
-              { key: "unit", label: "Unité", placeholder: "Ex: sac, m³, kg" },
-              { key: "price", label: "Prix (DA)", placeholder: "0", type: "number" },
-              { key: "stockQuantity", label: "Quantité initiale", placeholder: "0", type: "number" },
-            ].map(({ key, label, placeholder, type }) => (
-              <div key={key} className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
-                <input
-                  type={type || "text"}
-                  placeholder={placeholder}
-                  value={(form as any)[key]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  required={key === "name" || key === "unit"}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                />
+      {/* Logs Grid exactly like Manager view */}
+      <div className="grid gap-3 mt-4">
+        {materials.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground text-sm border border-dashed rounded-2xl">
+            Aucun mouvement enregistré pour ce projet
+          </div>
+        ) : (
+          materials.map((log: any) => (
+            <div key={log._id} className="rounded-2xl border border-border bg-card p-4 shadow-sm flex items-center justify-between hover:border-amber-500/30 transition-colors">
+              <div className="space-y-1">
+                <div className="font-bold text-base">{log.materialId?.name || log.name || 'Matériel'}</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{new Date(log.createdAt || log.date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  {log.supplier && <span>• {log.supplier}</span>}
+                </div>
               </div>
-            ))}
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null) }}>
-              Annuler
-            </Button>
-            <Button type="submit" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour"}
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* Table */}
-      <div className="rounded-2xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              {["Nom", "Unité", "Prix", "Stock", "Actions"].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {materials.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground text-sm">
-                  Aucun matériau enregistré
-                </td>
-              </tr>
-            ) : (
-              materials.map((m) => (
-                <tr key={m._id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{m.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{m.unit}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{m.price ? `${m.price} DA` : "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-                      m.stockQuantity > 10 ? "bg-green-500/10 text-green-600" :
-                        m.stockQuantity > 0 ? "bg-amber-500/10 text-amber-600" :
-                          "bg-red-500/10 text-red-600"
-                    )}>
-                      {m.stockQuantity} {m.unit}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => handleEdit(m)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-500/10 hover:text-red-500" onClick={() => handleDelete(m._id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              <div className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold shadow-sm",
+                log.type === 'IN' ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-red-500/10 text-red-600 border border-red-500/20"
+              )}>
+                {log.type === 'IN' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                {log.quantity} {log.materialId?.unit || log.unit || 'T'}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
