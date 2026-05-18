@@ -27,28 +27,57 @@ exports.addWorker = asyncHandler(async (req, res) => {
     });
   }
 
-  const worker = await Worker.create({
-    name,
-    trade,
-    projectId,
-    dailySalary,
-    documents: documents || [],
-    contact: contact || {},
-    assignedTasks: assignedTasks || [],
-    supervisorId: supervisorId || null,
-    isSubcontractor: isSubcontractor || (trade === 'Sous Traitant')
+  // Check if an inactive worker with the same name exists in this project
+  let worker = await Worker.findOne({
+    name: name,
+    projectId: projectId,
+    active: false
   });
 
+  let isReactivated = false;
+
+  if (worker) {
+    // Reactivate and update existing worker
+    worker.active = true;
+    worker.trade = trade;
+    worker.dailySalary = dailySalary;
+    if (documents) worker.documents = documents;
+    if (contact) worker.contact = Object.keys(contact).length > 0 ? contact : worker.contact;
+    if (assignedTasks) worker.assignedTasks = assignedTasks;
+    if (supervisorId !== undefined) worker.supervisorId = supervisorId;
+    if (isSubcontractor !== undefined) worker.isSubcontractor = isSubcontractor;
+    worker.updatedAt = new Date();
+    await worker.save();
+    isReactivated = true;
+  } else {
+    // Create new worker
+    worker = await Worker.create({
+      name,
+      trade,
+      projectId,
+      dailySalary,
+      documents: documents || [],
+      contact: contact || {},
+      assignedTasks: assignedTasks || [],
+      supervisorId: supervisorId || null,
+      isSubcontractor: isSubcontractor || (trade === 'Sous Traitant')
+    });
+  }
+
   // Notify Admins and Gérants
+  const notificationMessage = isReactivated
+    ? `Travailleur réactivé : ${req.user.name} a réactivé ${worker.name} (${worker.trade}) sur le projet ${project.name}`
+    : `Nouveau travailleur ajouté : ${req.user.name} a ajouté ${worker.name} (${worker.trade}) au projet ${project.name}`;
+
   await sendNotificationToRoles(
     ['Admin', 'Gérant'],
     'system',
-    `Nouveau travailleur ajouté : ${req.user.name} a ajouté ${worker.name} (${worker.trade}) au projet ${project.name}`,
+    notificationMessage,
     `/admin/projects/${project._id}`,
-    'Nouveau Travailleur'
+    isReactivated ? 'Travailleur Réactivé' : 'Nouveau Travailleur'
   );
 
-  res.status(201).json({
+  res.status(isReactivated ? 200 : 201).json({
     success: true,
     data: worker
   });

@@ -224,7 +224,7 @@ exports.getProjectTeam = asyncHandler(async (req, res) => {
   const workers = await Worker.find({
     projectId: req.params.id,
     active: true
-  }).select('name trade contact dailySalary supervisorId');
+  }).select('name trade contact dailySalary supervisorId masked');
 
   res.status(200).json({
     success: true,
