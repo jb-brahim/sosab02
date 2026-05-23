@@ -9,12 +9,6 @@ const materialSchema = new mongoose.Schema({
   unit: {
     type: String,
     required: [true, 'Unit is required'],
-    enum: [
-      // Catalog units
-      'kg', 'T', 'm', 'ml', 'm²', 'm³', 'U', 'L',
-      // Legacy / compat
-      'ton', 'piece', 'box', 'bag', 'liter', 'pcs', 'm2', 'm3', 'sac', 'l', 'paq', 'bar', 'voy'
-    ],
     trim: true
   },
   price: {

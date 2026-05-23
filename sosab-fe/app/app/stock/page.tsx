@@ -49,6 +49,11 @@ export default function StockPage() {
     const [quickLog, setQuickLog] = useState<QuickLogState | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
+    // New manual OUT form state
+    const [showNewOut, setShowNewOut] = useState(false)
+    const [newOutForm, setNewOutForm] = useState({ name: '', unit: '', category: 'Standard', quantity: '' })
+    const [submittingNewOut, setSubmittingNewOut] = useState(false)
+
     // Redirect non-managers
     useEffect(() => {
         if (user && user.role !== "pm" && user.role !== "admin") {
@@ -94,9 +99,9 @@ export default function StockPage() {
         MATERIAL_CATALOG.flatMap(g => g.items.map(i => i.name.toLowerCase()))
     )
 
-    // DB materials that are NOT in the catalog at all
+    // DB materials that are NOT in the catalog at all (including negative stock)
     const uncategorizedMaterials = dbMaterials.filter(
-        m => !catalogNames.has(m.name.toLowerCase()) && (m.totalIn > 0 || m.totalOut > 0 || m.stockQuantity > 0)
+        m => !catalogNames.has(m.name.toLowerCase()) && (m.totalIn > 0 || m.totalOut > 0 || m.stockQuantity !== 0)
     )
 
     // Export Excel
@@ -161,14 +166,39 @@ export default function StockPage() {
         } finally { setSubmitting(false) }
     }
 
+    // Submit new OUT for a material that may not exist yet
+    const submitNewOut = async () => {
+        if (!selectedProjectId) return
+        const qty = parseFloat(newOutForm.quantity)
+        if (!newOutForm.name.trim()) { toast.error("Entrez le nom du matériau"); return }
+        if (!newOutForm.unit.trim()) { toast.error("Entrez l'unité"); return }
+        if (isNaN(qty) || qty <= 0) { toast.error("Entrez une quantité valide"); return }
+        try {
+            setSubmittingNewOut(true)
+            await api.post("/materials/quick-log", {
+                projectId: selectedProjectId,
+                materialName: newOutForm.name.trim(),
+                unit: newOutForm.unit.trim(),
+                category: newOutForm.category || 'Standard',
+                quantity: qty,
+                type: 'OUT'
+            })
+            toast.success(`-${qty} ${newOutForm.unit} — ${newOutForm.name} enregistré`)
+            setShowNewOut(false)
+            setNewOutForm({ name: '', unit: '', category: 'Standard', quantity: '' })
+            await fetchMaterials()
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Échec de l'enregistrement")
+        } finally { setSubmittingNewOut(false) }
+    }
+
     const selectedProject = projects.find(p => p._id === selectedProjectId)
 
     return (
         <div className="min-h-screen bg-background relative overflow-hidden pb-20">
             <div className="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
 
-            {/* Header */}
-            <div className="sticky top-0 z-20 flex items-center gap-4 border-b border-white/5 bg-background/80 p-4 backdrop-blur-md">
+            <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-white/5 bg-background/80 p-4 backdrop-blur-md">
                 <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
                         <Warehouse className="h-5 w-5 text-primary" />
@@ -180,6 +210,15 @@ export default function StockPage() {
                         </p>
                     </div>
                 </div>
+                {selectedProjectId && (
+                    <button
+                        onClick={() => setShowNewOut(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors"
+                    >
+                        <Minus className="w-3.5 h-3.5" />
+                        Nouvelle Sortie
+                    </button>
+                )}
             </div>
 
             <div className="p-4 relative z-10 space-y-3">
@@ -218,6 +257,87 @@ export default function StockPage() {
                         </Button>
                     )}
                 </div>
+
+                {/* New OUT Modal */}
+                {showNewOut && (
+                    <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                        onClick={() => setShowNewOut(false)}>
+                        <div className="glass-card rounded-2xl w-full max-w-sm p-5 space-y-4 border border-red-500/20"
+                            onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wider text-red-400">- Nouvelle Sortie (OUT)</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Matériau existant ou nouveau</p>
+                                </div>
+                                <button onClick={() => setShowNewOut(false)} className="p-1 rounded-lg hover:bg-white/10">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Nom du matériau</label>
+                                    <Input
+                                        placeholder="Ex: marbre thela 2cm, sable..."
+                                        value={newOutForm.name}
+                                        onChange={e => setNewOutForm({ ...newOutForm, name: e.target.value })}
+                                        autoFocus
+                                        className="bg-background/50"
+                                    />
+                                    {/* Suggestions from existing project materials */}
+                                    {newOutForm.name.trim().length > 1 && (
+                                        <div className="mt-1 space-y-0.5 max-h-32 overflow-y-auto">
+                                            {dbMaterials
+                                                .filter(m => m.name.toLowerCase().includes(newOutForm.name.toLowerCase()))
+                                                .slice(0, 4)
+                                                .map(m => (
+                                                    <button key={m._id} type="button"
+                                                        onClick={() => setNewOutForm({ ...newOutForm, name: m.name, unit: m.unit, category: m.category || 'Standard' })}
+                                                        className="w-full text-left px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs flex justify-between"
+                                                    >
+                                                        <span className="font-medium">{m.name}</span>
+                                                        <span className="text-muted-foreground">{m.stockQuantity} {m.unit}</span>
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Unité</label>
+                                        <Input
+                                            placeholder="Ex: sac, m², kg"
+                                            value={newOutForm.unit}
+                                            onChange={e => setNewOutForm({ ...newOutForm, unit: e.target.value })}
+                                            className="bg-background/50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Quantité</label>
+                                        <Input
+                                            type="number"
+                                            min="0.001"
+                                            step="any"
+                                            placeholder="0"
+                                            value={newOutForm.quantity}
+                                            onChange={e => setNewOutForm({ ...newOutForm, quantity: e.target.value })}
+                                            onKeyDown={e => e.key === 'Enter' && submitNewOut()}
+                                            className="bg-background/50"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={submitNewOut}
+                                disabled={submittingNewOut}
+                                className="w-full py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                                {submittingNewOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <Minus className="w-4 h-4" />}
+                                Confirmer la sortie
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Quick-log overlay */}
                 {quickLog && (
