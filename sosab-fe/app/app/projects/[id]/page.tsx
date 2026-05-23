@@ -264,8 +264,9 @@ export default function MobileProjectDetails() {
     }
 
     const handleRegisterOut = async () => {
-        if (!outForm.quantity) return toast.error("Please enter quantity")
-        if (!outForm.materialId && !outForm.name) return toast.error("Please select a material")
+        if (!outForm.name) return toast.error("Veuillez sélectionner un matériau")
+        if (!outForm.unit || outForm.unit.trim() === "") return toast.error("Veuillez entrer l'unité du matériau")
+        if (!outForm.quantity) return toast.error("Veuillez entrer une quantité")
 
         try {
             setSubmittingOut(true)
@@ -1261,6 +1262,29 @@ export default function MobileProjectDetails() {
                                                             <span className="text-[10px] text-muted-foreground font-bold uppercase">{m.stockQuantity} {m.unit}</span>
                                                         </button>
                                                     ))}
+                                                    {/* Custom material option when nothing matches */}
+                                                    {classQuery.trim().length > 0 &&
+                                                        !MATERIAL_CATALOG.flatMap(cat => cat.items.map(i => i.name.toLowerCase())).includes(classQuery.toLowerCase()) &&
+                                                        !projectMaterials.some(m => m.name.toLowerCase() === classQuery.toLowerCase()) && (
+                                                            <button
+                                                                className="w-full text-left px-4 py-3 text-sm font-semibold bg-red-500/10 text-red-400 border-t border-white/5 flex items-center gap-2 hover:bg-red-500/20 transition-colors"
+                                                                onClick={() => {
+                                                                    setOutForm({
+                                                                        ...outForm,
+                                                                        materialId: '',
+                                                                        name: classQuery,
+                                                                        unit: '',
+                                                                        category: 'Standard'
+                                                                    })
+                                                                    setShowClassSuggestions(false)
+                                                                    setClassQuery("")
+                                                                }}
+                                                            >
+                                                                <ArrowUpRight className="w-4 h-4" />
+                                                                Utiliser "{classQuery}" (nouveau)
+                                                            </button>
+                                                        )
+                                                    }
                                                 </div>
                                             )}
                                         </div>
@@ -1275,7 +1299,7 @@ export default function MobileProjectDetails() {
                                                 <div>
                                                     <p className="text-sm font-bold leading-tight">{outForm.name}</p>
                                                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                                                        {outForm.category} • {outForm.unit}
+                                                        {outForm.category} • {outForm.unit || '?'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1283,6 +1307,22 @@ export default function MobileProjectDetails() {
                                                 <X className="w-4 h-4 text-red-500" />
                                             </Button>
                                         </div>
+
+                                        {/* Unit input — shown only if material has no unit (custom/new) */}
+                                        {!outForm.unit && (
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                                    Unité (requis)
+                                                </label>
+                                                <Input
+                                                    placeholder="Ex: sac, m², kg, pièce..."
+                                                    value={outForm.unit}
+                                                    onChange={e => setOutForm({ ...outForm, unit: e.target.value })}
+                                                    className="bg-background/50 border-red-500/30 focus:border-red-500/60"
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        )}
 
                                         <div className="space-y-2">
                                             <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
