@@ -191,18 +191,28 @@ function AttendanceTab({ projectId }: { projectId: string }) {
                 attendance.map((record: any) => (
                   <tr key={record.workerId} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-3 font-medium">{record.workerName}</td>
-                    {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map(day => (
-                      <td key={day} className="px-3 py-3 text-center">
-                        {record[day] ? (
-                          <Check className="h-4 w-4 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-4 w-4 text-muted-foreground/30 mx-auto" />
-                        )}
-                      </td>
-                    ))}
+                    {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map(day => {
+                      const val = record[day] ?? 0
+                      return (
+                        <td key={day} className="px-3 py-3 text-center">
+                          {val > 0 ? (
+                            <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-md text-xs font-bold ${
+                              val === 1 ? 'bg-green-500/10 text-green-500' :
+                              val >= 2 ? 'bg-blue-500/10 text-blue-400' :
+                              'bg-amber-500/10 text-amber-500'
+                            }`}>
+                              {val}j
+                            </span>
+                          ) : (
+                            <X className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                          )}
+                        </td>
+                      )
+                    })}
                     <td className="px-3 py-3">
                       <Badge variant="outline" className="text-amber-600 border-amber-500/30 bg-amber-500/5 font-semibold">
-                        {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].filter(d => record[d]).length}j
+                        {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+                          .reduce((sum, d) => sum + (record[d] ?? 0), 0)}j
                       </Badge>
                     </td>
                   </tr>

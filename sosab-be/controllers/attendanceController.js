@@ -132,20 +132,21 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     const record = {
       workerId: worker._id,
       workerName: worker.name,
-      sunday: false,
-      monday: false,
-      tuesday: false,
-      wednesday: false,
-      thursday: false,
-      friday: false,
-      saturday: false
+      sunday: 0,
+      monday: 0,
+      tuesday: 0,
+      wednesday: 0,
+      thursday: 0,
+      friday: 0,
+      saturday: 0
     };
 
     workerRecords.forEach(a => {
       const dayIndex = new Date(a.date).getDay();
       const dayName = dayNames[dayIndex];
       if (record.hasOwnProperty(dayName)) {
-        record[dayName] = a.present;
+        // Store actual dayValue (0.5, 1, 1.5, 2...) — 0 means absent
+        record[dayName] = a.present ? (a.dayValue || 1) : 0;
       }
     });
 
