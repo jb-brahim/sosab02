@@ -506,8 +506,24 @@ exports.directReception = asyncHandler(async (req, res) => {
 exports.quickLog = asyncHandler(async (req, res) => {
   const { projectId, materialName, unit, category, quantity, type, notes, deliveredBy, supplier, bonLivraison } = req.body;
 
+  // Debug: log incoming payload to identify missing fields
+  console.log('[quickLog] Received body:', JSON.stringify({
+    projectId: projectId || '(missing)',
+    materialName: materialName || '(missing)',
+    unit: unit || '(missing)',
+    quantity: quantity ?? '(missing)',
+    type: type || '(missing)',
+    category
+  }));
+
   if (!projectId || !materialName || !unit || !quantity || !type) {
-    return res.status(400).json({ success: false, message: 'projectId, materialName, unit, quantity and type are required' });
+    const missing = [];
+    if (!projectId) missing.push('projectId');
+    if (!materialName) missing.push('materialName');
+    if (!unit) missing.push('unit');
+    if (!quantity) missing.push('quantity');
+    if (!type) missing.push('type');
+    return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` });
   }
   if (!['IN', 'OUT'].includes(type)) {
     return res.status(400).json({ success: false, message: 'type must be IN or OUT' });

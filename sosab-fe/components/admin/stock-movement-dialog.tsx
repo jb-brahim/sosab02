@@ -98,17 +98,32 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!selectedMaterial || !formData.quantity) return
+        if (!selectedMaterial) return
+
+        // Frontend validation — mirrors backend requirements
+        const qty = parseFloat(formData.quantity)
+        if (!formData.quantity || isNaN(qty) || qty <= 0) {
+            toast.error(locale === "fr" ? "Veuillez entrer une quantité valide (> 0)" : "Please enter a valid quantity (> 0)")
+            return
+        }
+        if (!customUnit || customUnit.trim() === "") {
+            toast.error(locale === "fr" ? "L'unité est requise" : "Unit is required")
+            return
+        }
+        if (!selectedMaterial.name || selectedMaterial.name.trim() === "") {
+            toast.error(locale === "fr" ? "Le nom du matériau est requis" : "Material name is required")
+            return
+        }
 
         setIsLoading(true)
         try {
             const res = await api.post("/materials/quick-log", {
                 projectId,
-                materialName: selectedMaterial.name,
-                unit: customUnit,
-                category: customCategory,
+                materialName: selectedMaterial.name.trim(),
+                unit: customUnit.trim(),
+                category: customCategory || "Standard",
                 type,
-                quantity: parseFloat(formData.quantity),
+                quantity: qty,
                 notes: formData.notes,
                 deliveredBy: type === "IN" ? formData.deliveredBy : undefined,
                 supplier: type === "IN" ? formData.supplier : undefined,
