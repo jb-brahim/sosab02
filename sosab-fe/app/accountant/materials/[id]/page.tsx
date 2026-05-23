@@ -206,16 +206,24 @@ export default function MaterialDetailsPage() {
                 </div>
 
                 {/* Summary Card */}
-                <Card className="bg-success/5 border-success/20 overflow-hidden shadow-sm">
-                    <CardContent className="p-5 flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <div className="text-[10px] uppercase font-black text-success/60 tracking-wider">{t("materials.total_lifetime_volume")}</div>
-                            <div className="text-3xl font-display font-black text-success">
-                                {summary?.totalIn} <span className="text-xs font-bold uppercase opacity-60 ml-0.5">{material?.unit}</span>
+                <Card className="overflow-hidden shadow-sm border-border/50">
+                    <CardContent className="p-5 flex items-center justify-between gap-4">
+                        <div className="flex gap-4 flex-1">
+                            <div className="space-y-0.5">
+                                <div className="text-[10px] uppercase font-black text-green-500/60 tracking-wider">Total Entrées</div>
+                                <div className="text-2xl font-display font-black text-green-500">
+                                    +{summary?.totalIn || 0} <span className="text-xs font-bold uppercase opacity-60 ml-0.5">{material?.unit}</span>
+                                </div>
+                            </div>
+                            <div className="space-y-0.5">
+                                <div className="text-[10px] uppercase font-black text-red-400/60 tracking-wider">Total Sorties</div>
+                                <div className="text-2xl font-display font-black text-red-400">
+                                    -{summary?.totalOut || 0} <span className="text-xs font-bold uppercase opacity-60 ml-0.5">{material?.unit}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="h-12 w-12 rounded-2xl bg-success/10 flex items-center justify-center">
-                            <ArrowDownLeft className="w-6 h-6 text-success" />
+                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <ArrowDownLeft className="w-6 h-6 text-primary" />
                         </div>
                     </CardContent>
                 </Card>
@@ -238,8 +246,11 @@ export default function MaterialDetailsPage() {
                                     <CardContent className="p-4 space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-0.5">
-                                                <div className="text-lg font-display font-black text-primary">
-                                                    +{log.quantity} <span className="text-[10px] font-bold uppercase text-muted-foreground/60">{material?.unit}</span>
+                                                <div className={`text-lg font-display font-black ${
+                                                    log.type === 'OUT' ? 'text-red-400' : 'text-green-500'
+                                                }`}>
+                                                    {log.type === 'OUT' ? '-' : '+'}{log.quantity}{' '}
+                                                    <span className="text-[10px] font-bold uppercase text-muted-foreground/60">{material?.unit}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/80 uppercase">
                                                     <Calendar className="w-3 h-3" />
