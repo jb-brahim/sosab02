@@ -5,11 +5,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Minus, Loader2, Search, ArrowLeft, ArrowDownLeft, ArrowUpRight, Package, Box, Truck, User, FileText, ChevronRight } from "lucide-react"
+import { Plus, Minus, Loader2, Search, ArrowLeft, ArrowDownLeft, ArrowUpRight, Package, Box, Truck, User, FileText, ChevronRight, Calendar as CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { MATERIAL_CATALOG } from "@/lib/material-catalog"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface StockMovementDialogProps {
     projectId: string
@@ -20,6 +23,8 @@ interface StockMovementDialogProps {
 
 export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" }: StockMovementDialogProps) {
     const [open, setOpen] = useState(false)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [datePickerOpen, setDatePickerOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [step, setStep] = useState<"select" | "details">("select")
     
@@ -127,7 +132,8 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                 notes: formData.notes,
                 deliveredBy: type === "IN" ? formData.deliveredBy : undefined,
                 supplier: type === "IN" ? formData.supplier : undefined,
-                bonLivraison: type === "IN" ? formData.bonLivraison : undefined
+                bonLivraison: type === "IN" ? formData.bonLivraison : undefined,
+                date: selectedDate.toISOString()
             })
 
             if (res.data.success) {
@@ -161,6 +167,7 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                 deliveredBy: "",
                 bonLivraison: ""
             })
+            setSelectedDate(new Date())
         }, 300)
     }
 
@@ -380,22 +387,58 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                             </div>
                         )}
 
-                        {/* Quantity input */}
-                        <div className="space-y-2">
-                            <Label htmlFor="mov-qty" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                {locale === "fr" ? `Quantité (${customUnit})` : `Quantity (${customUnit})`}
-                            </Label>
-                            <Input
-                                id="mov-qty"
-                                type="number"
-                                step="any"
-                                min="0.001"
-                                placeholder={locale === "fr" ? "Entrez la quantité" : "Enter quantity"}
-                                value={formData.quantity}
-                                onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                                required
-                                className="rounded-xl border border-border"
-                            />
+                        {/* Quantity & Date inputs grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="mov-qty" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {locale === "fr" ? `Quantité (${customUnit})` : `Quantity (${customUnit})`}
+                                </Label>
+                                <Input
+                                    id="mov-qty"
+                                    type="number"
+                                    step="any"
+                                    min="0.001"
+                                    placeholder={locale === "fr" ? "Entrez la quantité" : "Enter quantity"}
+                                    value={formData.quantity}
+                                    onChange={e => setFormData({ ...formData, quantity: e.target.value })}
+                                    required
+                                    className="rounded-xl border border-border"
+                                />
+                            </div>
+                            <div className="space-y-2 flex flex-col justify-end">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                                    {locale === "fr" ? "Date de transaction" : "Transaction Date"}
+                                </Label>
+                                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full justify-start rounded-xl border border-border text-left font-normal bg-background text-sm h-10 px-3 hover:bg-white/5"
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            {selectedDate ? (
+                                                format(selectedDate, "dd/MM/yyyy")
+                                            ) : (
+                                                <span>{locale === "fr" ? "Choisir une date" : "Pick a date"}</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 animate-in fade-in-50 zoom-in-95 duration-100" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={selectedDate}
+                                            onSelect={(date) => {
+                                                if (date) {
+                                                    setSelectedDate(date)
+                                                    setDatePickerOpen(false)
+                                                }
+                                            }}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
 
                         {/* IN-ONLY DELIVERY FIELDS */}
