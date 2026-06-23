@@ -504,7 +504,7 @@ exports.directReception = asyncHandler(async (req, res) => {
 // @route   POST /api/materials/quick-log
 // @access  Private (Manager/Admin)
 exports.quickLog = asyncHandler(async (req, res) => {
-  const { projectId, materialName, unit, category, quantity, type, notes, deliveredBy, supplier, bonLivraison } = req.body;
+  const { projectId, materialName, unit, category, quantity, type, notes, deliveredBy, supplier, bonLivraison, date } = req.body;
 
   // Debug: log incoming payload to identify missing fields
   console.log('[quickLog] Received body:', JSON.stringify({
@@ -513,7 +513,8 @@ exports.quickLog = asyncHandler(async (req, res) => {
     unit: unit || '(missing)',
     quantity: quantity ?? '(missing)',
     type: type || '(missing)',
-    category
+    category,
+    date
   }));
 
   if (!projectId || !materialName || !unit || !quantity || !type) {
@@ -563,7 +564,7 @@ exports.quickLog = asyncHandler(async (req, res) => {
     supplier: supplier || '',
     bonLivraison: bonLivraison || '',
     loggedBy: req.user._id,
-    date: new Date()
+    date: date ? new Date(date) : new Date()
   });
 
   // Keep stockQuantity in sync
