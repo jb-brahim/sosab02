@@ -100,7 +100,7 @@ exports.getUser = asyncHandler(async (req, res) => {
 // @route   PATCH /api/users/:id
 // @access  Private/Admin
 exports.updateUser = asyncHandler(async (req, res) => {
-  const { name, email, role, assignedProjects, active } = req.body;
+  const { name, email, role, assignedProjects, active, password } = req.body;
 
   const user = await User.findById(req.params.id);
 
@@ -121,6 +121,7 @@ exports.updateUser = asyncHandler(async (req, res) => {
 
   if (name) user.name = name;
   if (email) user.email = email;
+  if (password) user.password = password;
   if (role) {
     // Prevent promoting to Admin
     if (role === 'Admin') {

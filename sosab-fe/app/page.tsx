@@ -14,7 +14,11 @@ export default function Home() {
       if (!user) {
         router.push("/login")
       } else if (user.role === "admin") {
-        router.push("/admin")
+        if (user.email === "owner@company.com" || user.email.startsWith("owner@")) {
+          router.push("/owner")
+        } else {
+          router.push("/admin")
+        }
       } else if (user.role === "gerant") {
         router.push("/gerant")
       } else if (user.role === "accountant") {

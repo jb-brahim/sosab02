@@ -2,6 +2,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const Project = require('../models/Project');
 const Worker = require('../models/Worker');
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 
 // @desc    Get dashboard statistics
 // @route   GET /api/admin/stats
@@ -55,5 +56,21 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
                 active: activeWorkers
             }
         }
+    });
+});
+
+// @desc    Get all audit logs
+// @route   GET /api/admin/logs
+// @access  Private/Admin
+exports.getAuditLogs = asyncHandler(async (req, res) => {
+    const logs = await AuditLog.find()
+        .populate('userId', 'name email role')
+        .sort({ createdAt: -1 })
+        .limit(500);
+
+    res.status(200).json({
+        success: true,
+        count: logs.length,
+        data: logs
     });
 });

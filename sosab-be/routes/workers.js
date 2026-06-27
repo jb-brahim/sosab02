@@ -46,7 +46,7 @@ router
     logAction('update', 'Worker'),
     updateWorker
   )
-  .delete(deleteWorker);
+  .delete(logAction('delete', 'Worker'), deleteWorker);
 
 router
   .route('/:projectId')

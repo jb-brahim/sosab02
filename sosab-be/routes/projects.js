@@ -40,6 +40,7 @@ router
     updateProject
   )
   .delete(
+    logAction('delete', 'Project'),
     deleteProject
   );
 

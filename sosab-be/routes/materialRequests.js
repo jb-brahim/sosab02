@@ -16,7 +16,7 @@ router.use(protect);
 
 router
     .route('/')
-    .post(createRequest)
+    .post(logAction('create', 'MaterialRequest'), createRequest)
     .get(getRequests);
 
 router
