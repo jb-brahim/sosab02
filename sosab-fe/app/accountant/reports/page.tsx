@@ -7,13 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, Download, Calendar, ArrowLeft, FileSpreadsheet, AlertCircle } from "lucide-react"
+import { FileText, Download, Calendar, ArrowLeft, FileSpreadsheet, AlertCircle, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useLanguage } from "@/lib/language-context"
 import { MultiSelect } from "@/components/ui/multi-select"
 import { format } from "date-fns"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ReportsPage() {
     const { t } = useLanguage()
@@ -30,6 +40,22 @@ export default function ReportsPage() {
         endDate: "",
         format: "pdf"
     })
+
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+
+    const handleDeleteReport = async () => {
+        if (!deleteId) return
+        try {
+            await api.delete(`/reports/${deleteId}`)
+            setRecentReports(prev => prev.filter(r => r._id !== deleteId))
+            toast.success(t("reports.deleted") || "Rapport supprimé")
+        } catch (error) {
+            console.error("Failed to delete report", error)
+            toast.error(t("reports.delete_failed") || "Échec de suppression")
+        } finally {
+            setDeleteId(null)
+        }
+    }
 
     const fetchRecentReports = async () => {
         try {
@@ -297,9 +323,31 @@ export default function ReportsPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-transparent">
-                                                <Download className="w-3.5 h-3.5" />
-                                            </Button>
+                                            <div className="flex items-center gap-1">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-transparent"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        const apiUrl = require('@/lib/api').BACKEND_URL;
+                                                        window.open(`${apiUrl}${report.pdfUrl}`, '_blank')
+                                                    }}
+                                                >
+                                                    <Download className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-transparent"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setDeleteId(report._id)
+                                                    }}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -308,6 +356,23 @@ export default function ReportsPage() {
                     </Card>
                 </div>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl">{t("reports.delete_title") || "Supprimer le rapport"}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("reports.delete_description") || "Êtes-vous sûr de vouloir supprimer ce rapport ? Cette action est irréversible."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl h-12">{t("common.cancel") || "Annuler"}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteReport} className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("common.delete") || "Supprimer"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
