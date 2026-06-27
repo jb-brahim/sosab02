@@ -98,7 +98,7 @@ export default function GenerateReportPage() {
     }
 
     return (
-        <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
+        <div className="p-4 space-y-6 max-w-4xl mx-auto pb-24">
             <div className="flex items-center gap-2 mb-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="w-5 h-5" />
@@ -113,105 +113,120 @@ export default function GenerateReportPage() {
             </div>
 
             <Card>
-                <CardContent className="p-6 space-y-6">
-                    {/* Project Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="project">{t("materials.site_label")}</Label>
-                        <MultiSelect
-                            options={projects.map(p => ({ label: p.name, value: p._id }))}
-                            selected={formData.projectIds}
-                            onChange={(vals) => setFormData({ ...formData, projectIds: vals })}
-                            placeholder={t("reports.select_project")}
-                        />
-                    </div>
-
-                    {/* Report Type */}
-                    <div className="space-y-2">
-                        <Label>{t("reports.status_label")}</Label>
-                        <RadioGroup
-                            value={formData.type}
-                            onValueChange={(value) => setFormData({ ...formData, type: value })}
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="attendance" id="attendance" />
-                                <Label htmlFor="attendance" className="font-normal cursor-pointer">
-                                    {t("reports.attendance_grid")}
-                                </Label>
+                <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Left Column: Sites & Dates */}
+                        <div className="space-y-6">
+                            {/* Project Selection */}
+                            <div className="space-y-2">
+                                <Label htmlFor="project" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("materials.site_label")}</Label>
+                                <MultiSelect
+                                    options={projects.map(p => ({ label: p.name, value: p._id }))}
+                                    selected={formData.projectIds}
+                                    onChange={(vals) => setFormData({ ...formData, projectIds: vals })}
+                                    placeholder={t("reports.select_project")}
+                                />
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="payment" id="payment" />
-                                <Label htmlFor="payment" className="font-normal cursor-pointer">
-                                    {t("reports.payment_summary")}
-                                </Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
 
-                    {/* Date Range */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="startDate">{t("reports.from")}</Label>
-                            <Input
-                                id="startDate"
-                                type="date"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                            />
+                            {/* Date Range */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Période du Rapport</Label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="startDate" className="text-[10px] font-bold text-muted-foreground/85 uppercase">{t("reports.from")}</Label>
+                                        <Input
+                                            id="startDate"
+                                            type="date"
+                                            value={formData.startDate}
+                                            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="endDate" className="text-[10px] font-bold text-muted-foreground/85 uppercase">{t("reports.to")}</Label>
+                                        <Input
+                                            id="endDate"
+                                            type="date"
+                                            value={formData.endDate}
+                                            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="endDate">{t("reports.to")}</Label>
-                            <Input
-                                id="endDate"
-                                type="date"
-                                value={formData.endDate}
-                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                            />
+
+                        {/* Right Column: Options & Action */}
+                        <div className="space-y-6 flex flex-col justify-between">
+                            <div className="space-y-6">
+                                {/* Report Type */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("reports.status_label")}</Label>
+                                    <RadioGroup
+                                        value={formData.type}
+                                        onValueChange={(value) => setFormData({ ...formData, type: value })}
+                                        className="grid grid-cols-1 gap-2 bg-muted/20 p-3 rounded-xl border border-border/30"
+                                    >
+                                        <div className="flex items-center space-x-2 rounded-lg p-2 hover:bg-muted/40 transition-colors cursor-pointer">
+                                            <RadioGroupItem value="attendance" id="attendance" />
+                                            <Label htmlFor="attendance" className="font-medium cursor-pointer text-sm">
+                                                {t("reports.attendance_grid")}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 rounded-lg p-2 hover:bg-muted/40 transition-colors cursor-pointer">
+                                            <RadioGroupItem value="payment" id="payment" />
+                                            <Label htmlFor="payment" className="font-medium cursor-pointer text-sm">
+                                                {t("reports.payment_summary")}
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+
+                                {/* Format Selection */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("reports.export_format")}</Label>
+                                    <RadioGroup
+                                        value={formData.format}
+                                        onValueChange={(value) => setFormData({ ...formData, format: value })}
+                                        className="grid grid-cols-2 gap-4"
+                                    >
+                                        <div className="flex items-center space-x-2 rounded-xl border border-border/50 p-3 hover:bg-muted/40 transition-all cursor-pointer">
+                                            <RadioGroupItem value="pdf" id="pdf" />
+                                            <Label htmlFor="pdf" className="font-medium cursor-pointer text-sm flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-red-500" />
+                                                {t("reports.pdf_printable")}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 rounded-xl border border-border/50 p-3 hover:bg-muted/40 transition-all cursor-pointer">
+                                            <RadioGroupItem value="excel" id="excel" />
+                                            <Label htmlFor="excel" className="font-medium cursor-pointer text-sm flex items-center gap-2">
+                                                <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                                                {t("reports.excel_editable")}
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                            </div>
+
+                            {/* Generate Button */}
+                            <Button
+                                onClick={handleGenerate}
+                                disabled={generating || loading || formData.projectIds.length === 0}
+                                className="w-full mt-auto"
+                                size="lg"
+                            >
+                                {generating ? (
+                                    <>
+                                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                        {t("materials.generating")}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="w-4 h-4 mr-2" />
+                                        {t("reports.generate")}
+                                    </>
+                                )}
+                            </Button>
                         </div>
                     </div>
-
-                    {/* Format Selection */}
-                    <div className="space-y-2">
-                        <Label>{t("reports.export_format")}</Label>
-                        <RadioGroup
-                            value={formData.format}
-                            onValueChange={(value) => setFormData({ ...formData, format: value })}
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="pdf" id="pdf" />
-                                <Label htmlFor="pdf" className="font-normal cursor-pointer flex items-center gap-2">
-                                    <FileText className="w-4 h-4" />
-                                    {t("reports.pdf_printable")}
-                                </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="excel" id="excel" />
-                                <Label htmlFor="excel" className="font-normal cursor-pointer flex items-center gap-2">
-                                    <FileSpreadsheet className="w-4 h-4" />
-                                    {t("reports.excel_editable")}
-                                </Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
-
-                    {/* Generate Button */}
-                    <Button
-                        onClick={handleGenerate}
-                        disabled={generating || loading || formData.projectIds.length === 0}
-                        className="w-full"
-                        size="lg"
-                    >
-                        {generating ? (
-                            <>
-                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                {t("materials.generating")}
-                            </>
-                        ) : (
-                            <>
-                                <Download className="w-4 h-4 mr-2" />
-                                {t("reports.generate")}
-                            </>
-                        )}
-                    </Button>
                 </CardContent>
             </Card>
         </div>

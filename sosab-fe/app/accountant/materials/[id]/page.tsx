@@ -163,7 +163,7 @@ export default function MaterialDetailsPage() {
 
     if (!logs.length && !loading) {
         return (
-            <div className="p-4 space-y-4 max-w-md mx-auto">
+            <div className="p-4 space-y-4 max-w-4xl mx-auto">
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-2">
                     <ChevronLeft className="w-4 h-4 mr-1" /> {t("common.cancel")}
                 </Button>
@@ -179,7 +179,7 @@ export default function MaterialDetailsPage() {
     }
 
     return (
-        <div className="p-4 space-y-6 max-w-md mx-auto pb-24">
+        <div className="p-4 space-y-6 max-w-4xl mx-auto pb-24">
             <div className="space-y-4">
                 {/* Back */}
                 <Button variant="ghost" onClick={() => router.back()} className="mb-2 -ml-4 h-8 text-muted-foreground hover:text-primary">
