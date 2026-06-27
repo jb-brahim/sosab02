@@ -87,6 +87,15 @@ export default function ManagersManagementPage() {
     }
   }
 
+  const getAssignedProjects = (userId: string) => {
+    return projects.filter(proj => 
+      proj.managers && proj.managers.some((m: any) => {
+        const mId = m._id || m;
+        return mId.toString() === userId.toString();
+      })
+    )
+  }
+
   useEffect(() => {
     loadData()
   }, [])
@@ -100,6 +109,22 @@ export default function ManagersManagementPage() {
     try {
       const res = await api.post("/users", createForm)
       if (res.data.success) {
+        // Sync project manager assignments
+        const newUserId = res.data.data.id || res.data.data._id
+        if (createForm.assignedProjects.length > 0 && newUserId) {
+          await Promise.all(createForm.assignedProjects.map(async (projectId) => {
+            const project = projects.find(p => p._id === projectId)
+            if (project) {
+              const existingManagers = project.managers?.map((m: any) => m._id || m) || []
+              if (!existingManagers.includes(newUserId)) {
+                await api.patch(`/projects/${projectId}`, {
+                  managers: [...existingManagers, newUserId]
+                })
+              }
+            }
+          }))
+        }
+
         toast.success(`Manager ${createForm.name} ajouté avec succès`)
         setCreateOpen(false)
         setCreateForm({
@@ -127,6 +152,42 @@ export default function ManagersManagementPage() {
     try {
       const res = await api.patch(`/users/${editUser._id}`, editForm)
       if (res.data.success) {
+        // Sync project manager assignments
+        const prevAssigned = getAssignedProjects(editUser._id).map(p => p._id)
+        const nextAssigned = editForm.assignedProjects
+        
+        const added = nextAssigned.filter(id => !prevAssigned.includes(id))
+        const removed = prevAssigned.filter(id => !nextAssigned.includes(id))
+        
+        // Add manager to new projects
+        if (added.length > 0) {
+          await Promise.all(added.map(async (projectId) => {
+            const project = projects.find(p => p._id === projectId)
+            if (project) {
+              const existingManagers = project.managers?.map((m: any) => m._id || m) || []
+              if (!existingManagers.includes(editUser._id)) {
+                await api.patch(`/projects/${projectId}`, {
+                  managers: [...existingManagers, editUser._id]
+                })
+              }
+            }
+          }))
+        }
+        
+        // Remove manager from deselected projects
+        if (removed.length > 0) {
+          await Promise.all(removed.map(async (projectId) => {
+            const project = projects.find(p => p._id === projectId)
+            if (project) {
+              const existingManagers = project.managers?.map((m: any) => m._id || m) || []
+              const updatedManagers = existingManagers.filter((mId: string) => mId !== editUser._id)
+              await api.patch(`/projects/${projectId}`, {
+                managers: updatedManagers
+              })
+            }
+          }))
+        }
+
         toast.success("Manager mis à jour avec succès")
         setEditUser(null)
         loadData()
@@ -279,8 +340,8 @@ export default function ManagersManagementPage() {
                     <Building className="w-3.5 h-3.5" /> Chantiers Assignés
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {u.assignedProjects && u.assignedProjects.length > 0 ? (
-                      u.assignedProjects.map((p: any) => (
+                    {getAssignedProjects(u._id).length > 0 ? (
+                      getAssignedProjects(u._id).map((p: any) => (
                         <Badge key={p._id} className="bg-background text-foreground/80 hover:bg-background border-border/60 text-[9px] font-semibold py-0.5 px-2 rounded">
                           {p.name}
                         </Badge>
@@ -340,7 +401,7 @@ export default function ManagersManagementPage() {
                           name: u.name,
                           email: u.email,
                           role: u.role,
-                          assignedProjects: u.assignedProjects?.map((p: any) => p._id) || []
+                          assignedProjects: getAssignedProjects(u._id).map((p: any) => p._id)
                         })
                       }}
                       className="h-9 w-9 text-muted-foreground hover:text-purple-500 rounded-xl"

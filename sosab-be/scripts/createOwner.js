@@ -1,12 +1,23 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+// Load env vars
+let envPath = path.resolve(__dirname, '../.env.production');
+if (!fs.existsSync(envPath)) {
+    envPath = path.resolve(__dirname, '../.env');
+}
+dotenv.config({ path: envPath });
 
 const createOwnerUser = async () => {
     try {
+        const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sosab';
+        console.log('Connecting to URI:', uri.replace(/:([^:@]+)@/, ':****@')); // Hide password in logs
         // Connect to MongoDB
-        await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sosab');
+        await mongoose.connect(uri);
         console.log('Connected to MongoDB');
 
         // Check if owner already exists
