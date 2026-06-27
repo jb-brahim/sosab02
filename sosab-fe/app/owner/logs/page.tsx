@@ -8,7 +8,7 @@ import {
   Search,
   Filter,
   User,
-  Calendar,
+  Calendar as CalendarIcon,
   Layers,
   Laptop,
   Globe,
@@ -18,13 +18,17 @@ import {
   LogIn,
   LogOut,
   CheckCircle,
-  XCircle
+  XCircle,
+  X
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const renderChanges = (changes: any, resource: string, workers: any[], projects: any[]) => {
   if (!changes) return null
@@ -162,7 +166,8 @@ export default function AuditLogsPage() {
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [actionFilter, setActionFilter] = useState("ALL")
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [resourceFilter, setResourceFilter] = useState("ALL")
 
   useEffect(() => {
@@ -268,10 +273,17 @@ export default function AuditLogsPage() {
                           userEmail.toLowerCase().includes(search.toLowerCase()) ||
                           (log.resource && log.resource.toLowerCase().includes(search.toLowerCase()))
 
-    const matchesAction = actionFilter === "ALL" || log.action === actionFilter
+    let matchesDate = true
+    if (selectedDate) {
+      const logDate = new Date(log.createdAt)
+      matchesDate = logDate.getDate() === selectedDate.getDate() &&
+                    logDate.getMonth() === selectedDate.getMonth() &&
+                    logDate.getFullYear() === selectedDate.getFullYear()
+    }
+
     const matchesResource = resourceFilter === "ALL" || log.resource === resourceFilter
 
-    return matchesSearch && matchesAction && matchesResource
+    return matchesSearch && matchesDate && matchesResource
   })
 
   // Get list of unique resources for the filter select dropdown
@@ -302,22 +314,40 @@ export default function AuditLogsPage() {
           />
         </div>
         
-        <div>
-          <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="h-10 text-xs rounded-xl bg-card">
-              <SelectValue placeholder="Action" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="ALL">Toutes les actions</SelectItem>
-              <SelectItem value="create">Création</SelectItem>
-              <SelectItem value="update">Modification</SelectItem>
-              <SelectItem value="delete">Suppression</SelectItem>
-              <SelectItem value="login">Connexions</SelectItem>
-              <SelectItem value="logout">Déconnexions</SelectItem>
-              <SelectItem value="approve">Approbation</SelectItem>
-              <SelectItem value="reject">Rejet</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex gap-2 items-center">
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-10 text-xs rounded-xl bg-card border border-border/40 hover:bg-muted/10 transition-all font-semibold"
+              >
+                <CalendarIcon className="w-4 h-4 mr-2 text-purple-500" />
+                {selectedDate ? format(selectedDate, 'dd MMMM yyyy') : "Filtrer par date (Tous)"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  setSelectedDate(date)
+                  setDatePickerOpen(false)
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {selectedDate && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setSelectedDate(undefined)}
+              className="h-10 w-10 text-muted-foreground hover:text-red-500 rounded-xl flex-shrink-0"
+              title="Effacer la date"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
         <div>
