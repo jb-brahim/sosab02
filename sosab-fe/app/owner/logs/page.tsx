@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 
-const renderChanges = (changes: any, resource: string) => {
+const renderChanges = (changes: any, resource: string, workers: any[], projects: any[]) => {
   if (!changes) return null
   const body = changes.body || {}
   if (Object.keys(body).length === 0) return null
@@ -34,22 +34,31 @@ const renderChanges = (changes: any, resource: string) => {
   // Custom formats for specific resources
   if (resource === "Attendance") {
     const isPresent = body.present === true || body.present === "true"
+    const workerName = workers.find((w: any) => w._id === body.workerId)?.name || `ID: ${body.workerId?.substring(0, 8)}...`
+    const projectName = projects.find((p: any) => p._id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
+    
     return (
-      <div className="space-y-1 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
+      <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
         <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Détails de Présence:</div>
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
+        <div className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          <span>Ouvrier: <strong className="text-foreground font-extrabold">{workerName}</strong></span>
+          <span>Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong></span>
           <span>Statut: <strong className={isPresent ? "text-green-500 font-bold" : "text-red-500 font-bold"}>{isPresent ? "Présent" : "Absent"}</strong></span>
           {isPresent && <span>Valeur: <strong>{body.dayValue || 1}</strong></span>}
-          {body.date && <span>Date: <strong>{body.date}</strong></span>}
+          {body.date && <span>Date de présence: <strong>{body.date}</strong></span>}
         </div>
       </div>
     )
   }
 
   if (resource === "DailyReport") {
+    const projectName = projects.find((p: any) => p._id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
     return (
       <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
         <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Rapport Journalier:</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong>
+        </div>
         {body.workCompleted && (
           <div className="text-xs text-muted-foreground">
             <span className="font-semibold text-foreground/75 block">Travaux réalisés:</span>
@@ -99,7 +108,20 @@ const renderChanges = (changes: any, resource: string) => {
   }
 
   Object.entries(body).forEach(([key, val]) => {
-    if (key.endsWith("Id") || key === "_id" || typeof val === "object") return
+    if (key.endsWith("Id") || key === "_id" || typeof val === "object") {
+      if (key === "projectId") {
+        const projName = projects.find((p: any) => p._id === val)?.name
+        if (projName) {
+          lines.push({ label: "Chantier", value: projName })
+        }
+      } else if (key === "workerId") {
+        const wrkName = workers.find((w: any) => w._id === val)?.name
+        if (wrkName) {
+          lines.push({ label: "Ouvrier", value: wrkName })
+        }
+      }
+      return
+    }
     lines.push({ label: formatKey(key), value: formatValue(val) })
   })
 
@@ -122,27 +144,40 @@ const renderChanges = (changes: any, resource: string) => {
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([])
+  const [workers, setWorkers] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [actionFilter, setActionFilter] = useState("ALL")
   const [resourceFilter, setResourceFilter] = useState("ALL")
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const loadAllData = async () => {
       try {
         setLoading(true)
-        const res = await api.get("/admin/logs")
-        if (res.data.success) {
-          setLogs(res.data.data)
+        const [logsRes, workersRes, projectsRes] = await Promise.all([
+          api.get("/admin/logs"),
+          api.get("/workers").catch(err => ({ data: { success: false, data: [] } })),
+          api.get("/projects").catch(err => ({ data: { success: false, data: [] } }))
+        ])
+        
+        if (logsRes.data.success) {
+          setLogs(logsRes.data.data)
+        }
+        if (workersRes.data.success) {
+          setWorkers(workersRes.data.data)
+        }
+        if (projectsRes.data.success) {
+          setProjects(projectsRes.data.data)
         }
       } catch (error) {
-        console.error("Failed to load audit logs", error)
-        toast.error("Impossible de charger le journal d'activité")
+        console.error("Failed to load audit logs data", error)
+        toast.error("Impossible de charger les logs ou les données")
       } finally {
         setLoading(false)
       }
     }
-    fetchLogs()
+    loadAllData()
   }, [])
 
   // Action badge formatter
@@ -336,7 +371,7 @@ export default function AuditLogsPage() {
                 </div>
 
                 {/* Optional changes debug print */}
-                {renderChanges(log.changes, log.resource)}
+                {renderChanges(log.changes, log.resource, workers, projects)}
               </CardContent>
             </Card>
           ))
