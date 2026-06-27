@@ -26,6 +26,100 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 
+const renderChanges = (changes: any, resource: string) => {
+  if (!changes) return null
+  const body = changes.body || {}
+  if (Object.keys(body).length === 0) return null
+
+  // Custom formats for specific resources
+  if (resource === "Attendance") {
+    const isPresent = body.present === true || body.present === "true"
+    return (
+      <div className="space-y-1 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
+        <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Détails de Présence:</div>
+        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
+          <span>Statut: <strong className={isPresent ? "text-green-500 font-bold" : "text-red-500 font-bold"}>{isPresent ? "Présent" : "Absent"}</strong></span>
+          {isPresent && <span>Valeur: <strong>{body.dayValue || 1}</strong></span>}
+          {body.date && <span>Date: <strong>{body.date}</strong></span>}
+        </div>
+      </div>
+    )
+  }
+
+  if (resource === "DailyReport") {
+    return (
+      <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
+        <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Rapport Journalier:</div>
+        {body.workCompleted && (
+          <div className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground/75 block">Travaux réalisés:</span>
+            <p className="whitespace-pre-line mt-0.5 bg-background/50 p-2 rounded border border-border/30 text-xs italic leading-relaxed text-foreground/90">{body.workCompleted}</p>
+          </div>
+        )}
+        {body.issues && (
+          <div className="text-xs text-red-500">
+            <span className="font-semibold block">Problèmes signalés:</span>
+            <p className="mt-0.5 bg-red-500/5 p-2 rounded border border-red-500/10 text-xs italic leading-relaxed text-red-500">{body.issues}</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // General bullet points for other resources
+  const lines: { label: string; value: string }[] = []
+  
+  const formatKey = (key: string) => {
+    const labels: Record<string, string> = {
+      name: "Nom",
+      email: "Email",
+      role: "Rôle",
+      active: "Actif",
+      location: "Emplacement",
+      budget: "Budget",
+      startDate: "Date de début",
+      endDate: "Date de fin",
+      progress: "Progression",
+      status: "Statut",
+      quantity: "Quantité",
+      unit: "Unité",
+      supplier: "Fournisseur",
+      price: "Prix",
+      type: "Type",
+      notes: "Notes",
+      description: "Description"
+    }
+    return labels[key] || key
+  }
+
+  const formatValue = (val: any) => {
+    if (typeof val === "boolean") return val ? "Oui" : "Non"
+    if (val === null || val === undefined) return "—"
+    return val.toString()
+  }
+
+  Object.entries(body).forEach(([key, val]) => {
+    if (key.endsWith("Id") || key === "_id" || typeof val === "object") return
+    lines.push({ label: formatKey(key), value: formatValue(val) })
+  })
+
+  if (lines.length === 0) return null
+
+  return (
+    <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
+      <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Informations:</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+        {lines.map((line, idx) => (
+          <div key={idx} className="text-xs flex items-center justify-between border-b border-border/10 pb-0.5">
+            <span className="text-muted-foreground">{line.label}:</span>
+            <span className="font-semibold text-foreground/90">{line.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -242,12 +336,7 @@ export default function AuditLogsPage() {
                 </div>
 
                 {/* Optional changes debug print */}
-                {log.changes && Object.keys(log.changes).length > 0 && (
-                  <div className="p-2 rounded-xl bg-muted/40 border border-border/30 text-[10px] font-mono text-muted-foreground/90 max-h-24 overflow-y-auto">
-                    <div className="font-bold text-foreground/80 mb-0.5 uppercase tracking-wide text-[9px]">Détails des modifications:</div>
-                    {JSON.stringify(log.changes, null, 2)}
-                  </div>
-                )}
+                {renderChanges(log.changes, log.resource)}
               </CardContent>
             </Card>
           ))
