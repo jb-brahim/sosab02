@@ -256,14 +256,14 @@ export default function ManagersManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6 text-purple-500" />
+            <Users className="h-6 w-6 text-primary" />
             Gestion des Managers
           </h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Ajoutez de nouveaux gérants ou directeurs de projet, configurez leurs chantiers, modifiez les mots de passe et révoquez leurs accès.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl gap-2 font-bold h-11 shrink-0">
+        <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl gap-2 font-bold h-11 shrink-0">
           <UserPlus className="w-4 h-4" />
           Ajouter Manager
         </Button>
@@ -307,13 +307,13 @@ export default function ManagersManagementPage() {
           </div>
         ) : (
           filteredUsers.map((u) => (
-            <Card key={u._id} className="border-border/40 hover:border-purple-500/20 transition-all rounded-2xl overflow-hidden shadow-sm relative">
+            <Card key={u._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm relative">
               <CardContent className="p-5 space-y-4">
                 {/* Profile row */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                      u.active ? 'bg-purple-500/10 text-purple-500' : 'bg-muted text-muted-foreground'
+                      u.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>
                       {u.name.charAt(0)}
                     </div>
@@ -330,7 +330,7 @@ export default function ManagersManagementPage() {
                       </div>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-[9px] uppercase px-2 py-0.5 border-purple-500/30 text-purple-500 bg-purple-500/5 font-bold">
+                  <Badge variant="outline" className="text-[9px] uppercase px-2 py-0.5 border-primary/30 text-primary bg-primary/5 font-bold">
                     {u.role}
                   </Badge>
                 </div>
@@ -388,7 +388,7 @@ export default function ManagersManagementPage() {
                         setPasswordUser(u)
                         setNewPassword("")
                       }}
-                      className="h-9 w-9 text-muted-foreground hover:text-purple-500 rounded-xl"
+                      className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl"
                       title="Changer mot de passe"
                     >
                       <Key className="w-3.5 h-3.5" />
@@ -405,7 +405,7 @@ export default function ManagersManagementPage() {
                           assignedProjects: getAssignedProjects(u._id).map((p: any) => p._id)
                         })
                       }}
-                      className="h-9 w-9 text-muted-foreground hover:text-purple-500 rounded-xl"
+                      className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl"
                       title="Modifier détails"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -420,10 +420,10 @@ export default function ManagersManagementPage() {
 
       {/* Dialog: Create Manager */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl max-w-md">
+        <DialogContent className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display text-lg flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-purple-500" /> Ajouter un nouveau manager
+              <UserPlus className="w-5 h-5 text-primary" /> Ajouter un nouveau manager
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Créez un nouveau profil de gérant, PM ou comptable et assignez ses chantiers.
@@ -492,7 +492,7 @@ export default function ManagersManagementPage() {
             <DialogClose asChild>
               <Button variant="ghost" className="rounded-xl h-11">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-11 font-bold">
+            <Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11 font-bold">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -501,10 +501,10 @@ export default function ManagersManagementPage() {
 
       {/* Dialog: Edit Details */}
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl max-w-md">
+        <DialogContent className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display text-lg flex items-center gap-2">
-              <Edit2 className="w-5 h-5 text-purple-500" /> Modifier les informations
+              <Edit2 className="w-5 h-5 text-primary" /> Modifier les informations
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Modifiez le nom, l'email, le rôle ou les affectations de chantier du manager.
@@ -562,7 +562,7 @@ export default function ManagersManagementPage() {
             <DialogClose asChild>
               <Button variant="ghost" className="rounded-xl h-11">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleEdit} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-11 font-bold">
+            <Button onClick={handleEdit} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11 font-bold">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -571,10 +571,10 @@ export default function ManagersManagementPage() {
 
       {/* Dialog: Change Password */}
       <Dialog open={!!passwordUser} onOpenChange={(open) => !open && setPasswordUser(null)}>
-        <DialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl max-w-sm">
+        <DialogContent className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-display text-lg flex items-center gap-2">
-              <Lock className="w-5 h-5 text-purple-500" /> Réinitialiser mot de passe
+              <Lock className="w-5 h-5 text-primary" /> Réinitialiser mot de passe
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Modification du mot de passe de <span className="font-bold text-foreground">{passwordUser?.name}</span>.
@@ -598,7 +598,7 @@ export default function ManagersManagementPage() {
             <DialogClose asChild>
               <Button variant="ghost" className="rounded-xl h-11">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-11 font-bold">
+            <Button onClick={handleChangePassword} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11 font-bold">
               Confirmer
             </Button>
           </DialogFooter>

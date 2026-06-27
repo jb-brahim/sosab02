@@ -45,8 +45,8 @@ const renderChanges = (changes: any, resource: string, workers: any[], projects:
     console.log(`[ATTENDANCE LOG DEBUG] workerId: ${body.workerId} -> Resolved: ${workerName} (from ${workers.length} workers)`)
     
     return (
-      <div className="space-y-2 mt-1 bg-purple-500/5 p-3 rounded-xl border border-purple-500/10">
-        <div className="font-bold text-purple-400 text-[10px] uppercase tracking-wider flex items-center gap-1">
+      <div className="space-y-2 mt-1 bg-primary/5 p-3 rounded-xl border border-primary/10">
+        <div className="font-bold text-primary text-[10px] uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-3.5 h-3.5" /> Détails de Présence
         </div>
         <div className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
@@ -294,7 +294,7 @@ export default function AuditLogsPage() {
       {/* Title Header */}
       <div>
         <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-          <Activity className="h-6 w-6 text-purple-500" />
+          <Activity className="h-6 w-6 text-primary" />
           Journal d'Activité Audit
         </h1>
         <p className="text-muted-foreground text-xs mt-0.5">
@@ -321,7 +321,7 @@ export default function AuditLogsPage() {
                 variant="outline"
                 className="w-full justify-start h-10 text-xs rounded-xl bg-card border border-border/40 hover:bg-muted/10 transition-all font-semibold"
               >
-                <CalendarIcon className="w-4 h-4 mr-2 text-purple-500" />
+                <CalendarIcon className="w-4 h-4 mr-2 text-primary" />
                 {selectedDate ? format(selectedDate, 'dd MMMM yyyy') : "Filtrer par date (Tous)"}
               </Button>
             </PopoverTrigger>
@@ -377,12 +377,12 @@ export default function AuditLogsPage() {
           </div>
         ) : (
           filteredLogs.map((log) => (
-            <Card key={log._id} className="border-border/40 hover:border-purple-500/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
+            <Card key={log._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
               <CardContent className="p-4 space-y-3">
                 {/* Top Row: User & Action */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 font-bold text-xs">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                       {log.userId?.name?.charAt(0) || "S"}
                     </div>
                     <div>

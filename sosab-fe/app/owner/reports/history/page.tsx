@@ -71,13 +71,13 @@ export default function OwnerReportsHistoryPage() {
                 </Button>
                 <div>
                     <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-purple-500" />
+                        <FileText className="w-6 h-6 text-primary" />
                         Historique des Rapports
                     </h1>
                     <p className="text-muted-foreground text-xs">Consulter, télécharger ou supprimer tous les rapports générés</p>
                 </div>
                 <div className="ml-auto">
-                    <Button size="sm" onClick={() => router.push('/owner/reports')} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold">
+                    <Button size="sm" onClick={() => router.push('/owner/reports')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold">
                         + Nouveau
                     </Button>
                 </div>
@@ -94,7 +94,7 @@ export default function OwnerReportsHistoryPage() {
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
                         {reports.map((report) => (
-                            <Card key={report._id} className="group overflow-hidden border-border/40 hover:border-purple-500/20 transition-all cursor-pointer shadow-sm hover:shadow-md" onClick={() => openReport(report.pdfUrl)}>
+                            <Card key={report._id} className="group overflow-hidden border-border/40 hover:border-primary/20 transition-all cursor-pointer shadow-sm hover:shadow-md" onClick={() => openReport(report.pdfUrl)}>
                                 <CardContent className="p-0">
                                     <div className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -116,7 +116,7 @@ export default function OwnerReportsHistoryPage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-purple-500/5 hover:text-purple-600 rounded-xl" onClick={(e) => {
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-xl" onClick={(e) => {
                                                 e.stopPropagation()
                                                 openReport(report.pdfUrl)
                                             }}>
@@ -149,7 +149,7 @@ export default function OwnerReportsHistoryPage() {
             </div>
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent className="rounded-2xl border-white/5 bg-background/95 backdrop-blur-xl">
+                <AlertDialogContent className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="font-display text-lg">Supprimer le rapport</AlertDialogTitle>
                         <AlertDialogDescription className="text-xs text-muted-foreground">

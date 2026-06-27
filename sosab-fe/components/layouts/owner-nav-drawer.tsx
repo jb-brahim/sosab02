@@ -139,12 +139,12 @@ export function OwnerNavDrawer() {
                             <div className="flex flex-col h-full">
                                 {/* Header */}
                                 <div className="flex items-center gap-3 px-6 py-5 border-b border-border/50">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white shadow-lg shadow-purple-600/20">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                                         <Shield className="h-5 w-5" />
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="font-bold text-sm tracking-wide">SOSAB</span>
-                                        <span className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">
+                                        <span className="text-[10px] text-primary font-bold uppercase tracking-wider">
                                             Super Admin (Owner)
                                         </span>
                                     </div>
@@ -164,11 +164,11 @@ export function OwnerNavDrawer() {
                                                     className={cn(
                                                         "flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                                                         isActive
-                                                            ? "bg-purple-600/10 text-purple-500 font-semibold"
+                                                            ? "bg-primary/10 text-primary font-semibold"
                                                             : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                     )}
                                                 >
-                                                    <item.icon className={cn("h-5 w-5", isActive ? "text-purple-500" : "text-muted-foreground")} />
+                                                    <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
                                                     <span>{item.label}</span>
                                                 </Link>
                                             </SheetClose>
@@ -179,14 +179,14 @@ export function OwnerNavDrawer() {
                                 {/* Footer Profile info */}
                                 <div className="border-t border-border/50 p-4 space-y-3">
                                     <div className="flex items-center gap-3 px-2 py-1">
-                                        <Avatar className="h-9 w-9 ring-2 ring-purple-600/20">
-                                            <AvatarFallback className="bg-purple-600/10 text-purple-600 font-bold text-sm">
+                                        <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
                                                 {user?.name?.charAt(0) || "S"}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-bold text-xs truncate text-foreground/90">{user?.name || "Propriétaire"}</span>
-                                            <span className="text-[9px] text-purple-500 font-medium uppercase tracking-wider">Directeur</span>
+                                            <span className="text-[9px] text-primary font-medium uppercase tracking-wider">Directeur</span>
                                         </div>
                                     </div>
                                     <Button
@@ -203,7 +203,7 @@ export function OwnerNavDrawer() {
                     </Sheet>
                 )}
                 <span className="font-bold text-sm tracking-wide flex items-center gap-1.5">
-                    {!showBack && <HardHat className="h-4.5 w-4.5 text-purple-500" />}
+                    {!showBack && <HardHat className="h-4.5 w-4.5 text-primary" />}
                     {showBack ? "Retour" : "Portail Super Admin"}
                 </span>
             </div>
@@ -217,7 +217,7 @@ export function OwnerNavDrawer() {
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl relative hover:bg-muted">
                             <Bell className="h-4.5 w-4.5 text-muted-foreground" />
                             {unreadCount > 0 && (
-                                <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[9px] font-bold text-white shadow-lg">
+                                <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-lg">
                                     {unreadCount}
                                 </span>
                             )}
@@ -227,7 +227,7 @@ export function OwnerNavDrawer() {
                         <DropdownMenuLabel className="flex items-center justify-between px-3 py-2 text-xs text-muted-foreground uppercase font-bold tracking-wider">
                             <span>Notifications</span>
                             {unreadCount > 0 && (
-                                <span className="text-[10px] text-purple-500 cursor-pointer hover:underline" onClick={() => {
+                                <span className="text-[10px] text-primary cursor-pointer hover:underline" onClick={() => {
                                     notifications.filter(n => !n.read).forEach(n => markAsRead(n._id));
                                 }}>
                                     Tout marquer lu
@@ -246,7 +246,7 @@ export function OwnerNavDrawer() {
                                         key={notification._id}
                                         className={cn(
                                             "flex flex-col items-start gap-1 p-3 cursor-pointer rounded-xl transition-all m-1 focus:bg-muted/50",
-                                            !notification.read && "bg-purple-600/5 hover:bg-purple-600/10"
+                                            !notification.read && "bg-primary/5 hover:bg-primary/10"
                                         )}
                                         onClick={() => handleNotificationClick(notification)}
                                     >

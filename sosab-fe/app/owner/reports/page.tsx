@@ -140,7 +140,7 @@ export default function OwnerReportsPage() {
         <div className="space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in duration-300">
             <div>
                 <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-                    <FileText className="h-6 w-6 text-purple-500" />
+                    <FileText className="h-6 w-6 text-primary" />
                     Générateur de Rapports
                 </h1>
                 <p className="text-muted-foreground text-xs mt-0.5">
@@ -244,21 +244,21 @@ export default function OwnerReportsPage() {
                                 <Button
                                     onClick={handleGenerate}
                                     disabled={generating || loading || formData.projectIds.length === 0}
-                                    className="w-full h-11 text-xs font-bold uppercase bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                                    className="w-full h-11 text-xs font-bold uppercase bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
                                     size="lg"
-                                >
-                                    {generating ? (
-                                        <>
-                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                            Génération en cours...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Download className="w-4 h-4 mr-2" />
-                                            Générer le document
-                                        </>
-                                    )}
-                                </Button>
+                                 >
+                                     {generating ? (
+                                         <>
+                                             <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                             Génération en cours...
+                                         </>
+                                     ) : (
+                                         <>
+                                             <Download className="w-4 h-4 mr-2" />
+                                             Générer le document
+                                         </>
+                                     )}
+                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -276,7 +276,7 @@ export default function OwnerReportsPage() {
                                     variant="link" 
                                     size="sm" 
                                     onClick={() => router.push('/owner/reports/history')} 
-                                    className="h-auto p-0 text-purple-600 hover:text-purple-700 font-bold text-xs"
+                                    className="h-auto p-0 text-primary hover:text-primary/80 font-bold text-xs"
                                 >
                                     Voir tout
                                 </Button>
@@ -284,7 +284,7 @@ export default function OwnerReportsPage() {
                             
                             {loading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center py-8 text-center text-muted-foreground animate-pulse text-xs font-medium">
-                                    <div className="h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mb-2" />
+                                    <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
                                     Chargement...
                                 </div>
                             ) : recentReports.length === 0 ? (
@@ -298,7 +298,7 @@ export default function OwnerReportsPage() {
                                     {recentReports.map((report) => (
                                         <div 
                                             key={report._id} 
-                                            className="p-2.5 rounded-xl bg-muted/5 border border-border/40 hover:border-purple-500/20 hover:bg-purple-500/5 transition-all flex items-center justify-between cursor-pointer group"
+                                            className="p-2.5 rounded-xl bg-muted/5 border border-border/40 hover:border-primary/20 hover:bg-primary/5 transition-all flex items-center justify-between cursor-pointer group"
                                             onClick={() => {
                                                 const apiUrl = require('@/lib/api').BACKEND_URL;
                                                 window.open(`${apiUrl}${report.pdfUrl}`, '_blank')
@@ -309,7 +309,7 @@ export default function OwnerReportsPage() {
                                                     <FileText className="w-3.5 h-3.5" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold truncate text-foreground/90 group-hover:text-purple-600 transition-colors">
+                                                    <div className="text-xs font-bold truncate text-foreground/90 group-hover:text-primary transition-colors">
                                                         {report.projectId?.name || "Projet"}
                                                     </div>
                                                     <div className="text-[9px] text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -324,7 +324,7 @@ export default function OwnerReportsPage() {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    className="h-7 w-7 text-muted-foreground hover:text-purple-600 hover:bg-transparent"
+                                                    className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-transparent"
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         const apiUrl = require('@/lib/api').BACKEND_URL;
