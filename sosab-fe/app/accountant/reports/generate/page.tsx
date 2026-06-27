@@ -86,7 +86,7 @@ export default function GenerateReportPage() {
 
                 // Redirect to reports page after a short delay
                 setTimeout(() => {
-                    router.push('/app/reports')
+                    router.push('/accountant/reports')
                 }, 1500)
             }
         } catch (error: any) {

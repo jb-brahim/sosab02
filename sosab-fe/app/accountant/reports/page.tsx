@@ -89,7 +89,7 @@ export default function ReportsPage() {
                     <p className="text-muted-foreground text-xs">{t("reports.description")}</p>
                 </div>
                 <div className="ml-auto">
-                    <Button size="sm" onClick={() => router.push('/app/reports/generate')}>
+                    <Button size="sm" onClick={() => router.push('/accountant/reports/generate')}>
                         {t("reports.new_report")}
                     </Button>
                 </div>

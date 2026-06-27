@@ -111,7 +111,7 @@ export default function MaterialDetailsPage() {
             setDeleting(true)
             await api.delete(`/materials/item/${params.id}`)
             toast.success('Material deleted')
-            router.replace('/app/materials')
+            router.replace('/accountant/materials')
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to delete material')
             setDeleting(false)

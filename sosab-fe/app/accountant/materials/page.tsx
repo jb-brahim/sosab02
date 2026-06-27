@@ -107,7 +107,7 @@ export default function MaterialsPage() {
                             <div
                                 key={item._id}
                                 className="glass-card rounded-xl p-0 overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-transform gpu will-change-transform"
-                                onClick={() => item.materialId?._id && router.push(`/app/materials/${item.materialId._id}`)}
+                                onClick={() => item.materialId?._id && router.push(`/accountant/materials/${item.materialId._id}`)}
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
                                 <div className="p-4 flex flex-col gap-3">
