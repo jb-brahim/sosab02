@@ -54,27 +54,39 @@ function AccountantSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-border/50 min-h-[64px]">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-          <HardHat className="h-5 w-5 text-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wide">SOSAB</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold text-amber-500">
-              Comptable
-            </span>
-          </div>
+      <div className={cn("flex items-center border-b border-border/50 min-h-[64px]", collapsed ? "justify-center p-3" : "gap-3 px-4 py-5")}>
+        {collapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl hover:bg-muted"
+            onClick={onToggle}
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        ) : (
+          <>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+              <HardHat className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm tracking-wide">SOSAB</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold text-amber-500">
+                Comptable
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-7 w-7 shrink-0"
+              onClick={onToggle}
+              aria-label="Toggle sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto h-7 w-7 shrink-0"
-          onClick={onToggle}
-          aria-label="Toggle sidebar"
-        >
-          {collapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
-        </Button>
       </div>
 
       {/* Navigation */}
