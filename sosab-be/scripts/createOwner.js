@@ -6,7 +6,7 @@ require('dotenv').config();
 const createOwnerUser = async () => {
     try {
         // Connect to MongoDB
-        await mongoose.connect(process.env.MONGO_URI);
+        await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sosab');
         console.log('Connected to MongoDB');
 
         // Check if owner already exists
