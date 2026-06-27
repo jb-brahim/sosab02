@@ -33,26 +33,40 @@ const renderChanges = (changes: any, resource: string, workers: any[], projects:
 
   // Custom formats for specific resources
   if (resource === "Attendance") {
-    const isPresent = body.present === true || body.present === "true"
-    const workerName = workers.find((w: any) => w._id === body.workerId)?.name || `ID: ${body.workerId?.substring(0, 8)}...`
-    const projectName = projects.find((p: any) => p._id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
+    const isPresent = body.present === true || body.present === "true" || body.present === 1
+    const workerName = workers.find((w: any) => w._id === body.workerId || w.id === body.workerId)?.name || `ID: ${body.workerId?.substring(0, 8)}...`
+    const projectName = projects.find((p: any) => p._id === body.projectId || p.id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
+    
+    // Add debug console logging
+    console.log(`[ATTENDANCE LOG DEBUG] workerId: ${body.workerId} -> Resolved: ${workerName} (from ${workers.length} workers)`)
     
     return (
-      <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
-        <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Détails de Présence:</div>
-        <div className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+      <div className="space-y-2 mt-1 bg-purple-500/5 p-3 rounded-xl border border-purple-500/10">
+        <div className="font-bold text-purple-400 text-[10px] uppercase tracking-wider flex items-center gap-1">
+          <Activity className="w-3.5 h-3.5" /> Détails de Présence
+        </div>
+        <div className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
           <span>Ouvrier: <strong className="text-foreground font-extrabold">{workerName}</strong></span>
           <span>Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong></span>
           <span>Statut: <strong className={isPresent ? "text-green-500 font-bold" : "text-red-500 font-bold"}>{isPresent ? "Présent" : "Absent"}</strong></span>
-          {isPresent && <span>Valeur: <strong>{body.dayValue || 1}</strong></span>}
+          {isPresent && <span>Valeur journée: <strong>{body.dayValue !== undefined ? body.dayValue : 1}</strong></span>}
+          {body.overtime > 0 && <span>Heures supplémentaires: <strong className="text-amber-500">{body.overtime}h</strong></span>}
+          {body.bonus > 0 && <span>Bonus: <strong className="text-green-500">+{body.bonus} TND</strong></span>}
+          {body.penalty > 0 && <span>Pénalité: <strong className="text-red-500">-{body.penalty} TND</strong></span>}
           {body.date && <span>Date de présence: <strong>{body.date}</strong></span>}
         </div>
+        {body.notes && (
+          <div className="text-xs text-muted-foreground border-t border-border/20 pt-1.5 mt-1">
+            <span className="font-semibold block text-foreground/75">Notes de présence:</span>
+            <p className="mt-0.5 text-xs italic bg-muted/40 p-2 rounded">{body.notes}</p>
+          </div>
+        )}
       </div>
     )
   }
 
   if (resource === "DailyReport") {
-    const projectName = projects.find((p: any) => p._id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
+    const projectName = projects.find((p: any) => p._id === body.projectId || p.id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
     return (
       <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
         <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Rapport Journalier:</div>
@@ -110,12 +124,12 @@ const renderChanges = (changes: any, resource: string, workers: any[], projects:
   Object.entries(body).forEach(([key, val]) => {
     if (key.endsWith("Id") || key === "_id" || typeof val === "object") {
       if (key === "projectId") {
-        const projName = projects.find((p: any) => p._id === val)?.name
+        const projName = projects.find((p: any) => p._id === val || p.id === val)?.name
         if (projName) {
           lines.push({ label: "Chantier", value: projName })
         }
       } else if (key === "workerId") {
-        const wrkName = workers.find((w: any) => w._id === val)?.name
+        const wrkName = workers.find((w: any) => w._id === val || w.id === val)?.name
         if (wrkName) {
           lines.push({ label: "Ouvrier", value: wrkName })
         }
@@ -161,14 +175,26 @@ export default function AuditLogsPage() {
           api.get("/projects").catch(err => ({ data: { success: false, data: [] } }))
         ])
         
+        // Add logs page load diagnostics
+        console.log("--- LOGS PAGE LOAD DIAGNOSTICS ---")
+        console.log("Logs success:", logsRes.data.success, "Count:", logsRes.data.data?.length)
+        console.log("Workers success:", workersRes.data.success, "Count:", workersRes.data.data?.length)
+        console.log("Projects success:", projectsRes.data.success, "Count:", projectsRes.data.data?.length)
+
         if (logsRes.data.success) {
           setLogs(logsRes.data.data)
         }
         if (workersRes.data.success) {
           setWorkers(workersRes.data.data)
+        } else if (Array.isArray(workersRes.data)) {
+          console.log("Workers API returned raw array:", workersRes.data.length)
+          setWorkers(workersRes.data)
         }
         if (projectsRes.data.success) {
           setProjects(projectsRes.data.data)
+        } else if (Array.isArray(projectsRes.data)) {
+          console.log("Projects API returned raw array:", projectsRes.data.length)
+          setProjects(projectsRes.data)
         }
       } catch (error) {
         console.error("Failed to load audit logs data", error)
