@@ -240,25 +240,6 @@ export default function GenerateReportPage() {
 
                 {/* Right side: Insights, Guide & Recent reports (5 columns) */}
                 <div className="lg:col-span-5 space-y-6">
-                    {/* Guide card */}
-                    <Card className="border-border/40 bg-card/40 backdrop-blur-xl">
-                        <CardContent className="p-6 space-y-4">
-                            <h3 className="font-bold text-sm uppercase tracking-wider text-amber-500 flex items-center gap-2">
-                                <AlertCircle className="w-4.5 h-4.5" />
-                                Guide de Génération
-                            </h3>
-                            <div className="space-y-3 text-xs text-muted-foreground">
-                                <div className="p-3 bg-muted/20 rounded-xl space-y-1 border border-border/10">
-                                    <div className="font-bold text-foreground text-sm">Présence (Grille)</div>
-                                    <p className="leading-relaxed">Génère un tableau détaillé montrant la présence quotidienne (0/1) de chaque travailleur pour la période sélectionnée.</p>
-                                </div>
-                                <div className="p-3 bg-muted/20 rounded-xl space-y-1 border border-border/10">
-                                    <div className="font-bold text-foreground text-sm">Paiements (Sommaire)</div>
-                                    <p className="leading-relaxed">Génère un récapitulatif financier complet comprenant les salaires de base, heures supplémentaires, bonus, pénalités et le montant net à payer.</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
 
                     {/* Recent reports card */}
                     <Card className="border-border/40 shadow-md">
