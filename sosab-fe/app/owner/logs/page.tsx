@@ -27,8 +27,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const renderChanges = (changes: any, resource: string, workers: any[], projects: any[]) => {
   if (!changes) return null
@@ -167,7 +165,6 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [resourceFilter, setResourceFilter] = useState("ALL")
 
   useEffect(() => {
@@ -315,32 +312,26 @@ export default function AuditLogsPage() {
         </div>
         
         <div className="flex gap-2 items-center">
-          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-10 text-xs rounded-xl bg-card border border-border/40 hover:bg-muted/10 transition-all font-semibold"
-              >
-                <CalendarIcon className="w-4 h-4 mr-2 text-primary" />
-                {selectedDate ? format(selectedDate, 'dd MMMM yyyy') : "Filtrer par date (Tous)"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xl" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  setSelectedDate(date)
-                  setDatePickerOpen(false)
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="relative flex-1">
+            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
+            <input
+              type="date"
+              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setSelectedDate(new Date(e.target.value + 'T12:00:00'))
+                } else {
+                  setSelectedDate(undefined)
+                }
+              }}
+              className="w-full h-10 pl-9 pr-3 text-xs rounded-xl bg-card border border-border/40 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-semibold cursor-pointer"
+              style={{ colorScheme: 'dark' }}
+            />
+          </div>
           {selectedDate && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setSelectedDate(undefined)}
               className="h-10 w-10 text-muted-foreground hover:text-red-500 rounded-xl flex-shrink-0"
               title="Effacer la date"
