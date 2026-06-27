@@ -31,6 +31,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog"
@@ -424,6 +425,9 @@ export default function ManagersManagementPage() {
             <DialogTitle className="font-display text-lg flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-purple-500" /> Ajouter un nouveau manager
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Créez un nouveau profil de gérant, PM ou comptable et assignez ses chantiers.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -502,6 +506,9 @@ export default function ManagersManagementPage() {
             <DialogTitle className="font-display text-lg flex items-center gap-2">
               <Edit2 className="w-5 h-5 text-purple-500" /> Modifier les informations
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Modifiez le nom, l'email, le rôle ou les affectations de chantier du manager.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -569,12 +576,12 @@ export default function ManagersManagementPage() {
             <DialogTitle className="font-display text-lg flex items-center gap-2">
               <Lock className="w-5 h-5 text-purple-500" /> Réinitialiser mot de passe
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Modification du mot de passe de <span className="font-bold text-foreground">{passwordUser?.name}</span>.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <p className="text-xs text-muted-foreground">
-              Modification du mot de passe de <span className="font-bold text-foreground">{passwordUser?.name}</span>.
-            </p>
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nouveau mot de passe *</Label>
               <Input 
