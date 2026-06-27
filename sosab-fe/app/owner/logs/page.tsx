@@ -398,7 +398,7 @@ export default function AuditLogsPage() {
                 {/* Middle details: Device information */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground border-t border-border/30 pt-2.5">
                   <span className="flex items-center gap-1 font-semibold">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
                     {format(new Date(log.createdAt), 'dd MMM yyyy, HH:mm:ss')}
                   </span>
                   
