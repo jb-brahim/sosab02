@@ -2,6 +2,7 @@ const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const Project = require('../models/Project');
 const Worker = require('../models/Worker');
+const Notification = require('../models/Notification');
 const webpush = require('web-push');
 
 // Configure VAPID keys for web-push
@@ -97,13 +98,22 @@ exports.logAction = (action, resource) => {
                 bodyText = `${userName} a ${actionStr} la ressource ${resource}.`;
               }
 
-              // Find all Admins who have push subscriptions
-              const admins = await User.find({
-                role: 'Admin',
-                pushSubscriptions: { $exists: true, $not: { $size: 0 } }
-              });
+              // Find all active Admins
+              const admins = await User.find({ role: 'Admin', active: true });
 
               if (admins.length > 0) {
+                // 1. Create in-app notification in database for the bell icon
+                const notifications = admins.map(admin => ({
+                  userId: admin._id,
+                  type: 'audit_log',
+                  title,
+                  message: bodyText,
+                  link: '/owner/logs',
+                  read: false
+                }));
+                await Notification.insertMany(notifications);
+
+                // 2. Send Web Push notification to subscribed devices (phone/PC)
                 const payload = JSON.stringify({
                   title,
                   body: bodyText,
@@ -112,15 +122,17 @@ exports.logAction = (action, resource) => {
                 });
 
                 for (const admin of admins) {
-                  for (const sub of admin.pushSubscriptions) {
-                    try {
-                      await webpush.sendNotification(sub, payload);
-                    } catch (error) {
-                      console.error('Error sending audit push notification:', error);
-                      // Remove invalid subscriptions
-                      if (error.statusCode === 410 || error.statusCode === 404) {
-                        admin.pushSubscriptions = admin.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
-                        await admin.save();
+                  if (admin.pushSubscriptions && admin.pushSubscriptions.length > 0) {
+                    for (const sub of admin.pushSubscriptions) {
+                      try {
+                        await webpush.sendNotification(sub, payload);
+                      } catch (error) {
+                        console.error('Error sending audit push notification:', error);
+                        // Remove invalid subscriptions
+                        if (error.statusCode === 410 || error.statusCode === 404) {
+                          admin.pushSubscriptions = admin.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+                          await admin.save();
+                        }
                       }
                     }
                   }
