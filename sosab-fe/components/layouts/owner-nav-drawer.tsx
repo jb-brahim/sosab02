@@ -21,7 +21,8 @@ import {
     FileCheck,
     ClipboardList,
     UserX,
-    Check
+    Check,
+    Megaphone
 } from "lucide-react"
 import {
     Sheet,
@@ -50,6 +51,7 @@ const ownerNavItems = [
     { href: "/owner/managers", icon: Users, label: "Gestion Managers" },
     { href: "/owner/logs", icon: Activity, label: "Journal d'Activité" },
     { href: "/owner/reports", icon: FileText, label: "Génération Rapports" },
+    { href: "/owner/news", icon: Megaphone, label: "Annonces" },
 ]
 
 // ── Notification helpers ──────────────────────────────────────────────────────

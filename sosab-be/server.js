@@ -90,6 +90,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/daily-reports', require('./routes/dailyReports'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/admin', require('./routes/admin'));
 
 // Health check

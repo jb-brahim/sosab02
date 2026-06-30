@@ -37,9 +37,14 @@ exports.logAction = (action, resource) => {
             }
 
             // Resolve IP location and coordinates
-            let ipLocation = 'Localhost';
+            let ipLocation = 'Inconnue';
             let lat = null;
             let lon = null;
+
+            const isLocal = !cleanIp || cleanIp === '127.0.0.1' || cleanIp === '::1' || cleanIp === 'localhost';
+            if (isLocal) {
+              ipLocation = 'Localhost';
+            }
 
             // Check if exact GPS coordinates were sent in request headers
             if (req.headers['x-latitude'] && req.headers['x-longitude']) {
@@ -47,7 +52,7 @@ exports.logAction = (action, resource) => {
               lon = parseFloat(req.headers['x-longitude']);
             }
 
-            if (cleanIp && cleanIp !== '127.0.0.1' && cleanIp !== '::1' && cleanIp !== 'localhost') {
+            if (!isLocal) {
               const geoData = await new Promise((resolve) => {
                 https.get(`https://freeipapi.com/api/json/${cleanIp}`, (res) => {
                   let data = '';
@@ -69,8 +74,6 @@ exports.logAction = (action, resource) => {
                   ipLocation = `${geoData.cityName}, ${geoData.countryName}`;
                 } else if (geoData.countryName) {
                   ipLocation = geoData.countryName;
-                } else {
-                  ipLocation = 'Inconnue';
                 }
 
                 // Only use IP-based coordinates if browser GPS coordinates weren't sent

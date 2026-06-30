@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/lib/language-context"
 import { PushSubscriptionManager } from "@/components/push-subscription-manager"
+import { AnnouncementPopup } from "@/components/announcement-popup"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -53,6 +54,7 @@ export default function RootLayout({
             <AuthProvider>
               {children}
               <PushSubscriptionManager />
+              <AnnouncementPopup />
             </AuthProvider>
             <Toaster position="top-center" />
           </LanguageProvider>
