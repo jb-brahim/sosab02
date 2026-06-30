@@ -105,7 +105,7 @@ exports.logAction = (action, resource) => {
                 // 1. Create in-app notification in database for the bell icon
                 const notifications = admins.map(admin => ({
                   userId: admin._id,
-                  type: 'audit_log',
+                  type: 'system',
                   title,
                   message: bodyText,
                   link: '/owner/logs',
