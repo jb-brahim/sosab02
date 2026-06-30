@@ -99,10 +99,13 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
           {log.logs.map((item: any, index: number) => {
             const itemBody = item.changes?.body || {}
             const isPresent = itemBody.present === true || itemBody.present === "true" || itemBody.present === 1
-            const workerName = workers.find((w: any) => w._id === itemBody.workerId || w.id === itemBody.workerId)?.name || `ID: ${itemBody.workerId?.substring(0, 8)}...`
+            const wId = itemBody.workerId
+            const workerName = wId 
+              ? (workers.find((w: any) => w._id === wId || w.id === wId)?.name || `ID: ${wId.substring(0, 8)}...`)
+              : null
             return (
               <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-xl border border-border/30">
-                <span className="font-semibold text-foreground/95 text-xs">{workerName}</span>
+                {workerName && <span className="font-semibold text-foreground/95 text-xs">{workerName}</span>}
                 <div className="flex items-center gap-2">
                   <span className={isPresent ? "text-green-500 font-bold text-xs" : "text-red-500 font-bold text-xs"}>
                     {isPresent ? "Présent" : "Absent"}
@@ -137,11 +140,14 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
   // Custom formats for specific resources
   if (resource === "Attendance") {
     const isPresent = body.present === true || body.present === "true" || body.present === 1
-    const workerName = workers.find((w: any) => w._id === body.workerId || w.id === body.workerId)?.name || `ID: ${body.workerId?.substring(0, 8)}...`
-    const projectName = projects.find((p: any) => p._id === body.projectId || p.id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
-    
-    // Add debug console logging
-    console.log(`[ATTENDANCE LOG DEBUG] workerId: ${body.workerId} -> Resolved: ${workerName} (from ${workers.length} workers)`)
+    const wId = body.workerId
+    const pId = body.projectId
+    const workerName = wId 
+      ? (workers.find((w: any) => w._id === wId || w.id === wId)?.name || `ID: ${wId.substring(0, 8)}...`)
+      : null
+    const projectName = pId 
+      ? (projects.find((p: any) => p._id === pId || p.id === pId)?.name || `ID: ${pId.substring(0, 8)}...`)
+      : null
     
     return (
       <div className="space-y-2 mt-1 bg-primary/5 p-3 rounded-xl border border-primary/10">
@@ -149,8 +155,8 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
           <Activity className="w-3.5 h-3.5" /> Détails de Présence
         </div>
         <div className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-          <span>Ouvrier: <strong className="text-foreground font-extrabold">{workerName}</strong></span>
-          <span>Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong></span>
+          {workerName && <span>Ouvrier: <strong className="text-foreground font-extrabold">{workerName}</strong></span>}
+          {projectName && <span>Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong></span>}
           <span>Statut: <strong className={isPresent ? "text-green-500 font-bold" : "text-red-500 font-bold"}>{isPresent ? "Présent" : "Absent"}</strong></span>
           {isPresent && <span>Valeur journée: <strong>{body.dayValue !== undefined ? body.dayValue : 1}</strong></span>}
           {body.overtime > 0 && <span>Heures supplémentaires: <strong className="text-amber-500">{body.overtime}h</strong></span>}
@@ -169,13 +175,18 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
   }
 
   if (resource === "DailyReport") {
-    const projectName = projects.find((p: any) => p._id === body.projectId || p.id === body.projectId)?.name || `ID: ${body.projectId?.substring(0, 8)}...`
+    const pId = body.projectId
+    const projectName = pId 
+      ? (projects.find((p: any) => p._id === pId || p.id === pId)?.name || `ID: ${pId.substring(0, 8)}...`)
+      : null
     return (
       <div className="space-y-1.5 mt-1 bg-muted/30 p-2.5 rounded-xl border border-border/20">
         <div className="font-bold text-foreground/80 text-[10px] uppercase tracking-wider">Rapport Journalier:</div>
-        <div className="text-xs text-muted-foreground mb-1">
-          Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong>
-        </div>
+        {projectName && (
+          <div className="text-xs text-muted-foreground mb-1">
+            Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong>
+          </div>
+        )}
         {body.workCompleted && (
           <div className="text-xs text-muted-foreground">
             <span className="font-semibold text-foreground/75 block">Travaux réalisés:</span>
