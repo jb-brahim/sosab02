@@ -17,7 +17,12 @@ import {
   UserCheck,
   UserX,
   X,
-  Plus
+  Plus,
+  Globe,
+  MapPin,
+  Calendar,
+  Activity,
+  Check
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,6 +40,28 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog"
+
+const formatRelativeTime = (dateString: string | null) => {
+  if (!dateString) return "Jamais actif"
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return "À l'instant"
+    if (diffMins < 60) return `Il y a ${diffMins} min`
+    if (diffHours < 24) return `Il y a ${diffHours} h`
+    if (diffDays === 1) return "Hier"
+    if (diffDays < 7) return `Il y a ${diffDays} j`
+    
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return "Inconnu"
+  }
+}
 
 export default function ManagersManagementPage() {
   const [users, setUsers] = useState<any[]>([])
@@ -295,127 +322,193 @@ export default function ManagersManagementPage() {
         </div>
       </div>
 
-      {/* Users grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
-        {loading ? (
-          <div className="py-20 text-center animate-pulse text-muted-foreground text-sm font-medium col-span-2">
-            Chargement de la liste des managers...
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="py-20 text-center text-muted-foreground border border-dashed border-border rounded-2xl bg-card/20 col-span-2">
-            Aucun manager trouvé.
-          </div>
-        ) : (
-          filteredUsers.map((u) => (
-            <Card key={u._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm relative">
-              <CardContent className="p-5 space-y-4">
-                {/* Profile row */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                      u.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {u.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-extrabold text-sm text-foreground/90 flex items-center gap-2">
-                        {u.name}
-                        {!u.active && (
-                          <Badge variant="destructive" className="text-[8px] px-1 py-0 uppercase">Désactivé</Badge>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Mail className="w-3 h-3 text-muted-foreground/75" />
-                        {u.email}
-                      </div>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-[9px] uppercase px-2 py-0.5 border-primary/30 text-primary bg-primary/5 font-bold">
-                    {u.role}
-                  </Badge>
-                </div>
+      {/* Users table list */}
+      <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm pb-24">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-border/40 bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                <th className="p-4 pl-6">Manager</th>
+                <th className="p-4">Rôle</th>
+                <th className="p-4">Chantiers</th>
+                <th className="p-4">Statut</th>
+                <th className="p-4">Dernière Activité</th>
+                <th className="p-4">Dernière Position</th>
+                <th className="p-4 pr-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/30 text-xs">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-muted-foreground animate-pulse font-medium">
+                    Chargement de la liste des managers...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-muted-foreground italic">
+                    Aucun manager trouvé.
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => {
+                  const assigned = getAssignedProjects(u._id)
+                  return (
+                    <tr key={u._id} className="hover:bg-muted/10 transition-colors group">
+                      {/* Name & Email */}
+                      <td className="p-4 pl-6">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                            u.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-extrabold text-sm text-foreground/90 truncate">{u.name}</span>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                              <Mail className="w-3.5 h-3.5 text-muted-foreground/60" />
+                              {u.email}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
-                {/* Assigned Projects list */}
-                <div className="space-y-1.5 bg-muted/20 p-3 rounded-xl border border-border/30">
-                  <span className="text-[9px] text-muted-foreground uppercase font-bold flex items-center gap-1">
-                    <Building className="w-3.5 h-3.5" /> Chantiers Assignés
-                  </span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {getAssignedProjects(u._id).length > 0 ? (
-                      getAssignedProjects(u._id).map((p: any) => (
-                        <Badge key={p._id} className="bg-background text-foreground/80 hover:bg-background border-border/60 text-[9px] font-semibold py-0.5 px-2 rounded">
-                          {p.name}
+                      {/* Role */}
+                      <td className="p-4">
+                        <Badge variant="outline" className="text-[9px] uppercase px-2 py-0.5 border-primary/30 text-primary bg-primary/5 font-bold whitespace-nowrap">
+                          {u.role}
                         </Badge>
-                      ))
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground italic">Aucun chantier assigné</span>
-                    )}
-                  </div>
-                </div>
+                      </td>
 
-                {/* Actions bottom row */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
-                  {/* Status toggle */}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => toggleUserActive(u)}
-                    className={`rounded-xl text-[10px] font-bold h-9 px-2.5 gap-1.5 ${
-                      u.active 
-                        ? 'text-red-500 hover:text-red-600 hover:bg-red-500/10' 
-                        : 'text-green-500 hover:text-green-600 hover:bg-green-500/10'
-                    }`}
-                  >
-                    {u.active ? (
-                      <>
-                        <UserX className="w-3.5 h-3.5" />
-                        Déconnecter & Bloquer
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="w-3.5 h-3.5" />
-                        Activer l'accès
-                      </>
-                    )}
-                  </Button>
+                      {/* Assigned Projects */}
+                      <td className="p-4 max-w-[200px]">
+                        <div className="flex flex-wrap gap-1">
+                          {assigned.length > 0 ? (
+                            assigned.map((p: any) => (
+                              <Badge key={p._id} className="bg-background text-foreground/80 hover:bg-background border-border/60 text-[9px] font-semibold py-0.5 px-2 rounded whitespace-nowrap">
+                                {p.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground italic">Aucun chantier</span>
+                          )}
+                        </div>
+                      </td>
 
-                  {/* Edit and password buttons */}
-                  <div className="flex items-center gap-1.5">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        setPasswordUser(u)
-                        setNewPassword("")
-                      }}
-                      className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl"
-                      title="Changer mot de passe"
-                    >
-                      <Key className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        setEditUser(u)
-                        setEditForm({
-                          name: u.name,
-                          email: u.email,
-                          role: u.role,
-                          assignedProjects: getAssignedProjects(u._id).map((p: any) => p._id)
-                        })
-                      }}
-                      className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl"
-                      title="Modifier détails"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+                      {/* Status */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 rounded-full ${u.active ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                          <span className={`font-semibold text-[10px] uppercase ${u.active ? 'text-green-500' : 'text-red-500'}`}>
+                            {u.active ? 'Actif' : 'Bloqué'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Last Active */}
+                      <td className="p-4 text-muted-foreground font-medium whitespace-nowrap">
+                        {formatRelativeTime(u.lastActive)}
+                      </td>
+
+                      {/* Last Location / GPS */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {u.lastLocation ? (
+                            <span className="text-foreground/80 font-medium flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5 text-muted-foreground/60" />
+                              {u.lastLocation}
+                            </span>
+                          ) : (
+                            u.lastIp && <span className="text-muted-foreground">IP: {u.lastIp}</span>
+                          )}
+                          
+                          {u.lastLatitude && u.lastLongitude && (
+                            <a 
+                              href={`https://www.google.com/maps/search/?api=1&query=${u.lastLatitude},${u.lastLongitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-600 font-extrabold bg-blue-500/10 hover:bg-blue-500/20 px-1.5 py-0.5 rounded-md border border-blue-500/20 transition-all cursor-pointer whitespace-nowrap"
+                              title="Voir la localisation exacte sur Google Maps"
+                            >
+                              <MapPin className="w-3 h-3 text-blue-500" />
+                              <span>GPS</span>
+                            </a>
+                          )}
+
+                          {!u.lastLocation && !u.lastIp && (
+                            <span className="text-muted-foreground italic text-[10px]">Inconnue</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4 pr-6 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Toggle Active */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => toggleUserActive(u)}
+                            className={`rounded-xl text-[10px] font-bold h-9 px-2.5 gap-1.5 transition-all ${
+                              u.active 
+                                ? 'text-red-500 hover:text-red-600 hover:bg-red-500/10' 
+                                : 'text-green-500 hover:text-green-600 hover:bg-green-500/10'
+                            }`}
+                          >
+                            {u.active ? (
+                              <>
+                                <UserX className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Bloquer</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Activer</span>
+                              </>
+                            )}
+                          </Button>
+
+                          {/* Change Password */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                              setPasswordUser(u)
+                              setNewPassword("")
+                            }}
+                            className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl transition-all"
+                            title="Changer mot de passe"
+                          >
+                            <Key className="w-3.5 h-3.5" />
+                          </Button>
+
+                          {/* Edit Details */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                              setEditUser(u)
+                              setEditForm({
+                                name: u.name,
+                                email: u.email,
+                                role: u.role,
+                                assignedProjects: getAssignedProjects(u._id).map((p: any) => p._id)
+                              })
+                            }}
+                            className="h-9 w-9 text-muted-foreground hover:text-primary rounded-xl transition-all"
+                            title="Modifier détails"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Dialog: Create Manager */}

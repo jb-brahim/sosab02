@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { sendNotificationToRoles } = require('./notificationController');
 const asyncHandler = require('../middleware/asyncHandler');
+const AuditLog = require('../models/AuditLog');
 
 // @desc    Create user (Admin only)
 // @route   POST /api/users
@@ -70,10 +71,30 @@ exports.getUsers = asyncHandler(async (req, res) => {
 
   const users = await User.find(query).select('-password').populate('assignedProjects', 'name location');
 
+  // Attach last active location and coordinates
+  const usersWithLocation = await Promise.all(users.map(async (user) => {
+    const userObj = user.toObject();
+    const lastLog = await AuditLog.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    if (lastLog) {
+      userObj.lastActive = lastLog.createdAt;
+      userObj.lastLocation = lastLog.location || null;
+      userObj.lastLatitude = lastLog.latitude || null;
+      userObj.lastLongitude = lastLog.longitude || null;
+      userObj.lastIp = lastLog.ipAddress || null;
+    } else {
+      userObj.lastActive = null;
+      userObj.lastLocation = null;
+      userObj.lastLatitude = null;
+      userObj.lastLongitude = null;
+      userObj.lastIp = null;
+    }
+    return userObj;
+  }));
+
   res.status(200).json({
     success: true,
-    count: users.length,
-    data: users
+    count: usersWithLocation.length,
+    data: usersWithLocation
   });
 });
 
