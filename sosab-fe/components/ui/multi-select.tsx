@@ -65,7 +65,7 @@ export function MultiSelect({
                                                 handleUnselect(option.value)
                                             }}
                                         >
-                                            <span className="truncate text-left" style={{ maxWidth: 'calc(100vw - 150px)' }}>
+                                            <span className="truncate text-left max-w-[150px] sm:max-w-[200px] md:max-w-[250px]">
                                                 {option.label}
                                             </span>
                                             <X className="ml-1 h-3 w-3 shrink-0 cursor-pointer" />

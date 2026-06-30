@@ -121,7 +121,11 @@ exports.getWorkers = asyncHandler(async (req, res) => {
 // @route   GET /api/workers/admin/all or GET /api/workers
 // @access  Private/Admin or Manager
 exports.getAllWorkers = asyncHandler(async (req, res) => {
-  let query = { active: true };
+  let query = {};
+
+  if (req.query.includeInactive !== 'true') {
+    query.active = true;
+  }
 
   // If Manager, filter by assigned projects
   // Gérant sees all projects' workers too (read-only)

@@ -173,7 +173,7 @@ export default function AuditLogsPage() {
         setLoading(true)
         const [logsRes, workersRes, projectsRes] = await Promise.all([
           api.get("/admin/logs"),
-          api.get("/workers").catch(err => ({ data: { success: false, data: [] } })),
+          api.get("/workers?includeInactive=true").catch(err => ({ data: { success: false, data: [] } })),
           api.get("/projects").catch(err => ({ data: { success: false, data: [] } }))
         ])
         
