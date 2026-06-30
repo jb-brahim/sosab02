@@ -1,5 +1,7 @@
 const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
+const Project = require('../models/Project');
+const Worker = require('../models/Worker');
 const webpush = require('web-push');
 
 // Configure VAPID keys for web-push
@@ -39,33 +41,61 @@ exports.logAction = (action, resource) => {
 
             // Send push notification to Admins about the new log
             try {
-              const actionLabels = {
-                create: 'Création',
-                update: 'Modification',
-                delete: 'Suppression',
-                login: 'Connexion',
-                logout: 'Déconnexion',
-                approve: 'Approbation',
-                reject: 'Rejet'
-              };
+              let title = 'SOSAB';
+              let bodyText = '';
 
-              const resourceLabels = {
-                Attendance: 'Présence',
-                DailyReport: 'Rapport Journalier',
-                User: 'Utilisateur',
-                Project: 'Chantier',
-                Material: 'Matériau',
-                Task: 'Tâche',
-                Notification: 'Notification',
-                Salary: 'Salaire',
-                Supplier: 'Fournisseur'
-              };
+              const body = req.body || {};
+              const userName = req.user.name;
 
-              const actionStr = actionLabels[action] || action;
-              const resourceStr = resourceLabels[resource] || resource;
+              // Clean, social-network-style formatting (like Facebook/YouTube)
+              if (resource === 'Attendance') {
+                const worker = await Worker.findById(body.workerId);
+                const project = await Project.findById(body.projectId);
+                const wName = worker ? worker.name : 'un ouvrier';
+                const pName = project ? project.name : 'un chantier';
+                const isPresent = body.present === true || body.present === 'true' || body.present === 1;
 
-              const title = `Activité: ${actionStr} ${resourceStr}`;
-              const body = `${req.user.name} (${req.user.role}) a effectué une action de ${actionStr.toLowerCase()} sur: ${resourceStr}.`;
+                title = `Présence: ${wName}`;
+                bodyText = `${userName} a marqué ${wName} comme ${isPresent ? 'Présent' : 'Absent'} sur le chantier ${pName}.`;
+              } else if (resource === 'User' && action === 'update') {
+                const targetUser = await User.findById(req.params.id);
+                const tName = targetUser ? targetUser.name : 'un utilisateur';
+
+                title = `Sécurité: ${tName}`;
+                if (body.active === true || body.active === 'true') {
+                  bodyText = `${userName} a activé le compte de ${tName}.`;
+                } else if (body.active === false || body.active === 'false') {
+                  bodyText = `${userName} a bloqué le compte de ${tName}.`;
+                } else if (body.password) {
+                  bodyText = `${userName} a réinitialisé le mot de passe de ${tName}.`;
+                } else {
+                  bodyText = `${userName} a mis à jour les informations de ${tName}.`;
+                }
+              } else if (resource === 'User' && action === 'create') {
+                const tName = body.name || 'un utilisateur';
+                title = 'Nouvel Utilisateur';
+                bodyText = `${userName} a créé le compte de ${tName}.`;
+              } else if (resource === 'Project') {
+                const pName = body.name || (await Project.findById(req.params.id || req.body.id))?.name || 'un chantier';
+                title = `Chantier: ${pName}`;
+                bodyText = `${userName} a ${action === 'create' ? 'créé' : action === 'delete' ? 'supprimé' : 'mis à jour'} le chantier ${pName}.`;
+              } else if (resource === 'Worker') {
+                const wName = body.name || (await Worker.findById(req.params.id || req.body.id))?.name || 'un ouvrier';
+                title = `Ouvrier: ${wName}`;
+                bodyText = `${userName} a ${action === 'create' ? 'ajouté' : action === 'delete' ? 'retiré' : 'mis à jour'} l'ouvrier ${wName}.`;
+              } else {
+                // Fallback for other resources
+                const actionLabels = {
+                  create: 'créé',
+                  update: 'modifié',
+                  delete: 'supprimé',
+                  login: 'connecté',
+                  logout: 'déconnecté'
+                };
+                const actionStr = actionLabels[action] || action;
+                title = `Activité: ${resource}`;
+                bodyText = `${userName} a ${actionStr} la ressource ${resource}.`;
+              }
 
               // Find all Admins who have push subscriptions
               const admins = await User.find({
@@ -76,7 +106,7 @@ exports.logAction = (action, resource) => {
               if (admins.length > 0) {
                 const payload = JSON.stringify({
                   title,
-                  body,
+                  body: bodyText,
                   link: '/owner/logs',
                   icon: '/logo.png'
                 });
