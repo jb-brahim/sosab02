@@ -612,22 +612,29 @@ export default function AuditLogsPage() {
                     </span>
                     
                     {log.ipAddress && (
-                      <span className="flex items-center gap-1.5 flex-wrap">
+                      <span className="flex items-center gap-1.5">
                         <Globe className="w-3.5 h-3.5 text-muted-foreground/60" />
-                        <span>IP: {log.ipAddress} {log.location && <span className="text-primary font-semibold">({log.location})</span>}</span>
-                        {log.latitude && log.longitude && (
-                          <a 
-                            href={`https://www.google.com/maps/search/?api=1&query=${log.latitude},${log.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-600 font-extrabold ml-1.5 bg-blue-500/10 hover:bg-blue-500/20 px-1.5 py-0.5 rounded-md border border-blue-500/20 transition-all cursor-pointer"
-                            title="Voir la localisation exacte sur Google Maps"
-                          >
-                            <MapPin className="w-3 h-3 text-blue-500" />
-                            <span>GPS</span>
-                          </a>
-                        )}
+                        IP: {log.ipAddress}
                       </span>
+                    )}
+
+                    {log.location && (
+                      <span className="text-primary font-semibold">
+                        ({log.location})
+                      </span>
+                    )}
+
+                    {log.latitude && log.longitude && (
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${log.latitude},${log.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-600 font-extrabold bg-blue-500/10 hover:bg-blue-500/20 px-1.5 py-0.5 rounded-md border border-blue-500/20 transition-all cursor-pointer"
+                        title="Voir la localisation exacte sur Google Maps"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                        <span>GPS</span>
+                      </a>
                     )}
 
                     {log.userAgent && (

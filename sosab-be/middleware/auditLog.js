@@ -27,8 +27,11 @@ exports.logAction = (action, resource) => {
       setImmediate(async () => {
         try {
           if (req.user) {
-            // Clean IP address
-            let cleanIp = req.ip || req.connection.remoteAddress || '';
+            // Clean IP address (supporting x-forwarded-for for proxies)
+            let cleanIp = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || '';
+            if (cleanIp.includes(',')) {
+              cleanIp = cleanIp.split(',')[0].trim();
+            }
             if (cleanIp.startsWith('::ffff:')) {
               cleanIp = cleanIp.substring(7);
             }
