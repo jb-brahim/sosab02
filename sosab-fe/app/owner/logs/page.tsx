@@ -28,7 +28,100 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 
-const renderChanges = (changes: any, resource: string, workers: any[], projects: any[]) => {
+const groupLogs = (logsList: any[]) => {
+  const grouped: any[] = []
+  
+  logsList.forEach(log => {
+    if (log.resource !== "Attendance" || !log.changes?.body) {
+      grouped.push(log)
+      return
+    }
+    
+    const body = log.changes.body
+    const projectId = body.projectId
+    const userId = log.userId?._id || log.userId
+    const action = log.action
+    const date = body.date
+    const time = new Date(log.createdAt).getTime()
+    
+    // Find an existing group in `grouped`
+    // Group if they are close in time (within 15s) and have same project, user, action, and attendance date
+    const existingGroupIndex = grouped.findIndex(g => 
+      g.resource === "Attendance" &&
+      (g.userId?._id || g.userId) === userId &&
+      g.action === action &&
+      g.changes?.body?.projectId === projectId &&
+      g.changes?.body?.date === date &&
+      Math.abs(new Date(g.createdAt).getTime() - time) < 15000
+    )
+    
+    if (existingGroupIndex > -1) {
+      // Add to existing group
+      if (!grouped[existingGroupIndex].isGrouped) {
+        const originalLog = grouped[existingGroupIndex]
+        grouped[existingGroupIndex] = {
+          ...originalLog,
+          isGrouped: true,
+          logs: [originalLog, log]
+        }
+      } else {
+        grouped[existingGroupIndex].logs.push(log)
+      }
+    } else {
+      grouped.push(log)
+    }
+  })
+  
+  return grouped
+}
+
+const renderChanges = (log: any, workers: any[], projects: any[]) => {
+  if (!log) return null
+
+  if (log.isGrouped && log.resource === "Attendance") {
+    const firstBody = log.logs[0].changes?.body || {}
+    const projectName = projects.find((p: any) => p._id === firstBody.projectId || p.id === firstBody.projectId)?.name || `ID: ${firstBody.projectId?.substring(0, 8)}...`
+    const date = firstBody.date
+
+    return (
+      <div className="space-y-2.5 mt-1 bg-primary/5 p-3 rounded-xl border border-primary/10">
+        <div className="font-bold text-primary text-[10px] uppercase tracking-wider flex items-center gap-1 justify-between">
+          <span className="flex items-center gap-1">
+            <Activity className="w-3.5 h-3.5" /> Présences Groupées ({log.logs.length} ouvriers)
+          </span>
+          {date && <span className="text-muted-foreground font-semibold normal-case">Date: {date}</span>}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Chantier: <strong className="text-foreground font-extrabold">{projectName}</strong>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/10">
+          {log.logs.map((item: any, index: number) => {
+            const itemBody = item.changes?.body || {}
+            const isPresent = itemBody.present === true || itemBody.present === "true" || itemBody.present === 1
+            const workerName = workers.find((w: any) => w._id === itemBody.workerId || w.id === itemBody.workerId)?.name || `ID: ${itemBody.workerId?.substring(0, 8)}...`
+            return (
+              <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-xl border border-border/30">
+                <span className="font-semibold text-foreground/95 text-xs">{workerName}</span>
+                <div className="flex items-center gap-2">
+                  <span className={isPresent ? "text-green-500 font-bold text-xs" : "text-red-500 font-bold text-xs"}>
+                    {isPresent ? "Présent" : "Absent"}
+                  </span>
+                  {isPresent && itemBody.dayValue !== undefined && (
+                    <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded-md text-muted-foreground font-bold">
+                      {itemBody.dayValue} j
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const changes = log.changes
+  const resource = log.resource
   if (!changes) return null
   const body = changes.body || {}
   if (Object.keys(body).length === 0) return null
@@ -367,7 +460,7 @@ export default function AuditLogsPage() {
             Aucun log d'activité trouvé.
           </div>
         ) : (
-          filteredLogs.map((log) => (
+          groupLogs(filteredLogs).map((log) => (
             <Card key={log._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
               <CardContent className="p-4 space-y-3">
                 {/* Top Row: User & Action */}
@@ -418,7 +511,7 @@ export default function AuditLogsPage() {
                 </div>
 
                 {/* Optional changes debug print */}
-                {renderChanges(log.changes, log.resource, workers, projects)}
+                {renderChanges(log, workers, projects)}
               </CardContent>
             </Card>
           ))
