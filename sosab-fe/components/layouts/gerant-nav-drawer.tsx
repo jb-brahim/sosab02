@@ -14,7 +14,13 @@ import {
     ChevronLeft,
     Bell,
     Package,
-    Check
+    Check,
+    Shield,
+    DollarSign,
+    Boxes,
+    FileCheck,
+    ClipboardList,
+    UserX
 } from "lucide-react"
 import {
     Sheet,
@@ -46,6 +52,68 @@ const gerantNavItems = (t: (key: string) => string) => [
     { href: "/gerant/materials", icon: Package, label: "Materils" },
     { href: "/gerant/reports", icon: FileBarChart, label: t("nav.reports") || "Reports" },
 ]
+
+// ── Notification helpers ──────────────────────────────────────────────────────
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case "material":
+      return {
+        icon: <Boxes className="h-4 w-4" />,
+        bg: "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+      }
+    case "report":
+      return {
+        icon: <FileCheck className="h-4 w-4" />,
+        bg: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+      }
+    case "salary":
+      return {
+        icon: <DollarSign className="h-4 w-4" />,
+        bg: "bg-green-500/10 text-green-500 border border-green-500/20"
+      }
+    case "task":
+      return {
+        icon: <ClipboardList className="h-4 w-4" />,
+        bg: "bg-violet-500/10 text-violet-500 border border-violet-500/20"
+      }
+    case "attendance":
+      return {
+        icon: <UserX className="h-4 w-4" />,
+        bg: "bg-red-500/10 text-red-500 border border-red-500/20"
+      }
+    case "system":
+      return {
+        icon: <Shield className="h-4 w-4" />,
+        bg: "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+      }
+    default:
+      return {
+        icon: <Bell className="h-4 w-4" />,
+        bg: "bg-primary/10 text-primary border border-primary/20"
+      }
+  }
+}
+
+const formatRelativeTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return "À l'instant"
+    if (diffMins < 60) return `Il y a ${diffMins} min`
+    if (diffHours < 24) return `Il y a ${diffHours} h`
+    if (diffDays === 1) return "Hier"
+    if (diffDays < 7) return `Il y a ${diffDays} j`
+    
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  } catch {
+    return ""
+  }
+}
 
 export function GerantNavDrawer() {
     const pathname = usePathname()
@@ -252,61 +320,84 @@ export function GerantNavDrawer() {
                             <Button variant="ghost" size="icon" className="relative hover:bg-muted rounded-xl">
                                 <Bell className="h-5 w-5 text-muted-foreground" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground shadow-lg animate-in zoom-in">
+                                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-lg animate-in zoom-in">
                                         {unreadCount}
                                     </span>
                                 )}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[300px] mt-2 rounded-2xl p-0 overflow-hidden glass shadow-2xl border-white/10">
-                            <DropdownMenuLabel className="flex items-center justify-between p-4 bg-muted/30">
-                                <span className="text-sm font-bold uppercase tracking-wider">{t("common.notifications") || "Notifications"}</span>
+                        <DropdownMenuContent align="end" className="w-80 sm:w-[360px] mt-2 rounded-2xl p-1.5 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
+                            <DropdownMenuLabel className="flex items-center justify-between px-3 py-2.5 text-xs text-muted-foreground font-bold tracking-wide border-b border-border/20 mb-1">
+                                <div className="flex items-center gap-1.5">
+                                    <Bell className="h-4 w-4 text-primary" />
+                                    <span className="text-foreground font-extrabold text-sm">{t("common.notifications") || "Notifications"}</span>
+                                    {unreadCount > 0 && (
+                                        <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-black">
+                                            {unreadCount} new
+                                        </span>
+                                    )}
+                                </div>
                                 {unreadCount > 0 && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
+                                    <button
+                                        className="text-[10px] text-primary hover:text-primary/80 transition-colors font-bold flex items-center gap-1 cursor-pointer"
                                         onClick={markAllAsRead}
-                                        className="h-7 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 uppercase tracking-tighter"
                                     >
-                                        {t("common.mark_all_read") || "Read all"}
-                                    </Button>
+                                        <Check className="h-3 w-3" />
+                                        {t("common.mark_all_read") || "Tout marquer comme lu"}
+                                    </button>
                                 )}
                             </DropdownMenuLabel>
-                            <DropdownMenuSeparator className="m-0 bg-white/5" />
-                            <div className="max-h-[60vh] overflow-y-auto">
+                            <div className="max-h-[380px] overflow-y-auto space-y-0.5">
                                 {notifications.length === 0 ? (
-                                    <div className="py-12 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-                                        <Bell className="h-8 w-8 opacity-10" />
-                                        <span>{t("common.no_notifications") || "No notifications"}</span>
+                                    <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
+                                        <div className="h-12 w-12 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground/60 border border-dashed border-border">
+                                            <Bell className="h-5 w-5" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-bold text-foreground/80">{t("common.no_notifications") || "Aucune notification"}</p>
+                                            <p className="text-[10px] text-muted-foreground max-w-[200px]">
+                                                Vous êtes à jour ! Toutes les nouvelles activités apparaîtront ici.
+                                            </p>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-white/5">
-                                        {notifications.map((notification) => (
-                                            <DropdownMenuItem
-                                                key={notification._id}
-                                                className={cn(
-                                                    "flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-muted/50 transition-colors relative",
-                                                    !notification.read && "bg-primary/5"
-                                                )}
-                                                onClick={() => handleNotificationClick(notification)}
-                                            >
-                                                {!notification.read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
-                                                <div className="flex items-start justify-between w-full gap-2">
-                                                    <span className={cn("text-xs leading-relaxed", !notification.read ? "font-bold text-foreground" : "text-muted-foreground")}>
-                                                        {notification.message}
+                                    notifications.map((n: any) => (
+                                        <DropdownMenuItem
+                                            key={n._id}
+                                            className={cn(
+                                                "flex items-start gap-3 p-3.5 cursor-pointer rounded-xl transition-all m-1 focus:bg-muted/50 relative border-l-2",
+                                                n.read 
+                                                  ? "border-transparent opacity-75 hover:opacity-100" 
+                                                  : "border-primary bg-primary/5 hover:bg-primary/10 font-medium"
+                                            )}
+                                            onClick={() => handleNotificationClick(n)}
+                                        >
+                                            {/* Left Side: Icon */}
+                                            <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm", getNotificationIcon(n.type).bg)}>
+                                                {getNotificationIcon(n.type).icon}
+                                            </div>
+
+                                            {/* Right Side: Content */}
+                                            <div className="flex-1 min-w-0 space-y-1 pr-2">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                        {n.title || "Notification"}
+                                                    </span>
+                                                    <span className="text-[9px] text-muted-foreground shrink-0 font-medium">
+                                                        {formatRelativeTime(n.createdAt)}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center justify-between w-full mt-1">
-                                                    <span className="text-[9px] font-bold uppercase tracking-widest text-primary/60">
-                                                        {notification.type}
-                                                    </span>
-                                                    <span className="text-[9px] text-muted-foreground font-medium">
-                                                        {new Date(notification.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </div>
+                                                <p className="text-xs text-foreground/90 leading-normal break-words">
+                                                    {n.message}
+                                                </p>
+                                            </div>
+
+                                            {/* Unread indicator dot */}
+                                            {!n.read && (
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-md shadow-primary/30" />
+                                            )}
+                                        </DropdownMenuItem>
+                                    ))
                                 )}
                             </div>
                         </DropdownMenuContent>

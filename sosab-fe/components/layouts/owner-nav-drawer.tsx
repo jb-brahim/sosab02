@@ -16,6 +16,12 @@ import {
     Users,
     Activity,
     HardHat,
+    DollarSign,
+    Boxes,
+    FileCheck,
+    ClipboardList,
+    UserX,
+    Check
 } from "lucide-react"
 import {
     Sheet,
@@ -45,6 +51,68 @@ const ownerNavItems = [
     { href: "/owner/logs", icon: Activity, label: "Journal d'Activité" },
     { href: "/owner/reports", icon: FileText, label: "Génération Rapports" },
 ]
+
+// ── Notification helpers ──────────────────────────────────────────────────────
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case "material":
+      return {
+        icon: <Boxes className="h-4 w-4" />,
+        bg: "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+      }
+    case "report":
+      return {
+        icon: <FileCheck className="h-4 w-4" />,
+        bg: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+      }
+    case "salary":
+      return {
+        icon: <DollarSign className="h-4 w-4" />,
+        bg: "bg-green-500/10 text-green-500 border border-green-500/20"
+      }
+    case "task":
+      return {
+        icon: <ClipboardList className="h-4 w-4" />,
+        bg: "bg-violet-500/10 text-violet-500 border border-violet-500/20"
+      }
+    case "attendance":
+      return {
+        icon: <UserX className="h-4 w-4" />,
+        bg: "bg-red-500/10 text-red-500 border border-red-500/20"
+      }
+    case "system":
+      return {
+        icon: <Shield className="h-4 w-4" />,
+        bg: "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+      }
+    default:
+      return {
+        icon: <Bell className="h-4 w-4" />,
+        bg: "bg-primary/10 text-primary border border-primary/20"
+      }
+  }
+}
+
+const formatRelativeTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return "À l'instant"
+    if (diffMins < 60) return `Il y a ${diffMins} min`
+    if (diffHours < 24) return `Il y a ${diffHours} h`
+    if (diffDays === 1) return "Hier"
+    if (diffDays < 7) return `Il y a ${diffDays} j`
+    
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  } catch {
+    return ""
+  }
+}
 
 // ── Shared notifications hook ────────────────────────────────────────────────
 function useNotifications(userId?: string) {
@@ -100,37 +168,79 @@ function NotificationsDropdown() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 rounded-2xl p-1 bg-card/95 backdrop-blur-xl border-border/50">
-                <DropdownMenuLabel className="flex items-center justify-between px-3 py-2 text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                    <span>Notifications</span>
+            <DropdownMenuContent align="end" className="w-80 sm:w-[360px] rounded-2xl p-1.5 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
+                <DropdownMenuLabel className="flex items-center justify-between px-3 py-2.5 text-xs text-muted-foreground font-bold tracking-wide border-b border-border/20 mb-1">
+                    <div className="flex items-center gap-1.5">
+                        <Bell className="h-4 w-4 text-primary" />
+                        <span className="text-foreground font-extrabold text-sm">Notifications</span>
+                        {unreadCount > 0 && (
+                            <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-black">
+                                {unreadCount} new
+                            </span>
+                        )}
+                    </div>
                     {unreadCount > 0 && (
-                        <span
-                            className="text-[10px] text-primary cursor-pointer hover:underline"
+                        <button
+                            className="text-[10px] text-primary hover:text-primary/80 transition-colors font-bold flex items-center gap-1 cursor-pointer"
                             onClick={() => notifications.filter(n => !n.read).forEach(n => markAsRead(n._id))}
                         >
-                            Tout marquer lu
-                        </span>
+                            <Check className="h-3 w-3" />
+                            Tout marquer comme lu
+                        </button>
                     )}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-border/50" />
-                <div className="max-h-[300px] overflow-y-auto">
+                <div className="max-h-[380px] overflow-y-auto space-y-0.5">
                     {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-xs text-muted-foreground">Aucune notification</div>
+                        <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
+                            <div className="h-12 w-12 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground/60 border border-dashed border-border">
+                                <Bell className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-foreground/80">Aucune notification</p>
+                                <p className="text-[10px] text-muted-foreground max-w-[200px]">
+                                    Vous êtes à jour ! Toutes les nouvelles activités apparaîtront ici.
+                                </p>
+                            </div>
+                        </div>
                     ) : (
                         notifications.map((n: any) => (
                             <DropdownMenuItem
                                 key={n._id}
                                 className={cn(
-                                    "flex flex-col items-start gap-1 p-3 cursor-pointer rounded-xl transition-all m-1 focus:bg-muted/50",
-                                    !n.read && "bg-primary/5 hover:bg-primary/10"
+                                    "flex items-start gap-3 p-3.5 cursor-pointer rounded-xl transition-all m-1 focus:bg-muted/50 relative border-l-2",
+                                    n.read 
+                                      ? "border-transparent opacity-75 hover:opacity-100" 
+                                      : "border-primary bg-primary/5 hover:bg-primary/10 font-medium"
                                 )}
                                 onClick={async () => {
                                     if (!n.read) await markAsRead(n._id)
                                     if (n.link) router.push(n.link)
                                 }}
                             >
-                                <span className="font-semibold text-xs text-foreground/90">{n.message}</span>
-                                <span className="text-[9px] text-muted-foreground">{new Date(n.createdAt).toLocaleDateString()}</span>
+                                {/* Left Side: Icon */}
+                                <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm", getNotificationIcon(n.type).bg)}>
+                                    {getNotificationIcon(n.type).icon}
+                                </div>
+
+                                {/* Right Side: Content */}
+                                <div className="flex-1 min-w-0 space-y-1 pr-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                            {n.title || "Notification"}
+                                        </span>
+                                        <span className="text-[9px] text-muted-foreground shrink-0 font-medium">
+                                            {formatRelativeTime(n.createdAt)}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-foreground/90 leading-normal break-words">
+                                        {n.message}
+                                    </p>
+                                </div>
+
+                                {/* Unread indicator dot */}
+                                {!n.read && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-md shadow-primary/30" />
+                                )}
                             </DropdownMenuItem>
                         ))
                     )}
