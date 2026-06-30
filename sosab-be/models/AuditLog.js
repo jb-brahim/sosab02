@@ -24,6 +24,15 @@ const auditLogSchema = new mongoose.Schema({
   ipAddress: {
     type: String
   },
+  location: {
+    type: String
+  },
+  latitude: {
+    type: Number
+  },
+  longitude: {
+    type: Number
+  },
   userAgent: {
     type: String
   },

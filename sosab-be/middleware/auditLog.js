@@ -4,6 +4,7 @@ const Project = require('../models/Project');
 const Worker = require('../models/Worker');
 const Notification = require('../models/Notification');
 const webpush = require('web-push');
+const https = require('https');
 
 // Configure VAPID keys for web-push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -26,6 +27,57 @@ exports.logAction = (action, resource) => {
       setImmediate(async () => {
         try {
           if (req.user) {
+            // Clean IP address
+            let cleanIp = req.ip || req.connection.remoteAddress || '';
+            if (cleanIp.startsWith('::ffff:')) {
+              cleanIp = cleanIp.substring(7);
+            }
+
+            // Resolve IP location and coordinates
+            let ipLocation = 'Localhost';
+            let lat = null;
+            let lon = null;
+
+            // Check if exact GPS coordinates were sent in request headers
+            if (req.headers['x-latitude'] && req.headers['x-longitude']) {
+              lat = parseFloat(req.headers['x-latitude']);
+              lon = parseFloat(req.headers['x-longitude']);
+            }
+
+            if (cleanIp && cleanIp !== '127.0.0.1' && cleanIp !== '::1' && cleanIp !== 'localhost') {
+              const geoData = await new Promise((resolve) => {
+                https.get(`https://freeipapi.com/api/json/${cleanIp}`, (res) => {
+                  let data = '';
+                  res.on('data', (chunk) => data += chunk);
+                  res.on('end', () => {
+                    try {
+                      resolve(JSON.parse(data));
+                    } catch {
+                      resolve(null);
+                    }
+                  });
+                }).on('error', () => {
+                  resolve(null);
+                });
+              });
+
+              if (geoData) {
+                if (geoData.cityName && geoData.countryName) {
+                  ipLocation = `${geoData.cityName}, ${geoData.countryName}`;
+                } else if (geoData.countryName) {
+                  ipLocation = geoData.countryName;
+                } else {
+                  ipLocation = 'Inconnue';
+                }
+
+                // Only use IP-based coordinates if browser GPS coordinates weren't sent
+                if (lat === null || lon === null) {
+                  lat = geoData.latitude || null;
+                  lon = geoData.longitude || null;
+                }
+              }
+            }
+
             const auditLog = await AuditLog.create({
               userId: req.user._id,
               action: action,
@@ -36,7 +88,10 @@ exports.logAction = (action, resource) => {
                 params: req.params,
                 query: req.query
               },
-              ipAddress: req.ip || req.connection.remoteAddress,
+              ipAddress: cleanIp,
+              location: ipLocation,
+              latitude: lat,
+              longitude: lon,
               userAgent: req.get('user-agent')
             });
 

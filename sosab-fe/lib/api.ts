@@ -28,6 +28,17 @@ api.interceptors.request.use(
                 // failed to parse
             }
         }
+
+        // Inject GPS coordinates if available
+        if (typeof window !== 'undefined') {
+            const lat = localStorage.getItem('sosab-lat');
+            const lon = localStorage.getItem('sosab-lon');
+            if (lat && lon) {
+                config.headers['x-latitude'] = lat;
+                config.headers['x-longitude'] = lon;
+            }
+        }
+
         return config;
     },
     (error) => {

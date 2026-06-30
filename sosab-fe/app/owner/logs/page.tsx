@@ -19,7 +19,8 @@ import {
   LogOut,
   CheckCircle,
   XCircle,
-  X
+  X,
+  MapPin
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -279,6 +280,53 @@ const getTargetName = (log: any, users: any[], projects: any[], workers: any[]) 
   }
   
   return null
+}
+
+const parseUserAgent = (ua: string) => {
+  if (!ua) return "Inconnu"
+  
+  let os = "Inconnu"
+  let browser = "Navigateur"
+  let device = ""
+
+  // 1. Detect OS
+  if (/windows nt 10\.0/i.test(ua)) os = "Windows 10/11"
+  else if (/windows nt 6\.3/i.test(ua)) os = "Windows 8.1"
+  else if (/windows nt 6\.2/i.test(ua)) os = "Windows 8"
+  else if (/windows nt 6\.1/i.test(ua)) os = "Windows 7"
+  else if (/macintosh|mac os x/i.test(ua)) os = "macOS"
+  else if (/android/i.test(ua)) {
+    const match = ua.match(/android\s+([0-9\.]+)/i)
+    os = match ? `Android ${match[1]}` : "Android"
+  } else if (/iphone|ipad|ipod/i.test(ua)) {
+    const match = ua.match(/os\s+([0-9_]+)\s+like\s+mac\s+os\s+x/i)
+    os = match ? `iOS ${match[1].replace(/_/g, '.')}` : "iOS"
+  } else if (/linux/i.test(ua)) os = "Linux"
+
+  // 2. Detect Device Type / Model
+  if (/iphone/i.test(ua)) device = "iPhone"
+  else if (/ipad/i.test(ua)) device = "iPad"
+  else if (/samsung|sm-/i.test(ua)) device = "Samsung"
+  else if (/huawei|honor/i.test(ua)) device = "Huawei"
+  else if (/redmi|xiaomi|mi\s/i.test(ua)) device = "Xiaomi"
+  else if (/oppo/i.test(ua)) device = "Oppo"
+  else if (/vivo/i.test(ua)) device = "Vivo"
+  else if (/oneplus/i.test(ua)) device = "OnePlus"
+  
+  // 3. Detect Browser
+  if (/edg/i.test(ua)) browser = "Edge"
+  else if (/opr/i.test(ua)) browser = "Opera"
+  else if (/chrome|crios/i.test(ua)) {
+    browser = "Chrome"
+  } else if (/safari/i.test(ua) && !/chrome|crios|android/i.test(ua)) {
+    browser = "Safari"
+  } else if (/firefox|fxios/i.test(ua)) {
+    browser = "Firefox"
+  }
+
+  // Combine into a clean string
+  const devicePart = device ? `${device} • ` : ""
+  return `${devicePart}${browser} (${os})`
 }
 
 export default function AuditLogsPage() {
@@ -564,16 +612,31 @@ export default function AuditLogsPage() {
                     </span>
                     
                     {log.ipAddress && (
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 flex-wrap">
                         <Globe className="w-3.5 h-3.5 text-muted-foreground/60" />
-                        IP: {log.ipAddress}
+                        <span>IP: {log.ipAddress} {log.location && <span className="text-primary font-semibold">({log.location})</span>}</span>
+                        {log.latitude && log.longitude && (
+                          <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${log.latitude},${log.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-600 font-extrabold ml-1.5 bg-blue-500/10 hover:bg-blue-500/20 px-1.5 py-0.5 rounded-md border border-blue-500/20 transition-all cursor-pointer"
+                            title="Voir la localisation exacte sur Google Maps"
+                          >
+                            <MapPin className="w-3 h-3 text-blue-500" />
+                            <span>GPS</span>
+                          </a>
+                        )}
                       </span>
                     )}
 
                     {log.userAgent && (
-                      <span className="flex items-center gap-1.5 max-w-[250px] truncate">
+                      <span 
+                        className="flex items-center gap-1.5 max-w-[250px] truncate cursor-help"
+                        title={log.userAgent}
+                      >
                         <Laptop className="w-3.5 h-3.5 text-muted-foreground/60" />
-                        {log.userAgent}
+                        {parseUserAgent(log.userAgent)}
                       </span>
                     )}
                   </div>

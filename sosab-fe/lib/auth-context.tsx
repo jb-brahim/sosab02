@@ -65,6 +65,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
+  // Request GPS coordinates on app startup to track actions precisely
+  useEffect(() => {
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          localStorage.setItem("sosab-lat", position.coords.latitude.toString())
+          localStorage.setItem("sosab-lon", position.coords.longitude.toString())
+          console.log("✓ Exact GPS coordinates captured:", position.coords.latitude, position.coords.longitude)
+        },
+        (error) => {
+          console.warn("⚠ Geolocation permission denied or failed:", error.message)
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+      )
+    }
+  }, [user])
+
   const login = async (email: string, password: string) => {
     try {
       // Dynamic import to avoid circular dependency if api uses auth-context (it doesn't yet but good practice)
