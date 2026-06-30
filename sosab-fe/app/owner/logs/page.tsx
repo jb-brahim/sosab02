@@ -251,10 +251,34 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
   )
 }
 
+const getTargetName = (log: any, users: any[], projects: any[], workers: any[]) => {
+  if (!log.resourceId) return null
+  
+  const id = log.resourceId
+  
+  if (log.resource === "User") {
+    const u = users.find(x => x._id === id || x.id === id)
+    return u ? `${u.name} (${u.role})` : `ID: ${id.substring(0, 8)}...`
+  }
+  
+  if (log.resource === "Project") {
+    const p = projects.find(x => x._id === id || x.id === id)
+    return p ? p.name : `ID: ${id.substring(0, 8)}...`
+  }
+  
+  if (log.resource === "Worker") {
+    const w = workers.find(x => x._id === id || x.id === id)
+    return w ? w.name : `ID: ${id.substring(0, 8)}...`
+  }
+  
+  return null
+}
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([])
   const [workers, setWorkers] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
+  const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
@@ -264,10 +288,11 @@ export default function AuditLogsPage() {
     const loadAllData = async () => {
       try {
         setLoading(true)
-        const [logsRes, workersRes, projectsRes] = await Promise.all([
+        const [logsRes, workersRes, projectsRes, usersRes] = await Promise.all([
           api.get("/admin/logs"),
           api.get("/workers?includeInactive=true").catch(err => ({ data: { success: false, data: [] } })),
-          api.get("/projects").catch(err => ({ data: { success: false, data: [] } }))
+          api.get("/projects").catch(err => ({ data: { success: false, data: [] } })),
+          api.get("/users").catch(err => ({ data: { success: false, data: [] } }))
         ])
         
         // Add logs page load diagnostics
@@ -275,6 +300,7 @@ export default function AuditLogsPage() {
         console.log("Logs success:", logsRes.data.success, "Count:", logsRes.data.data?.length)
         console.log("Workers success:", workersRes.data.success, "Count:", workersRes.data.data?.length)
         console.log("Projects success:", projectsRes.data.success, "Count:", projectsRes.data.data?.length)
+        console.log("Users success:", usersRes.data.success, "Count:", usersRes.data.data?.length)
 
         if (logsRes.data.success) {
           setLogs(logsRes.data.data)
@@ -290,6 +316,12 @@ export default function AuditLogsPage() {
         } else if (Array.isArray(projectsRes.data)) {
           console.log("Projects API returned raw array:", projectsRes.data.length)
           setProjects(projectsRes.data)
+        }
+        if (usersRes.data.success) {
+          setUsers(usersRes.data.data)
+        } else if (Array.isArray(usersRes.data)) {
+          console.log("Users API returned raw array:", usersRes.data.length)
+          setUsers(usersRes.data)
         }
       } catch (error) {
         console.error("Failed to load audit logs data", error)
@@ -460,61 +492,72 @@ export default function AuditLogsPage() {
             Aucun log d'activité trouvé.
           </div>
         ) : (
-          groupLogs(filteredLogs).map((log) => (
-            <Card key={log._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
-              <CardContent className="p-4 space-y-3">
-                {/* Top Row: User & Action */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                      {log.userId?.name?.charAt(0) || "S"}
+          groupLogs(filteredLogs).map((log) => {
+            const targetName = getTargetName(log, users, projects, workers)
+            return (
+              <Card key={log._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
+                <CardContent className="p-4 space-y-3">
+                  {/* Top Row: User & Action */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                        {log.userId?.name?.charAt(0) || "S"}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-foreground/90 flex flex-wrap items-center gap-1.5">
+                          <span>{log.userId?.name || "Système Automatique"}</span>
+                          {targetName && (
+                            <>
+                              <span className="text-muted-foreground font-normal text-xs">
+                                {log.action === "create" ? "a créé" : log.action === "delete" ? "a supprimé" : "a modifié"}
+                              </span>
+                              <span className="text-primary font-extrabold text-xs">{targetName}</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {log.userId?.role || "System"} • {log.userId?.email || "system@sosab.com"}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-sm text-foreground/90">
-                        {log.userId?.name || "Système Automatique"}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {log.userId?.role || "System"} • {log.userId?.email || "system@sosab.com"}
-                      </div>
+
+                    <div className="flex items-center gap-2 ml-10 sm:ml-0">
+                      {getActionBadge(log.action)}
+                      <Badge variant="outline" className="text-[9px] uppercase font-semibold text-muted-foreground flex items-center gap-1 py-0.5">
+                        <Layers className="w-3 h-3 text-purple-500" />
+                        {log.resource}
+                      </Badge>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-10 sm:ml-0">
-                    {getActionBadge(log.action)}
-                    <Badge variant="outline" className="text-[9px] uppercase font-semibold text-muted-foreground flex items-center gap-1 py-0.5">
-                      <Layers className="w-3 h-3 text-purple-500" />
-                      {log.resource}
-                    </Badge>
+                  {/* Middle details: Device information */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground border-t border-border/30 pt-2.5">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      {format(new Date(log.createdAt), 'dd MMM yyyy, HH:mm:ss')}
+                    </span>
+                    
+                    {log.ipAddress && (
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        IP: {log.ipAddress}
+                      </span>
+                    )}
+
+                    {log.userAgent && (
+                      <span className="flex items-center gap-1.5 max-w-[250px] truncate">
+                        <Laptop className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        {log.userAgent}
+                      </span>
+                    )}
                   </div>
-                </div>
 
-                {/* Middle details: Device information */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground border-t border-border/30 pt-2.5">
-                  <span className="flex items-center gap-1 font-semibold">
-                    <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
-                    {format(new Date(log.createdAt), 'dd MMM yyyy, HH:mm:ss')}
-                  </span>
-                  
-                  {log.ipAddress && (
-                    <span className="flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      IP: {log.ipAddress}
-                    </span>
-                  )}
-
-                  {log.userAgent && (
-                    <span className="flex items-center gap-1.5 max-w-[250px] truncate">
-                      <Laptop className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      {log.userAgent}
-                    </span>
-                  )}
-                </div>
-
-                {/* Optional changes debug print */}
-                {renderChanges(log, workers, projects)}
-              </CardContent>
-            </Card>
-          ))
+                  {/* Optional changes debug print */}
+                  {renderChanges(log, workers, projects)}
+                </CardContent>
+              </Card>
+            )
+          })
         )}
       </div>
     </div>
