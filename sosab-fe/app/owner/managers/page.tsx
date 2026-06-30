@@ -385,7 +385,11 @@ export default function ManagersManagementPage() {
                         <div className="flex flex-wrap gap-1">
                           {assigned.length > 0 ? (
                             assigned.map((p: any) => (
-                              <Badge key={p._id} className="bg-background text-foreground/80 hover:bg-background border-border/60 text-[9px] font-semibold py-0.5 px-2 rounded whitespace-nowrap">
+                              <Badge 
+                                key={p._id} 
+                                className="bg-background text-foreground/80 hover:bg-background border-border/60 text-[9px] font-semibold py-0.5 px-2 rounded max-w-[180px] truncate inline-block align-middle"
+                                title={p.name}
+                              >
                                 {p.name}
                               </Badge>
                             ))
@@ -396,7 +400,7 @@ export default function ManagersManagementPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span className={`h-2 w-2 rounded-full ${u.active ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                           <span className={`font-semibold text-[10px] uppercase ${u.active ? 'text-green-500' : 'text-red-500'}`}>
@@ -411,7 +415,7 @@ export default function ManagersManagementPage() {
                       </td>
 
                       {/* Last Location / GPS */}
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {u.lastLocation ? (
                             <span className="text-foreground/80 font-medium flex items-center gap-1">
@@ -442,7 +446,7 @@ export default function ManagersManagementPage() {
                       </td>
 
                       {/* Actions */}
-                      <td className="p-4 pr-6 text-right">
+                      <td className="p-4 pr-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Toggle Active */}
                           <Button 
