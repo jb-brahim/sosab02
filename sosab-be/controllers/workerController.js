@@ -141,9 +141,9 @@ exports.getAllWorkers = asyncHandler(async (req, res) => {
   const workers = await Worker.find(query)
     .populate({
       path: 'projectId',
-      select: 'name managerId',
+      select: 'name managers',
       populate: {
-        path: 'managerId',
+        path: 'managers',
         select: 'name email'
       }
     })
