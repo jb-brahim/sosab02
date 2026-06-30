@@ -30,7 +30,7 @@ exports.createNotification = async (userId, type, title, message, data = {}, lin
 
         // Send Push Notification if Gérant
         const user = await User.findById(userId);
-        if (user && user.role === 'Gérant' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+        if (user && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
             const payload = JSON.stringify({
                 title,
                 body: message,

@@ -23,7 +23,7 @@ export function PushSubscriptionManager() {
     const { user } = useAuth()
 
     useEffect(() => {
-        if (!user || user.role !== "gerant") return
+        if (!user) return
 
         async function registerPush() {
             try {
