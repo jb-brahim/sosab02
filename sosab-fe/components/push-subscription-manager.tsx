@@ -36,15 +36,25 @@ export function PushSubscriptionManager() {
                 console.log("Service Worker registered with scope:", registration.scope)
 
                 const subscription = await registration.pushManager.getSubscription()
+                const SUB_VERSION = "v3" // Increment to force resubscription
+                const currentVersion = localStorage.getItem("sosab-push-version")
 
-                if (!subscription) {
+                // If old subscription exists but version doesn't match, unsubscribe first
+                if (subscription && currentVersion !== SUB_VERSION) {
+                    console.log("Unsubscribing old push subscription due to VAPID key change...")
+                    await subscription.unsubscribe()
+                    localStorage.removeItem("sosab-push-version")
+                }
+
+                if (!subscription || currentVersion !== SUB_VERSION) {
                     const newSubscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                     })
 
                     await api.post("/notifications/subscribe", newSubscription)
-                    console.log("Push subscription successful")
+                    localStorage.setItem("sosab-push-version", SUB_VERSION)
+                    console.log("Push subscription successful (version " + SUB_VERSION + ")")
                 }
             } catch (error) {
                 console.error("Failed to register push subscription:", error)

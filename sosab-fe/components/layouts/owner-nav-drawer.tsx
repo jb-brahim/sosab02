@@ -75,7 +75,7 @@ function useNotifications(userId?: string) {
     React.useEffect(() => {
         const controller = new AbortController()
         fetchNotifications(controller.signal)
-        const interval = setInterval(() => fetchNotifications(controller.signal), 30000)
+        const interval = setInterval(() => fetchNotifications(controller.signal), 10000)
         return () => { controller.abort(); clearInterval(interval) }
     }, [fetchNotifications])
 

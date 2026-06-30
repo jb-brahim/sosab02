@@ -127,7 +127,7 @@ export function GerantNavDrawer() {
         const controller = new AbortController()
         fetchNotifications(controller.signal)
 
-        const interval = setInterval(() => fetchNotifications(controller.signal), 30000)
+        const interval = setInterval(() => fetchNotifications(controller.signal), 10000)
 
         return () => {
             controller.abort()
