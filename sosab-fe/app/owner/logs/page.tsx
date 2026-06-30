@@ -126,6 +126,13 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
   const body = changes.body || {}
   if (Object.keys(body).length === 0) return null
 
+  // Skip rendering change tables for simple status toggles or password resets
+  if (resource === "User" && log.action === "update") {
+    if (body.active !== undefined || body.password !== undefined) {
+      return null
+    }
+  }
+
   // Custom formats for specific resources
   if (resource === "Attendance") {
     const isPresent = body.present === true || body.present === "true" || body.present === 1
@@ -494,6 +501,25 @@ export default function AuditLogsPage() {
         ) : (
           groupLogs(filteredLogs).map((log) => {
             const targetName = getTargetName(log, users, projects, workers)
+            
+            // Custom action text and colors for specific User updates
+            let actionText = log.action === "create" ? "a créé" : log.action === "delete" ? "a supprimé" : "a modifié"
+            let actionColor = "text-muted-foreground font-normal"
+
+            if (log.resource === "User" && log.action === "update" && log.changes?.body) {
+              const body = log.changes.body
+              if (body.active === true || body.active === "true") {
+                actionText = "a activé le compte de"
+                actionColor = "text-green-500 font-bold"
+              } else if (body.active === false || body.active === "false") {
+                actionText = "a bloqué/désactivé le compte de"
+                actionColor = "text-red-500 font-bold"
+              } else if (body.password) {
+                actionText = "a réinitialisé le mot de passe de"
+                actionColor = "text-amber-500 font-bold"
+              }
+            }
+
             return (
               <Card key={log._id} className="border-border/40 hover:border-primary/20 transition-all rounded-2xl overflow-hidden shadow-sm hover:bg-muted/5">
                 <CardContent className="p-4 space-y-3">
@@ -508,8 +534,8 @@ export default function AuditLogsPage() {
                           <span>{log.userId?.name || "Système Automatique"}</span>
                           {targetName && (
                             <>
-                              <span className="text-muted-foreground font-normal text-xs">
-                                {log.action === "create" ? "a créé" : log.action === "delete" ? "a supprimé" : "a modifié"}
+                              <span className={`${actionColor} text-xs`}>
+                                {actionText}
                               </span>
                               <span className="text-primary font-extrabold text-xs">{targetName}</span>
                             </>
