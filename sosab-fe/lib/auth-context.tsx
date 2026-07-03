@@ -67,7 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Request GPS coordinates on app startup to track actions precisely
   useEffect(() => {
-    if (typeof window !== "undefined" && "geolocation" in navigator) {
+    if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      return
+    }
+
+    const requestGPS = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           localStorage.setItem("sosab-lat", position.coords.latitude.toString())
@@ -79,6 +83,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         { enableHighAccuracy: true, timeout: 15000 }
       )
+    }
+
+    // Try to use the Permissions API to check if permission is already granted, prompt, or denied.
+    // If it's already granted, we can call it silently. If it is 'prompt', we only prompt once per session.
+    if ("permissions" in navigator && navigator.permissions.query) {
+      navigator.permissions.query({ name: "geolocation" as PermissionName })
+        .then((result) => {
+          if (result.state === "granted") {
+            // Already granted, query silently in background to keep coords fresh
+            requestGPS()
+          } else if (result.state === "prompt") {
+            // Not granted yet; only prompt once per session
+            const prompted = sessionStorage.getItem("sosab-gps-prompted")
+            if (!prompted) {
+              sessionStorage.setItem("sosab-gps-prompted", "true")
+              requestGPS()
+            }
+          }
+          // If 'denied', do not call requestGPS to avoid spamming or warnings
+        })
+        .catch(() => {
+          // Fallback if query fails
+          const prompted = sessionStorage.getItem("sosab-gps-prompted")
+          if (!prompted) {
+            sessionStorage.setItem("sosab-gps-prompted", "true")
+            requestGPS()
+          }
+        })
+    } else {
+      // Fallback for browsers without permissions.query support
+      const prompted = sessionStorage.getItem("sosab-gps-prompted")
+      if (!prompted) {
+        sessionStorage.setItem("sosab-gps-prompted", "true")
+        requestGPS()
+      }
     }
   }, [user])
 
