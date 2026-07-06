@@ -105,7 +105,14 @@ const renderChanges = (log: any, workers: any[], projects: any[]) => {
               : null
             return (
               <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-xl border border-border/30">
-                {workerName && <span className="font-semibold text-foreground/95 text-xs">{workerName}</span>}
+                {workerName && (
+                  <span className="font-semibold text-foreground/95 text-xs flex items-center gap-2">
+                    <span className="text-[9px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-md font-black tracking-wide shrink-0">
+                      {itemBody.date || date}
+                    </span>
+                    <span className="truncate">{workerName}</span>
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <span className={isPresent ? "text-green-500 font-bold text-xs" : "text-red-500 font-bold text-xs"}>
                     {isPresent ? "Présent" : "Absent"}
