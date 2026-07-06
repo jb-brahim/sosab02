@@ -17,10 +17,29 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 // Create notification
 exports.createNotification = async (userId, type, title, message, data = {}, link = '', priority = 'medium') => {
     try {
+        // Emoji map based on notification type
+        const emojiMap = {
+            'low_stock': '⚠️',
+            'stock': '⚠️',
+            'worker_absence': '📅',
+            'attendance': '📅',
+            'report_ready': '📊',
+            'task_assigned': '📋',
+            'salary_approved': '💰',
+            'security': '🔒',
+            'system': '⚙️'
+        };
+
+        let emojiTitle = title;
+        const emoji = emojiMap[type] || emojiMap[type.toLowerCase()] || '';
+        if (emoji && !title.startsWith(emoji)) {
+            emojiTitle = `${emoji} ${title}`;
+        }
+
         const notification = await Notification.create({
             userId,
             type,
-            title,
+            title: emojiTitle,
             message,
             data,
             link,
@@ -28,14 +47,15 @@ exports.createNotification = async (userId, type, title, message, data = {}, lin
             read: false
         });
 
-        // Send Push Notification if Gérant
+        // Send Push Notification only if Admin (Owner)
         const user = await User.findById(userId);
-        if (user && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+        if (user && user.role === 'Admin' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
             const payload = JSON.stringify({
-                title,
+                title: emojiTitle,
                 body: message,
                 link: link || '/',
-                icon: '/logo.png' // Adjust based on project icon
+                type: type,
+                icon: '/logo.png' // Fallback handled by sw.js custom logic
             });
 
             for (const sub of user.pushSubscriptions) {

@@ -110,6 +110,7 @@ exports.logAction = (action, resource) => {
               const userName = req.user.name;
 
               // Clean, social-network-style formatting (like Facebook/YouTube)
+              let notifType = 'system';
               if (resource === 'Attendance') {
                 const worker = await Worker.findById(body.workerId);
                 const project = await Project.findById(body.projectId);
@@ -117,13 +118,15 @@ exports.logAction = (action, resource) => {
                 const pName = project ? project.name : 'un chantier';
                 const isPresent = body.present === true || body.present === 'true' || body.present === 1;
 
-                title = `Présence: ${wName}`;
+                title = `👷 Présence: ${wName}`;
                 bodyText = `${userName} a marqué ${wName} comme ${isPresent ? 'Présent' : 'Absent'} sur le chantier ${pName}.`;
+                notifType = 'attendance';
               } else if (resource === 'User' && action === 'update') {
                 const targetUser = await User.findById(req.params.id);
                 const tName = targetUser ? targetUser.name : 'un utilisateur';
 
-                title = `Sécurité: ${tName}`;
+                title = `🔒 Sécurité: ${tName}`;
+                notifType = 'security';
                 if (body.active === true || body.active === 'true') {
                   bodyText = `${userName} a activé le compte de ${tName}.`;
                 } else if (body.active === false || body.active === 'false') {
@@ -135,16 +138,19 @@ exports.logAction = (action, resource) => {
                 }
               } else if (resource === 'User' && action === 'create') {
                 const tName = body.name || 'un utilisateur';
-                title = 'Nouvel Utilisateur';
+                title = '🔑 Nouvel Utilisateur';
                 bodyText = `${userName} a créé le compte de ${tName}.`;
+                notifType = 'security';
               } else if (resource === 'Project') {
                 const pName = body.name || (await Project.findById(req.params.id || req.body.id))?.name || 'un chantier';
-                title = `Chantier: ${pName}`;
+                title = `🏗️ Chantier: ${pName}`;
                 bodyText = `${userName} a ${action === 'create' ? 'créé' : action === 'delete' ? 'supprimé' : 'mis à jour'} le chantier ${pName}.`;
+                notifType = 'system';
               } else if (resource === 'Worker') {
                 const wName = body.name || (await Worker.findById(req.params.id || req.body.id))?.name || 'un ouvrier';
-                title = `Ouvrier: ${wName}`;
+                title = `👷 Ouvrier: ${wName}`;
                 bodyText = `${userName} a ${action === 'create' ? 'ajouté' : action === 'delete' ? 'retiré' : 'mis à jour'} l'ouvrier ${wName}.`;
+                notifType = 'attendance';
               } else {
                 // Fallback for other resources
                 const actionLabels = {
@@ -155,8 +161,9 @@ exports.logAction = (action, resource) => {
                   logout: 'déconnecté'
                 };
                 const actionStr = actionLabels[action] || action;
-                title = `Activité: ${resource}`;
+                title = `⚙️ Activité: ${resource}`;
                 bodyText = `${userName} a ${actionStr} la ressource ${resource}.`;
+                notifType = 'system';
               }
 
               // Find all active Admins
@@ -166,7 +173,7 @@ exports.logAction = (action, resource) => {
                 // 1. Create in-app notification in database for the bell icon
                 const notifications = admins.map(admin => ({
                   userId: admin._id,
-                  type: 'system',
+                  type: notifType,
                   title,
                   message: bodyText,
                   link: '/owner/logs',
@@ -179,6 +186,7 @@ exports.logAction = (action, resource) => {
                   title,
                   body: bodyText,
                   link: '/owner/logs',
+                  type: notifType,
                   icon: '/logo.png'
                 });
 

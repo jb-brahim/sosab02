@@ -12,15 +12,35 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   );
 }
 
-// Helper to send push to Gérant
-const sendPushToGerant = async (userId, title, message, link) => {
+// Helper to send push to Admin (Owner)
+const sendPushToAdmin = async (userId, title, message, link, type = 'system') => {
   try {
     const user = await User.findById(userId);
-    if (user && user.role === 'Gérant' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+    if (user && user.role === 'Admin' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+      // Emoji map based on notification type
+      const emojiMap = {
+        'low_stock': '⚠️',
+        'stock': '⚠️',
+        'worker_absence': '📅',
+        'attendance': '📅',
+        'report_ready': '📊',
+        'task_assigned': '📋',
+        'salary_approved': '💰',
+        'security': '🔒',
+        'system': '⚙️'
+      };
+
+      let emojiTitle = title;
+      const emoji = emojiMap[type] || emojiMap[type.toLowerCase()] || '';
+      if (emoji && !title.startsWith(emoji)) {
+        emojiTitle = `${emoji} ${title}`;
+      }
+
       const payload = JSON.stringify({
-        title,
+        title: emojiTitle,
         body: message,
         link: link || '/',
+        type,
         icon: '/logo.png'
       });
 
@@ -107,17 +127,37 @@ exports.markAsRead = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 exports.createNotification = asyncHandler(async (req, res) => {
   const { userId, type, message, link } = req.body;
+  const title = req.body.title || 'Notification';
+
+  // Emoji map based on notification type
+  const emojiMap = {
+    'low_stock': '⚠️',
+    'stock': '⚠️',
+    'worker_absence': '📅',
+    'attendance': '📅',
+    'report_ready': '📊',
+    'task_assigned': '📋',
+    'salary_approved': '💰',
+    'security': '🔒',
+    'system': '⚙️'
+  };
+
+  let emojiTitle = title;
+  const emoji = emojiMap[type] || emojiMap[type?.toLowerCase()] || '';
+  if (emoji && !title.startsWith(emoji)) {
+    emojiTitle = `${emoji} ${title}`;
+  }
 
   const notification = await Notification.create({
     userId,
     type,
     message,
     link,
-    title: req.body.title || 'Notification'
+    title: emojiTitle
   });
 
   // Send push
-  await sendPushToGerant(userId, req.body.title || 'Notification', message, link);
+  await sendPushToAdmin(userId, emojiTitle, message, link, type);
 
   res.status(201).json({
     success: true,
@@ -132,20 +172,39 @@ exports.sendNotificationToRoles = async (roles, type, message, link, title = 'Al
     const users = await User.find({ role: { $in: roles }, active: true });
     if (users.length === 0) return;
 
+    // Emoji map based on notification type
+    const emojiMap = {
+      'low_stock': '⚠️',
+      'stock': '⚠️',
+      'worker_absence': '📅',
+      'attendance': '📅',
+      'report_ready': '📊',
+      'task_assigned': '📋',
+      'salary_approved': '💰',
+      'security': '🔒',
+      'system': '⚙️'
+    };
+
+    let emojiTitle = title;
+    const emoji = emojiMap[type] || emojiMap[type?.toLowerCase()] || '';
+    if (emoji && !title.startsWith(emoji)) {
+      emojiTitle = `${emoji} ${title}`;
+    }
+
     const notifications = users.map(user => ({
       userId: user._id,
       type,
       message,
       link,
-      title
+      title: emojiTitle
     }));
 
     await Notification.insertMany(notifications);
 
-    // Send push to each user if they are Gérant
+    // Send push to each user if they are Admin (Owner)
     for (const user of users) {
-      if (user.role === 'Gérant') {
-        await sendPushToGerant(user._id, title, message, link);
+      if (user.role === 'Admin') {
+        await sendPushToAdmin(user._id, emojiTitle, message, link, type);
       }
     }
   } catch (error) {
