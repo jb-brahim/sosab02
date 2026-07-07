@@ -616,7 +616,7 @@ exports.generateAttendanceReportHTML = (data) => {
   ${data.groups.map(group => `
     <div class="page-break">
       <div class="header">
-        <h1>POINTAGE CHANTIER: ${project.name}</h1>
+        <h1>POINTAGE CHANTIER: ${group.projectName || project.name}</h1>
         <h2>PAIEMENT: ${headerLabel} - ANNEE: ${new Date().getFullYear()}</h2>
         <h3 style="background: #e2e8f0; padding: 5px; margin-top: 10px; font-size: 13px;">
           ${group.subcontractor ? `SOUS-TRAITANT: ${group.subcontractor.name} (${group.subcontractor.trade})` : 'EQUIPE DIRECTE'}

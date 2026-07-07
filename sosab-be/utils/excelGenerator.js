@@ -70,16 +70,20 @@ function setupAttendanceSheet(worksheet, project, headerLabel, rangeLabels, grou
  */
 async function generateAttendanceExcel(data, outputPath) {
     const workbook = new ExcelJS.Workbook();
-    const { project, headerLabel, groups } = data;
+    const { project, projects, headerLabel, groups } = data;
     const rangeLabels = data.rangeLabels || Array.from({ length: 31 }, (_, i) => i + 1);
 
     for (const group of groups) {
-        const groupLabel = group.subcontractor ? group.subcontractor.name : 'EQUIPE DIRECTE';
+        let groupLabel = group.subcontractor ? group.subcontractor.name : 'EQUIPE DIRECTE';
+        if (!group.subcontractor && group.project && projects && projects.length > 1) {
+            groupLabel = `DIR - ${group.project.name}`;
+        }
         // Excel sheet names must be unique and <= 31 chars
         const sheetName = groupLabel.substring(0, 31).replace(/[:\\\?\*\[\]\/]/g, '_');
         const worksheet = workbook.addWorksheet(sheetName);
 
-        let currentRow = setupAttendanceSheet(worksheet, project, headerLabel, rangeLabels, groupLabel);
+        const currentProject = (!group.subcontractor && group.project) ? group.project : project;
+        let currentRow = setupAttendanceSheet(worksheet, currentProject, headerLabel, rangeLabels, groupLabel);
 
         group.workers.forEach((worker) => {
             const row = worksheet.getRow(currentRow);
@@ -135,10 +139,13 @@ async function generateAttendanceExcel(data, outputPath) {
  */
 async function generatePaymentExcel(data, outputPath) {
     const workbook = new ExcelJS.Workbook();
-    const { project, headerLabel, groups, totalPayment } = data;
+    const { project, projects, headerLabel, groups, totalPayment } = data;
 
     for (const group of groups) {
-        const groupLabel = group.subcontractor ? group.subcontractor.name : 'EQUIPE DIRECTE';
+        let groupLabel = group.subcontractor ? group.subcontractor.name : 'EQUIPE DIRECTE';
+        if (!group.subcontractor && group.projectName && projects && projects.length > 1) {
+            groupLabel = `DIR - ${group.projectName}`;
+        }
         const sheetName = groupLabel.substring(0, 31).replace(/[:\\\?\*\[\]\/]/g, '_');
         const worksheet = workbook.addWorksheet(sheetName);
 
@@ -156,7 +163,8 @@ async function generatePaymentExcel(data, outputPath) {
         // Title Rows
         worksheet.mergeCells('A1:G1');
         const titleCell = worksheet.getCell('A1');
-        titleCell.value = `PAIEMENT CHANTIER: ${project.name} - ${groupLabel}`;
+        const currentProjName = (!group.subcontractor && group.projectName) ? group.projectName : project.name;
+        titleCell.value = `PAIEMENT CHANTIER: ${currentProjName} - ${groupLabel}`;
         titleCell.font = { bold: true, size: 14 };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };

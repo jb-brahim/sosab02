@@ -413,12 +413,17 @@ exports.generateReport = asyncHandler(async (req, res) => {
       return grid;
     };
 
-    // Add Direct Workers Group
-    if (directWorkers.length > 0) {
-      groups.push({
-        subcontractor: null,
-        workers: await processWorkers(directWorkers)
-      });
+    // Add Direct Workers Group (separated by project)
+    for (const proj of projects) {
+      const projDirectWorkers = directWorkers.filter(w => w.projectId.toString() === proj._id.toString());
+      if (projDirectWorkers.length > 0) {
+        groups.push({
+          subcontractor: null,
+          project: { _id: proj._id, name: proj.name },
+          projectName: proj.name,
+          workers: await processWorkers(projDirectWorkers)
+        });
+      }
     }
 
     // Add groups for each subcontractor
@@ -426,8 +431,11 @@ exports.generateReport = asyncHandler(async (req, res) => {
       const subTeam = workers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
       // Process subcontractor himself + his team
       const allSubWorkers = [sub, ...subTeam];
+      const subProj = projects.find(p => p._id.toString() === sub.projectId.toString()) || primaryProject;
       groups.push({
         subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+        project: { _id: subProj._id, name: subProj.name },
+        projectName: subProj.name,
         workers: await processWorkers(allSubWorkers)
       });
     }
