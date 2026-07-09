@@ -3,13 +3,18 @@ const router = express.Router();
 const {
   markAttendance,
   getWeeklyAttendance,
-  getDailyAttendance
+  getDailyAttendance,
+  checkDailyAttendanceStatus
 } = require('../controllers/attendanceController');
 const { protect } = require('../middleware/auth');
 const { logAction } = require('../middleware/auditLog');
 
 // All routes require authentication
 router.use(protect);
+
+router
+  .route('/status/today')
+  .get(checkDailyAttendanceStatus);
 
 router
   .route('/')

@@ -10,6 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
+import { AttendanceReminderPopup } from "@/components/attendance-reminder-popup"
 
 export default function MobileHome() {
   const { user } = useAuth()
@@ -146,6 +147,7 @@ export default function MobileHome() {
           )}
         </div>
       </div>
+      <AttendanceReminderPopup />
     </div>
   )
 }

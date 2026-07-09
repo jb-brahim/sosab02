@@ -5,6 +5,11 @@ self.addEventListener('push', function (event) {
             body: data.body,
             icon: data.icon || '/logo.png',
             badge: '/badge.png',
+            vibrate: data.vibrate || [100, 50, 100],
+            sound: data.sound || undefined,
+            color: data.color || undefined,
+            tag: data.tag || 'sosab-notification',
+            renotify: data.renotify !== undefined ? data.renotify : true,
             data: {
                 url: data.link || '/'
             }

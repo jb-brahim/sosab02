@@ -218,3 +218,60 @@ exports.getDailyAttendance = asyncHandler(async (req, res) => {
     data: attendances
   });
 });
+
+// @desc    Check if logged-in manager needs to mark attendance today
+// @route   GET /api/attendance/status/today
+// @access  Private
+exports.checkDailyAttendanceStatus = asyncHandler(async (req, res) => {
+  const isManager = req.user.role === 'Project Manager' || req.user.role === 'Gérant' || req.user.role === 'Admin';
+  if (!isManager) {
+    return res.status(200).json({ success: true, attendanceRequired: false, projects: [] });
+  }
+
+  // Find active projects where this user is manager (if not Admin)
+  const query = { status: 'Active' };
+  if (req.user.role !== 'Admin') {
+    query.managers = req.user._id;
+  }
+
+  const projects = await Project.find(query);
+  if (!projects.length) {
+    return res.status(200).json({ success: true, attendanceRequired: false, projects: [] });
+  }
+
+  // Calculate start and end of today in local time
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const projectsPendingAttendance = [];
+
+  for (const project of projects) {
+    // Check if the project has workers
+    const workerCount = await Worker.countDocuments({ projectId: project._id, active: true });
+    if (workerCount === 0) {
+      continue;
+    }
+
+    // Check if there is at least one attendance record for today
+    const attendanceCount = await Attendance.countDocuments({
+      projectId: project._id,
+      date: { $gte: startOfToday, $lte: endOfToday }
+    });
+
+    if (attendanceCount === 0) {
+      projectsPendingAttendance.push({
+        id: project._id,
+        name: project.name,
+        location: project.location
+      });
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    attendanceRequired: projectsPendingAttendance.length > 0,
+    projects: projectsPendingAttendance
+  });
+});

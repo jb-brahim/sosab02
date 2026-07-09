@@ -4,12 +4,24 @@ const {
   getNotifications,
   markAsRead,
   createNotification,
-  subscribe
+  subscribe,
+  getReminderSetting,
+  updateReminderSetting
 } = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(protect);
+
+// Specific routes first
+router
+  .route('/reminder-setting')
+  .get(authorize('Admin'), getReminderSetting)
+  .post(authorize('Admin'), updateReminderSetting);
+
+router
+  .route('/subscribe')
+  .post(subscribe);
 
 router
   .route('/:userId')
@@ -22,10 +34,6 @@ router
 router
   .route('/')
   .post(authorize('Admin'), createNotification);
-
-router
-  .route('/subscribe')
-  .post(subscribe);
 
 module.exports = router;
 
