@@ -251,6 +251,7 @@ exports.getReminderSetting = asyncHandler(async (req, res) => {
       enabled: true,
       time: '10:00',
       managers: [],
+      projects: [],
       sound: 'default',
       vibration: true
     });
@@ -266,7 +267,7 @@ exports.getReminderSetting = asyncHandler(async (req, res) => {
 // @route   POST /api/notifications/reminder-setting
 // @access  Private/Admin
 exports.updateReminderSetting = asyncHandler(async (req, res) => {
-  const { enabled, time, managers, sound, vibration } = req.body;
+  const { enabled, time, managers, projects, sound, vibration } = req.body;
 
   let setting = await ReminderSetting.findOne();
 
@@ -277,6 +278,7 @@ exports.updateReminderSetting = asyncHandler(async (req, res) => {
   if (enabled !== undefined) setting.enabled = enabled;
   if (time !== undefined) setting.time = time;
   if (managers !== undefined) setting.managers = managers;
+  if (projects !== undefined) setting.projects = projects;
   if (sound !== undefined) setting.sound = sound;
   if (vibration !== undefined) setting.vibration = vibration;
   setting.updatedAt = Date.now();

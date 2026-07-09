@@ -1,6 +1,7 @@
 const Attendance = require('../models/Attendance');
 const Worker = require('../models/Worker');
 const Project = require('../models/Project');
+const ReminderSetting = require('../models/ReminderSetting');
 const asyncHandler = require('../middleware/asyncHandler');
 const { getWeekDates } = require('../utils/weekHelper');
 
@@ -235,9 +236,21 @@ exports.checkDailyAttendanceStatus = asyncHandler(async (req, res) => {
     query.managers = req.user._id;
   }
 
-  const projects = await Project.find(query);
+  let projects = await Project.find(query);
   if (!projects.length) {
     return res.status(200).json({ success: true, attendanceRequired: false, projects: [] });
+  }
+
+  // Filter based on selected projects in settings if provided
+  const setting = await ReminderSetting.findOne();
+  if (setting && setting.enabled && setting.projects && setting.projects.length > 0) {
+    const selectedProjects = projects.filter(p =>
+      setting.projects.some(sp => sp.toString() === p._id.toString())
+    );
+    // Only narrow down if at least one of this manager's projects was explicitly checked
+    if (selectedProjects.length > 0) {
+      projects = selectedProjects;
+    }
   }
 
   // Calculate start and end of today in local time

@@ -106,7 +106,19 @@ cron.schedule('* * * * *', async () => {
                     if (manager.role !== 'Admin') {
                         query.managers = manager._id;
                     }
-                    const activeProjects = await Project.find(query);
+                    let activeProjects = await Project.find(query);
+
+                    // Filter based on selected projects in settings if provided
+                    if (setting.projects && setting.projects.length > 0) {
+                        const selectedProjects = activeProjects.filter(p =>
+                            setting.projects.some(sp => sp.toString() === p._id.toString())
+                        );
+                        // Only narrow down if at least one of this manager's projects was explicitly checked
+                        if (selectedProjects.length > 0) {
+                            activeProjects = selectedProjects;
+                        }
+                    }
+
                     let needsReminder = false;
 
                     const startOfToday = new Date();

@@ -27,15 +27,18 @@ export default function OwnerSettingsPage() {
     const [vibration, setVibration] = useState(true)
     const [targetType, setTargetType] = useState("all") // "all" or "select"
     const [selectedManagers, setSelectedManagers] = useState<string[]>([])
+    const [allProjects, setAllProjects] = useState<any[]>([])
+    const [selectedProjects, setSelectedProjects] = useState<string[]>([])
 
-    // Fetch managers and settings
+    // Fetch managers, settings, and projects
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true)
-                const [usersRes, settingsRes] = await Promise.all([
+                const [usersRes, settingsRes, projectsRes] = await Promise.all([
                     api.get('/users'),
-                    api.get('/notifications/reminder-setting')
+                    api.get('/notifications/reminder-setting'),
+                    api.get('/projects')
                 ])
 
                 if (usersRes.data.success) {
@@ -46,12 +49,17 @@ export default function OwnerSettingsPage() {
                     setManagers(filtered)
                 }
 
+                if (projectsRes.data.success) {
+                    setAllProjects(projectsRes.data.data)
+                }
+
                 if (settingsRes.data.success && settingsRes.data.data) {
                     const data = settingsRes.data.data
                     setEnabled(data.enabled)
                     setTime(data.time || "10:00")
                     setSound(data.sound || "default")
                     setVibration(data.vibration !== false)
+                    setSelectedProjects(data.projects || [])
                     
                     if (data.managers && data.managers.length > 0) {
                         setTargetType("select")
@@ -85,8 +93,32 @@ export default function OwnerSettingsPage() {
     }
 
     const handleManagerToggle = (id: string) => {
+        const isChecking = !selectedManagers.includes(id)
+        
+        // Find projects managed by this user
+        const managerProjects = allProjects.filter(p => 
+            p.managers?.some((m: any) => (m._id || m) === id)
+        ).map(p => p._id)
+
         setSelectedManagers(prev => 
-            prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id]
+            isChecking ? [...prev, id] : prev.filter(mId => mId !== id)
+        )
+
+        setSelectedProjects(prev => {
+            if (isChecking) {
+                // Add all of this manager's projects by default
+                const newProjects = managerProjects.filter(pId => !prev.includes(pId))
+                return [...prev, ...newProjects]
+            } else {
+                // Remove all of this manager's projects
+                return prev.filter(pId => !managerProjects.includes(pId))
+            }
+        })
+    }
+
+    const handleProjectToggle = (projectId: string) => {
+        setSelectedProjects(prev => 
+            prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId]
         )
     }
 
@@ -98,7 +130,8 @@ export default function OwnerSettingsPage() {
                 time,
                 sound,
                 vibration,
-                managers: targetType === "all" ? [] : selectedManagers
+                managers: targetType === "all" ? [] : selectedManagers,
+                projects: targetType === "all" ? [] : selectedProjects
             }
 
             const res = await api.post('/notifications/reminder-setting', payload)
@@ -297,22 +330,57 @@ export default function OwnerSettingsPage() {
                                                 {managers.length === 0 ? (
                                                     <p className="text-sm text-muted-foreground py-2 text-center">Aucun manager trouvé.</p>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                        {managers.map((m) => (
-                                                            <div key={m._id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-background/50 transition-colors">
-                                                                <Checkbox
-                                                                    id={`m-${m._id}`}
-                                                                    checked={selectedManagers.includes(m._id)}
-                                                                    onCheckedChange={() => handleManagerToggle(m._id)}
-                                                                />
-                                                                <div className="grid gap-0.5 leading-none">
-                                                                    <Label htmlFor={`m-${m._id}`} className="cursor-pointer text-sm font-semibold flex items-center gap-1.5">
-                                                                        {m.name}
-                                                                    </Label>
-                                                                    <span className="text-[10px] text-primary font-medium uppercase tracking-wide opacity-80">{m.role}</span>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        {managers.map((m) => {
+                                                            const managerProjects = allProjects.filter(p => 
+                                                                p.managers?.some((mgr: any) => (mgr._id || mgr) === m._id)
+                                                            )
+                                                            return (
+                                                                <div key={m._id} className="border rounded-xl p-3 bg-background/30 space-y-3">
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <Checkbox
+                                                                            id={`m-${m._id}`}
+                                                                            checked={selectedManagers.includes(m._id)}
+                                                                            onCheckedChange={() => handleManagerToggle(m._id)}
+                                                                        />
+                                                                        <div className="grid gap-0.5 leading-none">
+                                                                            <Label htmlFor={`m-${m._id}`} className="cursor-pointer text-sm font-semibold flex items-center gap-1.5">
+                                                                                {m.name}
+                                                                            </Label>
+                                                                            <span className="text-[10px] text-primary font-medium uppercase tracking-wide opacity-80">{m.role}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {selectedManagers.includes(m._id) && managerProjects.length > 0 && (
+                                                                        <div className="pl-6 border-l-2 border-primary/20 space-y-2 animate-in fade-in duration-200">
+                                                                            <span className="text-[11px] font-medium text-muted-foreground block">Chantiers ciblés :</span>
+                                                                            <div className="space-y-1.5">
+                                                                                {managerProjects.map(proj => (
+                                                                                    <div key={proj._id} className="flex items-center space-x-2">
+                                                                                        <Checkbox
+                                                                                            id={`proj-${m._id}-${proj._id}`}
+                                                                                            checked={selectedProjects.includes(proj._id)}
+                                                                                            onCheckedChange={() => handleProjectToggle(proj._id)}
+                                                                                        />
+                                                                                        <Label 
+                                                                                            htmlFor={`proj-${m._id}-${proj._id}`}
+                                                                                            className="text-xs cursor-pointer flex items-center gap-1.5 font-normal text-muted-foreground hover:text-foreground transition-colors"
+                                                                                        >
+                                                                                            {proj.name}
+                                                                                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${
+                                                                                                proj.status === 'Active' ? 'bg-green-500/10 text-green-500 font-semibold' : 'bg-orange-500/10 text-orange-500 font-semibold'
+                                                                                            }`}>
+                                                                                                {proj.status}
+                                                                                            </span>
+                                                                                        </Label>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            </div>
-                                                        ))}
+                                                            )
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
