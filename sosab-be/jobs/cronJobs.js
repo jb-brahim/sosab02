@@ -2,6 +2,8 @@ const cron = require('node-cron');
 const { checkLowStock, checkWorkerAbsences, createNotification } = require('../services/notificationService');
 const Report = require('../models/Report');
 const Project = require('../models/Project');
+const Worker = require('../models/Worker');
+const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const ReminderSetting = require('../models/ReminderSetting');
 const webpush = require('web-push');
@@ -98,6 +100,35 @@ cron.schedule('* * * * *', async () => {
 
             for (const manager of targetManagers) {
                 try {
+                    // Check if this manager actually needs to mark attendance today (i.e. has active chantiers with workers, missing attendance)
+                    const activeProjects = await Project.find({ status: 'Active', managers: manager._id });
+                    let needsReminder = false;
+
+                    const startOfToday = new Date();
+                    startOfToday.setHours(0, 0, 0, 0);
+                    const endOfToday = new Date();
+                    endOfToday.setHours(23, 59, 59, 999);
+
+                    for (const project of activeProjects) {
+                        const workerCount = await Worker.countDocuments({ projectId: project._id, active: true });
+                        if (workerCount === 0) continue;
+
+                        const attendanceCount = await Attendance.countDocuments({
+                            projectId: project._id,
+                            date: { $gte: startOfToday, $lte: endOfToday }
+                        });
+
+                        if (attendanceCount === 0) {
+                            needsReminder = true;
+                            break;
+                        }
+                    }
+
+                    if (!needsReminder) {
+                        console.log(`[Reminder Cron] Skipping manager ${manager.name} (Attendance already completed or no chantiers with active workers).`);
+                        continue;
+                    }
+
                     // Create in-app notification for this manager
                     await createNotification(
                         manager._id,
