@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const ReminderSetting = require('../models/ReminderSetting');
 const asyncHandler = require('../middleware/asyncHandler');
 const webpush = require('web-push');
 
@@ -236,5 +237,55 @@ exports.subscribe = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Push subscription registered'
+  });
+});
+
+// @desc    Get attendance reminder settings
+// @route   GET /api/notifications/reminder-setting
+// @access  Private/Admin
+exports.getReminderSetting = asyncHandler(async (req, res) => {
+  let setting = await ReminderSetting.findOne();
+  
+  if (!setting) {
+    setting = await ReminderSetting.create({
+      enabled: true,
+      time: '10:00',
+      managers: [],
+      sound: 'default',
+      vibration: true
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: setting
+  });
+});
+
+// @desc    Update attendance reminder settings
+// @route   POST /api/notifications/reminder-setting
+// @access  Private/Admin
+exports.updateReminderSetting = asyncHandler(async (req, res) => {
+  const { enabled, time, managers, sound, vibration } = req.body;
+
+  let setting = await ReminderSetting.findOne();
+
+  if (!setting) {
+    setting = new ReminderSetting({});
+  }
+
+  if (enabled !== undefined) setting.enabled = enabled;
+  if (time !== undefined) setting.time = time;
+  if (managers !== undefined) setting.managers = managers;
+  if (sound !== undefined) setting.sound = sound;
+  if (vibration !== undefined) setting.vibration = vibration;
+  setting.updatedAt = Date.now();
+
+  await setting.save();
+
+  res.status(200).json({
+    success: true,
+    data: setting,
+    message: 'Paramètres mis à jour avec succès'
   });
 });

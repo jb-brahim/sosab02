@@ -46,16 +46,18 @@ exports.createNotification = async (userId, type, title, message, data = {}, lin
             priority,
             read: false
         });
-
-        // Send Push Notification only if Admin (Owner)
+        // Send Push Notification if Admin, Project Manager or Gérant
         const user = await User.findById(userId);
-        if (user && user.role === 'Admin' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
+        if (user && ['Admin', 'Project Manager', 'Gérant'].includes(user.role) && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
             const payload = JSON.stringify({
                 title: emojiTitle,
                 body: message,
                 link: link || '/',
                 type: type,
-                icon: '/logo.png' // Fallback handled by sw.js custom logic
+                icon: '/logo.png',
+                sound: data.customSound ? `/sounds/${data.customSound}.wav` : undefined,
+                vibrate: data.customVibration !== undefined ? (data.customVibration ? [300, 100, 300, 100, 400] : [100]) : undefined,
+                color: type === 'attendance' ? '#FF0000' : undefined // red highlight on phone
             });
 
             for (const sub of user.pushSubscriptions) {

@@ -64,6 +64,8 @@ self.addEventListener('push', function (event) {
             icon: iconUrl,
             badge: '/badge.png',
             vibrate: data.vibrate || vibrationPattern,
+            sound: data.sound || undefined,
+            color: data.color || undefined,
             tag: data.tag || 'sosab-notification',
             renotify: data.renotify !== undefined ? data.renotify : true,
             data: {

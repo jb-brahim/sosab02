@@ -8,6 +8,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
+import { AttendanceReminderPopup } from "@/components/attendance-reminder-popup"
 
 export default function GerantDashboard() {
     const { user } = useAuth()
@@ -144,6 +145,7 @@ export default function GerantDashboard() {
                     )}
                 </div>
             </div>
+            <AttendanceReminderPopup />
         </div>
     )
 }
