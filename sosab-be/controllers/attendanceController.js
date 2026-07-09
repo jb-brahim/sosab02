@@ -229,8 +229,10 @@ exports.checkDailyAttendanceStatus = asyncHandler(async (req, res) => {
     return res.status(200).json({ success: true, attendanceRequired: false, projects: [] });
   }
 
-  // Find active projects where this user is manager (if not Admin)
-  const query = { status: 'Active' };
+  // Find projects where this user is manager (excluding Planning/Draft, Completed, and Cancelled)
+  const query = {
+    status: { $nin: ['Planning', 'Completed', 'Cancelled', 'Draft'] }
+  };
   if (req.user.role !== 'Admin') {
     query.managers = req.user._id;
   }
