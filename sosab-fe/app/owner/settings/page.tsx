@@ -174,39 +174,7 @@ export default function OwnerSettingsPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Info Card / Quick settings */}
-                <div className="md:col-span-1 space-y-6">
-                    <Card className="glass-card border-primary/25 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
-                            <Bell className="w-24 h-24" />
-                        </div>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground font-semibold">
-                                <Sparkles className="w-4 h-4 text-primary" />
-                                Rappel de Pointage
-                            </CardTitle>
-                            <CardDescription>
-                                Un rappel intelligent pour éviter les oublis d'enregistrement.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                            <p>
-                                Si les présences d'un chantier ne sont pas enregistrées avant l'heure fixée, le système enverra automatiquement une notification push urgente.
-                            </p>
-                            <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 flex items-start gap-3">
-                                <ShieldAlert className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                                <span className="text-xs text-foreground/80">
-                                    Les managers recevront une vibration et le son choisi pour attirer leur attention.
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Configuration form */}
-                <div className="md:col-span-2 space-y-6">
-                    <Card className="glass-card shadow-xl">
+            <Card className="glass-card shadow-xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-bold flex items-center gap-2">
                                 <Bell className="w-5 h-5 text-primary" />
@@ -442,8 +410,6 @@ export default function OwnerSettingsPage() {
                             </div>
                         </CardContent>
                     </Card>
-                </div>
-            </div>
         </div>
     )
 }
