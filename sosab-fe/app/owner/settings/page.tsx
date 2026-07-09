@@ -204,21 +204,19 @@ export default function OwnerSettingsPage() {
 
                             {enabled && (
                                 <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
-                                    {/* Heure de rappel */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Command Bar: Time, Sound, Vibration */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end p-4 bg-muted/20 rounded-2xl border">
+                                        {/* Heure limit */}
                                         <div className="space-y-2">
                                             <Label htmlFor="reminder-time" className="font-semibold text-sm">
                                                 Heure limite de pointage
                                             </Label>
-                                            <p className="text-xs text-muted-foreground mb-1">
-                                                Heure à laquelle le rappel se déclenchera.
-                                            </p>
                                             <Input
                                                 id="reminder-time"
                                                 type="time"
                                                 value={time}
                                                 onChange={(e) => setTime(e.target.value)}
-                                                className="w-full h-11 text-lg font-medium"
+                                                className="w-full h-11 text-base font-medium"
                                             />
                                         </div>
 
@@ -227,9 +225,6 @@ export default function OwnerSettingsPage() {
                                             <Label htmlFor="reminder-sound" className="font-semibold text-sm">
                                                 Son de la Notification
                                             </Label>
-                                            <p className="text-xs text-muted-foreground mb-1">
-                                                Sonnerie jouée sur le téléphone du manager.
-                                            </p>
                                             <div className="flex gap-2">
                                                 <Select value={sound} onValueChange={setSound}>
                                                     <SelectTrigger id="reminder-sound" className="w-full h-11">
@@ -247,30 +242,28 @@ export default function OwnerSettingsPage() {
                                                     variant="outline"
                                                     size="icon"
                                                     onClick={handlePlaySoundPreview}
-                                                    className="h-11 w-11 shrink-0"
+                                                    className="h-11 w-11 shrink-0 bg-background"
                                                     title="Écouter un aperçu"
                                                 >
                                                     <Play className="w-4 h-4 text-primary" />
                                                 </Button>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Vibration */}
-                                    <div className="flex items-center justify-between p-4 bg-muted/10 rounded-2xl border border-dashed">
-                                        <div className="space-y-0.5">
-                                            <Label htmlFor="vibe-active" className="text-sm font-semibold">
-                                                Vibration du Téléphone
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Faire vibrer le téléphone lors du rappel.
-                                            </p>
+                                        {/* Vibration */}
+                                        <div className="flex items-center justify-between p-3.5 bg-background rounded-xl border border-dashed h-11">
+                                            <div className="grid gap-0.5 leading-none">
+                                                <Label htmlFor="vibe-active" className="text-sm font-semibold cursor-pointer">
+                                                    Vibration du Téléphone
+                                                </Label>
+                                                <span className="text-[10px] text-muted-foreground">Faire vibrer le mobile</span>
+                                            </div>
+                                            <Switch
+                                                id="vibe-active"
+                                                checked={vibration}
+                                                onCheckedChange={setVibration}
+                                            />
                                         </div>
-                                        <Switch
-                                            id="vibe-active"
-                                            checked={vibration}
-                                            onCheckedChange={setVibration}
-                                        />
                                     </div>
 
                                     {/* Destinataires */}
@@ -298,7 +291,7 @@ export default function OwnerSettingsPage() {
                                                 {managers.length === 0 ? (
                                                     <p className="text-sm text-muted-foreground py-4 text-center">Aucun manager trouvé.</p>
                                                 ) : (
-                                                    <div className="space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         {managers.map((m) => {
                                                             const managerProjects = allProjects.filter(p => 
                                                                 p.managers?.some((mgr: any) => (mgr._id || mgr) === m._id)
