@@ -326,55 +326,96 @@ export default function OwnerSettingsPage() {
                                         </RadioGroup>
 
                                         {targetType === "select" && (
-                                            <div className="p-4 bg-muted/20 rounded-2xl border space-y-3 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                                            <div className="p-5 bg-muted/10 rounded-2xl border border-muted-foreground/10 space-y-4 animate-in slide-in-from-top-2 duration-200">
                                                 {managers.length === 0 ? (
-                                                    <p className="text-sm text-muted-foreground py-2 text-center">Aucun manager trouvé.</p>
+                                                    <p className="text-sm text-muted-foreground py-4 text-center">Aucun manager trouvé.</p>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-4">
                                                         {managers.map((m) => {
                                                             const managerProjects = allProjects.filter(p => 
                                                                 p.managers?.some((mgr: any) => (mgr._id || mgr) === m._id)
                                                             )
+                                                            const isChecked = selectedManagers.includes(m._id)
                                                             return (
-                                                                <div key={m._id} className="border rounded-xl p-3 bg-background/30 space-y-3">
-                                                                    <div className="flex items-center space-x-3">
-                                                                        <Checkbox
-                                                                            id={`m-${m._id}`}
-                                                                            checked={selectedManagers.includes(m._id)}
-                                                                            onCheckedChange={() => handleManagerToggle(m._id)}
-                                                                        />
-                                                                        <div className="grid gap-0.5 leading-none">
-                                                                            <Label htmlFor={`m-${m._id}`} className="cursor-pointer text-sm font-semibold flex items-center gap-1.5">
-                                                                                {m.name}
-                                                                            </Label>
-                                                                            <span className="text-[10px] text-primary font-medium uppercase tracking-wide opacity-80">{m.role}</span>
+                                                                <div 
+                                                                    key={m._id} 
+                                                                    className={`border rounded-2xl p-4 transition-all duration-300 ${
+                                                                        isChecked 
+                                                                            ? 'bg-background border-primary/30 shadow-sm' 
+                                                                            : 'bg-background/20 border-muted-foreground/10 opacity-75 hover:opacity-100 hover:bg-background/30'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center space-x-3">
+                                                                            <Checkbox
+                                                                                id={`m-${m._id}`}
+                                                                                checked={isChecked}
+                                                                                onCheckedChange={() => handleManagerToggle(m._id)}
+                                                                                className="h-5 w-5"
+                                                                            />
+                                                                            <div className="grid gap-1">
+                                                                                <Label 
+                                                                                    htmlFor={`m-${m._id}`} 
+                                                                                    className="cursor-pointer text-base font-bold text-foreground"
+                                                                                >
+                                                                                    {m.name}
+                                                                                </Label>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wider">
+                                                                                        {m.role}
+                                                                                    </span>
+                                                                                    {isChecked && managerProjects.length > 0 && (
+                                                                                        <span className="text-[10px] text-muted-foreground">
+                                                                                            {managerProjects.length} chantier(s) assigné(s)
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                     
-                                                                    {selectedManagers.includes(m._id) && managerProjects.length > 0 && (
-                                                                        <div className="pl-6 border-l-2 border-primary/20 space-y-2 animate-in fade-in duration-200">
-                                                                            <span className="text-[11px] font-medium text-muted-foreground block">Chantiers ciblés :</span>
-                                                                            <div className="space-y-1.5">
-                                                                                {managerProjects.map(proj => (
-                                                                                    <div key={proj._id} className="flex items-center space-x-2">
-                                                                                        <Checkbox
-                                                                                            id={`proj-${m._id}-${proj._id}`}
-                                                                                            checked={selectedProjects.includes(proj._id)}
-                                                                                            onCheckedChange={() => handleProjectToggle(proj._id)}
-                                                                                        />
-                                                                                        <Label 
-                                                                                            htmlFor={`proj-${m._id}-${proj._id}`}
-                                                                                            className="text-xs cursor-pointer flex items-center gap-1.5 font-normal text-muted-foreground hover:text-foreground transition-colors"
-                                                                                        >
-                                                                                            {proj.name}
-                                                                                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${
-                                                                                                proj.status === 'Active' ? 'bg-green-500/10 text-green-500 font-semibold' : 'bg-orange-500/10 text-orange-500 font-semibold'
-                                                                                            }`}>
-                                                                                                {proj.status}
-                                                                                            </span>
-                                                                                        </Label>
-                                                                                    </div>
-                                                                                ))}
+                                                                    {isChecked && managerProjects.length > 0 && (
+                                                                        <div className="mt-4 pl-8 border-l-2 border-primary/20 space-y-3 animate-in slide-in-from-left-2 duration-200">
+                                                                            <div className="bg-muted/20 rounded-xl p-3.5 border border-muted-foreground/5 space-y-2.5">
+                                                                                <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                                                                                    <HardHat className="w-3.5 h-3.5 text-primary" />
+                                                                                    Chantiers à surveiller :
+                                                                                </span>
+                                                                                <div className="divide-y divide-muted-foreground/5 space-y-2">
+                                                                                    {managerProjects.map((proj, idx) => {
+                                                                                        const isProjChecked = selectedProjects.includes(proj._id)
+                                                                                        return (
+                                                                                            <div 
+                                                                                                key={proj._id} 
+                                                                                                className={`flex items-start space-x-3 pt-2 ${idx === 0 ? 'pt-0' : 'border-t border-muted-foreground/5'}`}
+                                                                                            >
+                                                                                                <Checkbox
+                                                                                                    id={`proj-${m._id}-${proj._id}`}
+                                                                                                    checked={isProjChecked}
+                                                                                                    onCheckedChange={() => handleProjectToggle(proj._id)}
+                                                                                                    className="h-4.5 w-4.5 mt-0.5"
+                                                                                                />
+                                                                                                <div className="grid gap-1 flex-1 leading-tight">
+                                                                                                    <Label 
+                                                                                                        htmlFor={`proj-${m._id}-${proj._id}`}
+                                                                                                        className={`text-sm cursor-pointer font-medium transition-colors ${
+                                                                                                            isProjChecked ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+                                                                                                        }`}
+                                                                                                    >
+                                                                                                        {proj.name}
+                                                                                                    </Label>
+                                                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                                                        <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider ${
+                                                                                                            proj.status === 'Active' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'
+                                                                                                        }`}>
+                                                                                                            {proj.status}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )
+                                                                                    })}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     )}
