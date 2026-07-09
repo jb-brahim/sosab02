@@ -39,9 +39,9 @@ export default function OwnerSettingsPage() {
                 ])
 
                 if (usersRes.data.success) {
-                    // Filter managers
+                    // Filter managers and Admins so Owner can select themselves for testing
                     const filtered = usersRes.data.data.filter((u: any) => 
-                        u.role === "Project Manager" || u.role === "Gérant" || u.role.toLowerCase().includes("manager") || u.role.toLowerCase() === "pm"
+                        u.role === "Project Manager" || u.role === "Gérant" || u.role === "Admin" || u.role.toLowerCase().includes("manager") || u.role.toLowerCase() === "pm"
                     )
                     setManagers(filtered)
                 }

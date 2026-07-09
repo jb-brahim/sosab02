@@ -101,9 +101,12 @@ cron.schedule('* * * * *', async () => {
             for (const manager of targetManagers) {
                 try {
                     // Check if this manager actually needs to mark attendance today (i.e. has chantiers with workers, missing attendance)
-                    const activeProjects = await Project.find({
-                        managers: manager._id
-                    });
+                    // If Admin, check all projects in the system
+                    const query = {};
+                    if (manager.role !== 'Admin') {
+                        query.managers = manager._id;
+                    }
+                    const activeProjects = await Project.find(query);
                     let needsReminder = false;
 
                     const startOfToday = new Date();
