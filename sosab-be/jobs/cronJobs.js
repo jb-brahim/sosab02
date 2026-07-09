@@ -100,9 +100,8 @@ cron.schedule('* * * * *', async () => {
 
             for (const manager of targetManagers) {
                 try {
-                    // Check if this manager actually needs to mark attendance today (i.e. has active chantiers with workers, missing attendance)
+                    // Check if this manager actually needs to mark attendance today (i.e. has chantiers with workers, missing attendance)
                     const activeProjects = await Project.find({
-                        status: { $nin: ['Planning', 'Completed', 'Cancelled', 'Draft'] },
                         managers: manager._id
                     });
                     let needsReminder = false;
