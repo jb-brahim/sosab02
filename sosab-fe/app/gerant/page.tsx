@@ -1,32 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Wallet, Search } from "lucide-react"
+import { Wallet, Search, Building2, MapPin, ChevronRight, HardHat } from "lucide-react"
 import { toast } from "sonner"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { useAuth } from "@/lib/auth-context"
 
-export default function SalarySummaryPage() {
+export default function GerantHomePage() {
+    const { user } = useAuth()
+    const router = useRouter()
     const [projects, setProjects] = useState<any[]>([])
-    const [loading, setLoading] = useState(false)
-    const [fetching, setFetching] = useState(false)
-    const [summaryData, setSummaryData] = useState<any>(null)
-
-    const [formData, setFormData] = useState({
-        projectId: "",
-        startDate: "",
-        endDate: ""
-    })
+    const [searchTerm, setSearchTerm] = useState("")
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -38,7 +26,7 @@ export default function SalarySummaryPage() {
                 }
             } catch (error) {
                 console.error("Failed to load projects", error)
-                toast.error("Impossible de charger les projets")
+                toast.error("Impossible de charger la liste des chantiers")
             } finally {
                 setLoading(false)
             }
@@ -46,171 +34,87 @@ export default function SalarySummaryPage() {
         fetchProjects()
     }, [])
 
-    const handleFetchSummary = async () => {
-        if (!formData.projectId) {
-            toast.error("Veuillez sélectionner un projet")
-            return
-        }
-        if (!formData.startDate || !formData.endDate) {
-            toast.error("Veuillez choisir une période de dates")
-            return
-        }
-
-        const start = new Date(formData.startDate)
-        const end = new Date(formData.endDate)
-
-        if (start > end) {
-            toast.error("La date de début doit être antérieure à la date de fin")
-            return
-        }
-
-        try {
-            setFetching(true)
-            const res = await api.get(`/reports/salary-summary`, {
-                params: {
-                    projectId: formData.projectId,
-                    startDate: formData.startDate,
-                    endDate: formData.endDate
-                }
-            })
-
-            if (res.data.success) {
-                setSummaryData(res.data.data)
-                toast.success("Données récupérées avec succès")
-            }
-        } catch (error: any) {
-            console.error("Failed to fetch salary summary", error)
-            toast.error(error.response?.data?.message || "Échec de la récupération des données")
-            setSummaryData(null)
-        } finally {
-            setFetching(false)
-        }
-    }
+    const filteredProjects = projects.filter(p => 
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in duration-300 px-4 sm:px-0">
-            <div>
-                <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-                    <Wallet className="h-6 w-6 text-primary" />
-                    Récapitulatif des Salaires
-                </h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                    Consultez simplement le total des salaires par projet et par équipe.
-                </p>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+                        <Wallet className="h-7 w-7 text-primary shrink-0" />
+                        Récapitulatif des Salaires
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1 font-medium">
+                        Sélectionnez un chantier pour consulter ses salaires
+                    </p>
+                </div>
             </div>
 
-            <Card className="border-border/40 shadow-sm">
-                <CardContent className="p-5 space-y-5">
-                    <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="project" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sélection du Chantier</Label>
-                            <Select 
-                                value={formData.projectId} 
-                                onValueChange={(value: string) => setFormData({ ...formData, projectId: value })}
-                            >
-                                <SelectTrigger id="project" className="h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                                    <SelectValue placeholder="Choisir un projet..." />
-                                </SelectTrigger>
-                                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[400px] rounded-xl shadow-xl">
-                                    {projects.map((p) => (
-                                        <SelectItem key={p._id} value={p._id} className="whitespace-normal break-words py-2.5">
-                                            {p.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="startDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date Début</Label>
-                                <Input
-                                    id="startDate"
-                                    type="date"
-                                    value={formData.startDate}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, startDate: e.target.value })}
-                                    className="h-12 text-sm rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="endDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date Fin</Label>
-                                <Input
-                                    id="endDate"
-                                    type="date"
-                                    value={formData.endDate}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, endDate: e.target.value })}
-                                    className="h-12 text-sm rounded-xl"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <Button
-                        onClick={handleFetchSummary}
-                        disabled={fetching || loading}
-                        className="w-full h-12 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 mt-2"
-                    >
-                        {fetching ? (
-                            <>
-                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                Calcul...
-                            </>
-                        ) : (
-                            <>
-                                <Search className="w-4 h-4 mr-2" />
-                                Afficher le récapitulatif
-                            </>
-                        )}
-                    </Button>
-                </CardContent>
-            </Card>
+            {/* Search Input */}
+            <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    type="text"
+                    placeholder="Rechercher un chantier par nom ou localisation..."
+                    value={searchTerm}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    className="h-13 pl-12 pr-4 text-sm rounded-2xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm focus:border-primary"
+                />
+            </div>
 
-            {summaryData && (
-                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                    <Card className="border-primary/20 shadow-md bg-primary/5">
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Total des Salaires</h2>
-                            <div className="text-4xl font-black text-primary">
-                                {summaryData.grandTotal.toLocaleString('fr-TN', { style: 'currency', currency: 'TND' })}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-3">
-                                Pour le projet <br/>
-                                <span className="font-bold text-foreground text-sm">{summaryData.project.name}</span>
-                            </p>
-                        </CardContent>
-                    </Card>
+            {/* Projects List */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                    <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-muted-foreground font-medium">Chargement des chantiers...</p>
+                </div>
+            ) : filteredProjects.length === 0 ? (
+                <div className="text-center py-16 px-4 bg-card/50 rounded-2xl border border-dashed border-border/60 space-y-3">
+                    <HardHat className="h-10 w-10 text-muted-foreground mx-auto opacity-50" />
+                    <p className="text-sm font-bold text-foreground">Aucun chantier trouvé</p>
+                    <p className="text-xs text-muted-foreground">Essayez un autre terme de recherche.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-4">
+                    {filteredProjects.map((project) => (
+                        <Card 
+                            key={project._id}
+                            onClick={() => router.push(`/gerant/salary-summary/${project._id}`)}
+                            className="border-border/50 shadow-sm bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer rounded-2xl overflow-hidden group active:scale-[0.99]"
+                        >
+                            <CardContent className="p-5 flex items-center justify-between gap-4">
+                                <div className="flex items-start gap-3.5 min-w-0">
+                                    <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                                        <Building2 className="h-5 w-5" />
+                                    </div>
+                                    <div className="space-y-1 min-w-0">
+                                        <h3 className="font-bold text-base text-foreground leading-snug break-words group-hover:text-primary transition-colors">
+                                            {project.name}
+                                        </h3>
+                                        {project.location && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                                                <MapPin className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                                                <span className="truncate">{project.location}</span>
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
 
-                    <div className="space-y-3">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-foreground/80 pl-1">Détails par équipe</h3>
-                        
-                        {summaryData.groups.length === 0 ? (
-                            <div className="p-6 text-center text-muted-foreground bg-muted/5 rounded-xl border border-dashed border-border/30">
-                                Aucune donnée trouvée.
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-3">
-                                {summaryData.groups.map((group: any, index: number) => (
-                                    <Card key={index} className={`border-border/40 shadow-sm ${group.isDirect ? 'bg-blue-500/5' : ''}`}>
-                                        <CardContent className="p-4 flex items-center justify-between">
-                                            <div className="pr-2">
-                                                <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-1">
-                                                    {group.isDirect ? 'Équipe Directe' : 'Sous-traitant'}
-                                                </div>
-                                                <div className="font-bold text-sm text-foreground line-clamp-2">
-                                                    {group.name}
-                                                </div>
-                                            </div>
-                                            <div className="text-right shrink-0">
-                                                <div className="font-black text-lg text-primary">
-                                                    {group.total.toLocaleString('fr-TN', { style: 'currency', currency: 'TND' })}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className="hidden sm:inline-block text-xs font-bold text-primary group-hover:underline">
+                                        Voir Salaires
+                                    </span>
+                                    <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                        <ChevronRight className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             )}
         </div>
