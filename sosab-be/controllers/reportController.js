@@ -694,6 +694,107 @@ exports.getReport = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get Salary Summary for a project and date range
+// @route   GET /api/reports/salary-summary
+// @access  Private
+exports.getSalarySummary = asyncHandler(async (req, res) => {
+  const { projectId, startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    return res.status(400).json({ success: false, message: 'Please provide projectId, startDate, and endDate' });
+  }
+
+  const start = new Date(startDate);
+  start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setUTCHours(23, 59, 59, 999);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return res.status(400).json({ success: false, message: 'Invalid date format' });
+  }
+
+  const project = await Project.findById(projectId);
+  if (!project) {
+    return res.status(404).json({ success: false, message: 'Project not found' });
+  }
+
+  // Check permissions
+  const isAuthorizedRole = ['Admin', 'admin', 'Gérant', 'Accountant', 'accountant'].includes(req.user.role);
+  if (!isAuthorizedRole) {
+    const isManager = project.managers && project.managers.some(m => m.toString() === req.user._id.toString());
+    if (!isManager) {
+      return res.status(403).json({ success: false, message: 'Not authorized for this project' });
+    }
+  }
+
+  const workers = await Worker.find({ projectId, active: true }).sort({ name: 1 });
+  
+  const subcontractors = workers.filter(w => w.isSubcontractor || w.trade === 'Sous Traitant');
+  const directWorkers = workers.filter(w => !w.supervisorId && !(w.isSubcontractor || w.trade === 'Sous Traitant'));
+
+  let grandTotal = 0;
+  const groups = [];
+
+  const processTeam = async (teamWorkers, teamName, isDirect) => {
+    let teamTotal = 0;
+    
+    for (const worker of teamWorkers) {
+      const attendanceRecords = await Attendance.find({
+        workerId: worker._id,
+        date: { $gte: start, $lte: end },
+        present: true
+      });
+
+      const uniqueDays = new Map();
+      attendanceRecords.forEach(record => {
+        const d = new Date(record.date);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        uniqueDays.set(dateStr, record.dayValue || 1);
+      });
+
+      const daysWorked = Array.from(uniqueDays.values()).reduce((sum, val) => sum + val, 0);
+
+      if (worker.masked && daysWorked === 0) continue;
+
+      const dailyRate = worker.dailySalary || 0;
+      teamTotal += (daysWorked * dailyRate);
+    }
+    
+    if (teamTotal > 0 || isDirect) {
+      groups.push({
+        name: teamName,
+        total: teamTotal,
+        isDirect
+      });
+      grandTotal += teamTotal;
+    }
+  };
+
+  // Process Direct Team
+  if (directWorkers.length > 0) {
+    await processTeam(directWorkers, 'Équipe Directe', true);
+  } else {
+    groups.push({ name: 'Équipe Directe', total: 0, isDirect: true });
+  }
+
+  // Process Subcontractors
+  for (const sub of subcontractors) {
+    const subTeam = workers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
+    const allSubWorkers = [sub, ...subTeam];
+    await processTeam(allSubWorkers, sub.name, false);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      project: { _id: project._id, name: project.name },
+      period: { start, end },
+      grandTotal,
+      groups
+    }
+  });
+});
+
 // @desc    Delete report
 // @route   DELETE /api/reports/:id
 // @access  Private/Admin

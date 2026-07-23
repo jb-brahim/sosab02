@@ -52,6 +52,7 @@ const ownerNavItems = [
     { href: "/owner/managers", icon: Users, label: "Gestion Managers" },
     { href: "/owner/logs", icon: Activity, label: "Journal d'Activité" },
     { href: "/owner/reports", icon: FileText, label: "Génération Rapports" },
+    { href: "/owner/salary-summary", icon: DollarSign, label: "Récap. Salaires" },
     { href: "/owner/news", icon: Megaphone, label: "Annonces" },
     { href: "/owner/settings", icon: Settings, label: "Paramètres" },
 ]

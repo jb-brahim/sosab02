@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
   generateReport,
-  getReport
+  getReport,
+  getSalarySummary
 } = require('../controllers/reportController');
 const { protect } = require('../middleware/auth');
 const { logAction } = require('../middleware/auditLog');
@@ -13,6 +14,10 @@ router.use(protect);
 router
   .route('/generate')
   .post(logAction('create', 'Report'), generateReport);
+  
+router
+  .route('/salary-summary')
+  .get(getSalarySummary);
 
 router
   .route('/')
