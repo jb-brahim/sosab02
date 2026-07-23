@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Wallet, Search } from "lucide-react"
 import { toast } from "sonner"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export default function SalarySummaryPage() {
     const [projects, setProjects] = useState<any[]>([])
@@ -97,17 +104,21 @@ export default function SalarySummaryPage() {
                     <div className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="project" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sélection du Chantier</Label>
-                            <select 
-                                id="project"
-                                className="flex h-12 w-full items-center justify-between rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={formData.projectId}
-                                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                            <Select 
+                                value={formData.projectId} 
+                                onValueChange={(value) => setFormData({ ...formData, projectId: value })}
                             >
-                                <option value="">Choisir un projet...</option>
-                                {projects.map((p) => (
-                                    <option key={p._id} value={p._id}>{p.name.length > 40 ? p.name.substring(0, 40) + '...' : p.name}</option>
-                                ))}
-                            </select>
+                                <SelectTrigger id="project" className="h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                                    <SelectValue placeholder="Choisir un projet..." />
+                                </SelectTrigger>
+                                <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-[400px] rounded-xl shadow-xl">
+                                    {projects.map((p) => (
+                                        <SelectItem key={p._id} value={p._id} className="whitespace-normal break-words py-2.5">
+                                            {p.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4">
@@ -160,7 +171,7 @@ export default function SalarySummaryPage() {
                         <CardContent className="p-6 flex flex-col items-center justify-center text-center">
                             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Total des Salaires</h2>
                             <div className="text-4xl font-black text-primary">
-                                {summaryData.grandTotal.toLocaleString('fr-DZ', { style: 'currency', currency: 'DZD' })}
+                                {summaryData.grandTotal.toLocaleString('fr-TN', { style: 'currency', currency: 'TND' })}
                             </div>
                             <p className="text-xs text-muted-foreground mt-3">
                                 Pour le projet <br/>
@@ -191,7 +202,7 @@ export default function SalarySummaryPage() {
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <div className="font-black text-lg text-primary">
-                                                    {group.total.toLocaleString('fr-DZ', { style: 'currency', currency: 'DZD' })}
+                                                    {group.total.toLocaleString('fr-TN', { style: 'currency', currency: 'TND' })}
                                                 </div>
                                             </div>
                                         </CardContent>
