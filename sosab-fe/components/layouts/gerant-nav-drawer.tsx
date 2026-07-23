@@ -50,6 +50,7 @@ import api from "@/lib/api"
 const gerantNavItems = (t: (key: string) => string) => [
     { href: "/gerant", icon: FolderKanban, label: t("nav.projects") === "nav.projects" ? "Chantier" : (t("nav.projects") === "Projets" ? "Chantier" : t("nav.projects")) || "Chantier" },
     { href: "/gerant/materials", icon: Package, label: "Materils" },
+    { href: "/gerant/salary-summary", icon: DollarSign, label: "Récap. Salaires" },
     { href: "/gerant/reports", icon: FileBarChart, label: t("nav.reports") || "Reports" },
 ]
 
