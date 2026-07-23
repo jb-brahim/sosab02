@@ -81,25 +81,25 @@ export default function SalarySummaryPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in duration-300">
-            <div>
-                <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-                    <Wallet className="h-6 w-6 text-primary" />
+        <div className="space-y-8 max-w-4xl mx-auto pb-24 animate-in fade-in duration-300 px-2 sm:px-0">
+            <div className="text-center sm:text-left">
+                <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center justify-center sm:justify-start gap-3">
+                    <Wallet className="h-8 w-8 text-primary" />
                     Récapitulatif des Salaires
                 </h1>
-                <p className="text-muted-foreground text-xs mt-0.5">
-                    Consultez le total des salaires par projet et par équipe sur une période donnée.
+                <p className="text-muted-foreground text-sm mt-2 font-medium">
+                    Consultez simplement le total des salaires par projet et par équipe.
                 </p>
             </div>
 
-            <Card className="border-border/40 shadow-sm">
-                <CardContent className="p-5 space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="project" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sélection du Chantier</Label>
+            <Card className="border-border/50 shadow-lg bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden">
+                <CardContent className="p-6 sm:p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="project" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sélection du Chantier</Label>
                             <select 
                                 id="project"
-                                className="flex h-10 w-full items-center justify-between rounded-xl border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex h-14 w-full items-center justify-between rounded-xl border-2 border-muted bg-background px-4 py-2 text-sm font-semibold ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
                                 value={formData.projectId}
                                 onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                             >
@@ -109,24 +109,24 @@ export default function SalarySummaryPage() {
                                 ))}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="startDate" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Date Début</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="startDate" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date de Début</Label>
                             <Input
                                 id="startDate"
                                 type="date"
                                 value={formData.startDate}
                                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                className="h-10 text-xs rounded-xl"
+                                className="h-14 text-sm font-semibold rounded-xl border-2 border-muted focus:border-primary px-4 cursor-pointer"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="endDate" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Date Fin</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="endDate" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date de Fin</Label>
                             <Input
                                 id="endDate"
                                 type="date"
                                 value={formData.endDate}
                                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                className="h-10 text-xs rounded-xl"
+                                className="h-14 text-sm font-semibold rounded-xl border-2 border-muted focus:border-primary px-4 cursor-pointer"
                             />
                         </div>
                     </div>
@@ -134,17 +134,17 @@ export default function SalarySummaryPage() {
                     <Button
                         onClick={handleFetchSummary}
                         disabled={fetching || loading}
-                        className="w-full md:w-auto h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6"
+                        className="w-full h-14 text-sm sm:text-base font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md shadow-primary/20 transition-all active:scale-[0.98]"
                     >
                         {fetching ? (
                             <>
-                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                Chargement...
+                                <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-3" />
+                                Calcul en cours...
                             </>
                         ) : (
                             <>
-                                <Search className="w-4 h-4 mr-2" />
-                                Afficher le récapitulatif
+                                <Search className="w-5 h-5 mr-3" />
+                                Afficher le Résultat
                             </>
                         )}
                     </Button>
@@ -152,41 +152,43 @@ export default function SalarySummaryPage() {
             </Card>
 
             {summaryData && (
-                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                    <Card className="border-border/40 shadow-sm bg-primary/5 border-primary/20">
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Total des Salaires</h2>
-                            <div className="text-4xl font-black text-primary">
+                <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-500">
+                    <Card className="border-primary/40 shadow-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl overflow-hidden relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/50" />
+                        <CardContent className="p-8 sm:p-12 flex flex-col items-center justify-center text-center">
+                            <h2 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-3">Total des Salaires</h2>
+                            <div className="text-5xl sm:text-6xl font-black text-primary drop-shadow-sm tracking-tight">
                                 {summaryData.grandTotal.toLocaleString('fr-DZ', { style: 'currency', currency: 'DZD' })}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Pour le projet <span className="font-bold text-foreground">{summaryData.project.name}</span>
+                            <p className="text-sm text-muted-foreground mt-4 font-medium max-w-md">
+                                Période sélectionnée pour le chantier <br/>
+                                <span className="font-bold text-foreground text-base">{summaryData.project.name}</span>
                             </p>
                         </CardContent>
                     </Card>
 
-                    <div className="space-y-3">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-foreground/80 pl-1">Détails par équipe</h3>
+                    <div className="space-y-4">
+                        <h3 className="font-black text-lg uppercase tracking-wider text-foreground/80 pl-2">Détails par équipe</h3>
                         
                         {summaryData.groups.length === 0 ? (
-                            <div className="p-6 text-center text-muted-foreground bg-muted/5 rounded-xl border border-dashed border-border/30">
-                                Aucune donnée trouvée pour cette période.
+                            <div className="p-8 text-center text-muted-foreground bg-card/50 rounded-2xl border-2 border-dashed border-border/50 font-medium">
+                                Aucune donnée de présence ou de salaire trouvée pour cette période.
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {summaryData.groups.map((group: any, index: number) => (
-                                    <Card key={index} className={`border-border/40 shadow-sm transition-all hover:border-primary/30 ${group.isDirect ? 'bg-blue-500/5' : ''}`}>
-                                        <CardContent className="p-5 flex items-center justify-between">
+                                    <Card key={index} className={`border-border/50 shadow-md rounded-2xl transition-all hover:border-primary/40 hover:shadow-lg ${group.isDirect ? 'bg-blue-500/5 border-blue-500/20' : 'bg-card'}`}>
+                                        <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <div>
-                                                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                                                <div className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1.5">
                                                     {group.isDirect ? 'Équipe Directe' : 'Sous-traitant'}
                                                 </div>
-                                                <div className="font-bold text-base text-foreground">
+                                                <div className="font-black text-lg text-foreground">
                                                     {group.name}
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="font-black text-lg text-primary">
+                                            <div className="text-left sm:text-right">
+                                                <div className="font-black text-2xl text-primary">
                                                     {group.total.toLocaleString('fr-DZ', { style: 'currency', currency: 'DZD' })}
                                                 </div>
                                             </div>
