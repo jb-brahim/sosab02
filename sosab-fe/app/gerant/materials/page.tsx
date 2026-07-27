@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Input } from "@/components/ui/input"
 import {
@@ -8,8 +9,7 @@ import {
     Search,
     Loader2,
     HardHat,
-    LayoutGrid,
-    ListFilter
+    ChevronRight
 } from "lucide-react"
 import api from "@/lib/api"
 import { useLanguage } from "@/lib/language-context"
@@ -26,6 +26,7 @@ interface MaterialSummary {
 export default function GerantMaterialsPage() {
     const { user } = useAuth()
     const { t } = useLanguage()
+    const router = useRouter()
     const [materials, setMaterials] = useState<MaterialSummary[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
@@ -107,7 +108,8 @@ export default function GerantMaterialsPage() {
                         {filteredMaterials.map((material, index) => (
                             <div
                                 key={`${material.materialId}-${index}`}
-                                className="glass-card rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 w-full overflow-hidden group active:scale-[0.98] transition-all duration-200 border border-white/5 hover:border-primary/20"
+                                onClick={() => router.push(`/gerant/materials/${material.materialId}`)}
+                                className="glass-card rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 w-full overflow-hidden group active:scale-[0.98] transition-all duration-200 border border-white/5 hover:border-primary/20 cursor-pointer"
                             >
                                 <div className="space-y-1 min-w-0 flex-1 overflow-hidden">
                                     <h3 className="font-bold text-sm text-foreground truncate min-w-0">{material.name}</h3>
@@ -124,7 +126,7 @@ export default function GerantMaterialsPage() {
                                     </div>
                                 </div>
 
-                                <div className="shrink-0 text-right flex flex-col items-end justify-center pl-1">
+                                <div className="shrink-0 flex items-center gap-1.5 pl-1">
                                     <div className="bg-primary/10 border border-primary/20 rounded-xl px-2.5 sm:px-3 py-1.5 flex items-baseline gap-1 text-primary shadow-sm whitespace-nowrap">
                                         <span className="text-base sm:text-lg font-display font-black tabular-nums leading-none">
                                             {material.stockQuantity ?? 0}
@@ -133,6 +135,7 @@ export default function GerantMaterialsPage() {
                                             {material.unit || "U"}
                                         </span>
                                     </div>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors shrink-0" />
                                 </div>
                             </div>
                         ))}
