@@ -125,7 +125,7 @@ export function GerantNavDrawer() {
     const navItems = gerantNavItems(t)
 
     // Show back button on any page that is NOT a top-level nav destination
-    const topLevelRoutes = ["/gerant", "/gerant/reports", "/gerant/settings"]
+    const topLevelRoutes = ["/gerant", "/gerant/projects", "/gerant/materials", "/gerant/reports", "/gerant/salary-summary", "/gerant/settings"]
     const showBack = !topLevelRoutes.includes(pathname)
 
     const handleLogout = () => {
