@@ -12,7 +12,7 @@ export default function GerantLayout({
         <AuthGuard allowedRoles={["admin", "gerant"]}>
             <div className="flex min-h-screen flex-col bg-background">
                 <GerantNavDrawer />
-                <main className="flex-1 w-full max-w-md mx-auto relative">{children}</main>
+                <main className="flex-1 w-full max-w-md mx-auto relative overflow-x-hidden">{children}</main>
             </div>
         </AuthGuard>
     )

@@ -68,17 +68,17 @@ export default function GerantMaterialsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background pb-24">
+        <div className="min-h-screen bg-background pb-24 w-full overflow-x-hidden">
             {/* Header section with Search */}
             <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-white/5 p-4 space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shrink-0">
                             <Package className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                            <h1 className="text-xl font-display font-bold tracking-tight">Matériaux</h1>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-xl font-display font-bold tracking-tight truncate">Matériaux</h1>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate">
                                 {t("stock.all_projects") || "Récapitulatif Stock Global"}
                             </p>
                         </div>
@@ -96,37 +96,37 @@ export default function GerantMaterialsPage() {
                 </div>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 w-full">
                 {filteredMaterials.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center glass rounded-2xl border-dashed">
                         <Package className="h-12 w-12 text-muted-foreground/30 mb-4" />
                         <p className="text-muted-foreground text-sm">{t("common.no_results") || "Aucun matériel trouvé"}</p>
                     </div>
                 ) : (
-                    <div className="grid gap-3">
+                    <div className="grid gap-3 w-full">
                         {filteredMaterials.map((material, index) => (
                             <div
                                 key={`${material.materialId}-${index}`}
-                                className="glass-card rounded-2xl p-4 flex items-center justify-between gap-3 group active:scale-[0.98] transition-all duration-200 border border-white/5 hover:border-primary/20"
+                                className="glass-card rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 w-full overflow-hidden group active:scale-[0.98] transition-all duration-200 border border-white/5 hover:border-primary/20"
                             >
-                                <div className="space-y-1.5 min-w-0 flex-1">
-                                    <h3 className="font-bold text-sm text-foreground truncate">{material.name}</h3>
-                                    <div className="flex items-center gap-1.5 min-w-0">
+                                <div className="space-y-1 min-w-0 flex-1 overflow-hidden">
+                                    <h3 className="font-bold text-sm text-foreground truncate min-w-0">{material.name}</h3>
+                                    <div className="flex items-center gap-1.5 min-w-0 w-full overflow-hidden">
                                         <div className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
-                                        <p className="text-[11px] text-muted-foreground truncate uppercase tracking-wider font-medium">
+                                        <p className="text-[11px] text-muted-foreground truncate uppercase tracking-wider font-medium min-w-0 flex-1">
                                             {material.projectName}
                                         </p>
                                     </div>
-                                    <div className="pt-0.5">
-                                        <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-white/5">
+                                    <div className="pt-0.5 flex items-center">
+                                        <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-white/5 truncate max-w-full">
                                             {material.category || "Consommable"}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="shrink-0 text-right flex flex-col items-end justify-center pl-2">
-                                    <div className="bg-primary/10 border border-primary/20 rounded-xl px-3 py-1.5 flex items-baseline gap-1 text-primary shadow-sm">
-                                        <span className="text-lg font-display font-black tabular-nums leading-none">
+                                <div className="shrink-0 text-right flex flex-col items-end justify-center pl-1">
+                                    <div className="bg-primary/10 border border-primary/20 rounded-xl px-2.5 sm:px-3 py-1.5 flex items-baseline gap-1 text-primary shadow-sm whitespace-nowrap">
+                                        <span className="text-base sm:text-lg font-display font-black tabular-nums leading-none">
                                             {material.stockQuantity ?? 0}
                                         </span>
                                         <span className="text-[10px] font-bold uppercase tracking-tight opacity-90">
