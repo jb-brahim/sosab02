@@ -95,7 +95,7 @@ export default function MaterialsPage() {
                 (m.supplier || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (m.projectName || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-            const projIdStr = (typeof m.projectId === 'object' && m.projectId !== null) ? m.projectId._id : m.projectId;
+            const projIdStr = (typeof m.projectId === 'object' && m.projectId !== null) ? ((m.projectId as any)._id || (m.projectId as any).id) : m.projectId;
             const matchesProject = filterProject === "all" || 
                 String(projIdStr) === String(filterProject) || 
                 m.projectName === filterProject ||
