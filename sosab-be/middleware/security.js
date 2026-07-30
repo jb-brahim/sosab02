@@ -15,12 +15,12 @@ setInterval(() => {
     });
 }, 10 * 60 * 1000);
 
-// 1. Rate limiter for /api/auth/login (Max 10 login attempts per 15 minutes)
+// 1. Rate limiter for /api/auth/login (Max 35 login attempts per 15 minutes)
 const loginLimiter = (req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     const now = Date.now();
     const windowMs = 15 * 60 * 1000; // 15 minutes
-    const maxLoginAttempts = 10;
+    const maxLoginAttempts = 35;
 
     if (!loginAttempts.has(ip)) {
         loginAttempts.set(ip, { count: 1, firstAttempt: now });
@@ -44,6 +44,11 @@ const loginLimiter = (req, res, next) => {
     }
 
     next();
+};
+
+const clearLoginAttempts = (ip) => {
+    if (ip) loginAttempts.delete(ip);
+    else loginAttempts.clear();
 };
 
 // 2. Anti-Sabotage Mass Deletion Limiter (Max 15 DELETE requests per 1 hour)
@@ -82,5 +87,6 @@ const antiDeletionLimiter = (req, res, next) => {
 
 module.exports = {
     loginLimiter,
-    antiDeletionLimiter
+    antiDeletionLimiter,
+    clearLoginAttempts
 };
