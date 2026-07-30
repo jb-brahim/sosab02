@@ -46,16 +46,29 @@ api.interceptors.request.use(
     }
 );
 
-// Add a response interceptor to handle 401 errors
+// Add a response interceptor to handle 401 and 428 (2FA Delete OTP) errors
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
+    async (error) => {
+        const status = error.response?.status;
+        const config = error.config;
+
+        if (status === 401) {
             // Token expired or invalid
             localStorage.removeItem('sosab-user');
             // Force redirect to login
             if (typeof window !== 'undefined') {
                 window.location.href = '/login';
+            }
+        } else if ((status === 428 || status === 403) && error.response?.data?.requiresOtp && config && !config._retryOtp) {
+            config._retryOtp = true;
+            if (typeof window !== 'undefined') {
+                const message = error.response?.data?.message || 'Un code de sécurité à 6 chiffres a été envoyé par email.';
+                const code = window.prompt(`🚨 CONFIRMATION DE SÉCURITÉ (2-Step Verification)\n\n${message}\n\nSaisissez le code à 6 chiffres reçu par email :`);
+                if (code && code.trim()) {
+                    config.headers['x-delete-otp'] = code.trim();
+                    return api.request(config);
+                }
             }
         }
         return Promise.reject(error);
