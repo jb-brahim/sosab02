@@ -35,7 +35,7 @@ const performDatabaseBackup = async (label = '') => {
         for (const col of collections) {
             const docs = await db.collection(col.name).find({}).toArray();
             const filePath = path.join(targetFolder, `${col.name}.json`);
-            fs.writeFileSync(filePath, JSON.stringify(docs, null, 2));
+            fs.writeFileSync(filePath, JSON.stringify(docs));
             
             backupMeta.collections[col.name] = docs.length;
             backupMeta.totalRecords += docs.length;
@@ -46,8 +46,8 @@ const performDatabaseBackup = async (label = '') => {
 
         console.log(`[AutoBackup] ✅ Backup successfully created at: ${targetFolder} (${backupMeta.totalRecords} total records backed up across ${collections.length} collections)`);
 
-        // Clean up backups older than 30 days
-        cleanOldBackups(30);
+        // Clean up backups older than 14 days to conserve disk space
+        cleanOldBackups(14);
 
         return targetFolder;
     } catch (error) {
