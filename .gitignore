@@ -44,3 +44,4 @@ sosab-be/temp/
 # Local build artifacts
 build/
 dist/
+*.xlsx
