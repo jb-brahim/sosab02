@@ -190,8 +190,8 @@ exports.getProjectMaterialLogs = asyncHandler(async (req, res) => {
   const logs = await MaterialLog.find({ materialId: { $in: materialIds } })
     .populate('materialId', 'name unit')
     .populate('loggedBy', 'name')
-    .sort({ date: -1 })
-    .limit(50);
+    .sort({ date: -1, createdAt: -1 })
+    .limit(500);
 
   res.status(200).json({
     success: true,
@@ -353,8 +353,8 @@ exports.getAllMaterialLogs = asyncHandler(async (req, res) => {
       }
     })
     .populate('loggedBy', 'name')
-    .sort({ createdAt: -1 })
-    .limit(100);
+    .sort({ date: -1, createdAt: -1 })
+    .limit(200);
 
   res.status(200).json({
     success: true,

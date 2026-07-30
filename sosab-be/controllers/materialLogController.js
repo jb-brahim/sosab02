@@ -116,7 +116,7 @@ exports.getMaterialLogs = asyncHandler(async (req, res) => {
         .populate('workerId', 'name')
         .populate('taskId', 'name')
         .populate('loggedBy', 'name email')
-        .sort({ createdAt: -1 });
+        .sort({ date: -1, createdAt: -1 });
 
     // Calculate totals
     const inTotal = logs.filter(l => l.type === 'IN').reduce((sum, l) => sum + l.quantity, 0);
