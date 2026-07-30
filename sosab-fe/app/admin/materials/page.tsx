@@ -95,9 +95,15 @@ export default function MaterialsPage() {
                 (m.supplier || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (m.projectName || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-            const matchesProject = filterProject === "all" || m.projectId === filterProject;
+            const projIdStr = (typeof m.projectId === 'object' && m.projectId !== null) ? m.projectId._id : m.projectId;
+            const matchesProject = filterProject === "all" || 
+                String(projIdStr) === String(filterProject) || 
+                m.projectName === filterProject ||
+                m.projectId === filterProject;
+
             const matchesSupplier = filterSupplier === "all" || m.supplier === filterSupplier;
 
+            return matchesSearch && matchesProject && matchesSupplier;
         }).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     }, [materials, searchTerm, filterProject, filterSupplier])
 
