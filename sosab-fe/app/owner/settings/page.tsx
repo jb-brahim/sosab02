@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Bell, Volume2, ShieldAlert, Sparkles, HardHat, Check, Play, Settings, RefreshCw } from "lucide-react"
+import { Bell, Volume2, ShieldAlert, Sparkles, HardHat, Check, Play, Settings, RefreshCw, Database } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
@@ -173,6 +173,47 @@ export default function OwnerSettingsPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Database Backup Section */}
+            <Card className="glass-card shadow-xl border-primary/20 bg-primary/5">
+                <CardHeader>
+                    <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                        <Database className="w-5 h-5 text-primary" />
+                        Sauvegarde de la Base de Données (Anti-Sabotage)
+                    </CardTitle>
+                    <CardDescription>
+                        Sauvegarde automatique chaque nuit à 00:00. Vous pouvez également déclencher une sauvegarde instantanée à tout moment.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-muted/20 rounded-2xl border">
+                    <div className="space-y-1">
+                        <h4 className="font-semibold text-foreground text-sm">Sauvegarde Instantanée Générée</h4>
+                        <p className="text-xs text-muted-foreground">
+                            Crée une copie de sécurité JSON de toutes les collections (Chantiers, Ouvriers, Présences, Matériaux, Salaires).
+                        </p>
+                    </div>
+                    <Button
+                        onClick={async () => {
+                            try {
+                                setSaving(true);
+                                const res = await api.post('/admin/backup/trigger');
+                                if (res.data.success) {
+                                    toast.success("✅ Sauvegarde de la base de données effectuée avec succès !");
+                                }
+                            } catch (err: any) {
+                                toast.error(err.response?.data?.message || "Échec de la sauvegarde.");
+                            } finally {
+                                setSaving(false);
+                            }
+                        }}
+                        disabled={saving}
+                        className="bg-primary hover:bg-primary/90 font-medium shrink-0 shadow-md"
+                    >
+                        <Database className="w-4 h-4 mr-2" />
+                        {saving ? "Sauvegarde en cours..." : "Déclencher une sauvegarde"}
+                    </Button>
+                </CardContent>
+            </Card>
 
             <Card className="glass-card shadow-xl">
                         <CardHeader>

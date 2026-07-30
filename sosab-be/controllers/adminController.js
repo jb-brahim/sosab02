@@ -74,3 +74,24 @@ exports.getAuditLogs = asyncHandler(async (req, res) => {
         data: logs
     });
 });
+
+const { performDatabaseBackup } = require('../jobs/databaseBackup');
+
+// @desc    Trigger manual database backup (Owner/Admin)
+// @route   POST /api/admin/backup/trigger
+// @access  Private/Admin
+exports.triggerManualBackup = asyncHandler(async (req, res) => {
+    const backupPath = await performDatabaseBackup('manual');
+    if (!backupPath) {
+        return res.status(500).json({
+            success: false,
+            message: 'Sauvegarde de la base de données a échoué.'
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        message: 'Sauvegarde effectuée avec succès!',
+        backupPath: backupPath
+    });
+});
