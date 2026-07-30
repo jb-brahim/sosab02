@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   // Version key to force session refresh when significant changes happen
-  const STORAGE_VERSION = 'v2.1-refresh';
+  const STORAGE_VERSION = 'v2.5-owner-superadmin';
 
   useEffect(() => {
     // Check for stored session
