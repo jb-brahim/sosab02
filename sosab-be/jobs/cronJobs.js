@@ -8,6 +8,17 @@ const User = require('../models/User');
 const ReminderSetting = require('../models/ReminderSetting');
 const webpush = require('web-push');
 const { generateReport } = require('../controllers/reportController');
+const { performDatabaseBackup } = require('./databaseBackup');
+
+// Run every day at Midnight (00:00) to perform automated database backup
+cron.schedule('0 0 * * *', async () => {
+    console.log('[Cron] Running daily automated database backup...');
+    try {
+        await performDatabaseBackup('daily');
+    } catch (error) {
+        console.error('[Cron] Error in daily database backup cron:', error);
+    }
+});
 
 // Run every day at 6 PM to check low stock
 cron.schedule('0 18 * * *', async () => {

@@ -20,21 +20,25 @@ const createAdminUser = async () => {
             process.exit(0);
         }
 
+        const password = process.env.ADMIN_PASSWORD;
+        if (!password) {
+            console.error('❌ Error: ADMIN_PASSWORD must be defined in environment variables.');
+            process.exit(1);
+        }
+
         // Create admin user
         const adminUser = await User.create({
             name: 'Admin SOSAB',
-            email: 'admin@sosab.com',
-            password: 'admin123',  // Change this after first login!
+            email: process.env.ADMIN_EMAIL || 'admin@sosab.com',
+            password: password,
             role: 'Admin',
             active: true
         });
 
         console.log('✅ Admin user created successfully!');
-        console.log('\n📧 Login credentials:');
-        console.log('   Email: admin@sosab.com');
-        console.log('   Password: admin123');
+        console.log('\n📧 Account created:');
+        console.log(`   Email: ${adminUser.email}`);
         console.log('   Role:', adminUser.role);
-        console.log('\n⚠️  IMPORTANT: Change this password after first login!');
 
         process.exit(0);
     } catch (error) {

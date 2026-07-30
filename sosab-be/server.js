@@ -75,6 +75,22 @@ if (process.env.NODE_ENV === 'development') {
 // Serve static files (PDF reports)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Security & Rate Limiting Middleware
+const { loginLimiter, antiDeletionLimiter } = require('./middleware/security');
+const { protect } = require('./middleware/auth');
+const requireDeleteOtp = require('./middleware/requireDeleteOtp');
+
+app.use('/api/auth/login', loginLimiter);
+app.use('/api', antiDeletionLimiter);
+
+// Require 2-Step OTP Verification for all HTTP DELETE operations on /api
+app.use('/api', (req, res, next) => {
+  if (req.method === 'DELETE') {
+    return protect(req, res, () => requireDeleteOtp(req, res, next));
+  }
+  next();
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));

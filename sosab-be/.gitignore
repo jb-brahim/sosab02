@@ -9,4 +9,6 @@ coverage/
 *.pdf
 uploads/
 temp/
+backups/
+*.csv
 

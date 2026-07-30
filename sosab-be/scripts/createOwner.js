@@ -31,21 +31,25 @@ const createOwnerUser = async () => {
             process.exit(0);
         }
 
+        const password = process.env.OWNER_PASSWORD || process.env.ADMIN_PASSWORD;
+        if (!password) {
+            console.error('❌ Error: OWNER_PASSWORD or ADMIN_PASSWORD must be defined in environment variables.');
+            process.exit(1);
+        }
+
         // Create owner user with Admin role in DB so it passes all backend middleware
         const ownerUser = await User.create({
             name: 'Propriétaire SOSAB',
-            email: 'owner@sosab.com',
-            password: 'owner123', // You can change this via Settings
+            email: process.env.OWNER_EMAIL || 'owner@sosab.com',
+            password: password,
             role: 'Admin',
             active: true
         });
 
         console.log('✅ Owner super user created successfully!');
-        console.log('\n📧 Login credentials:');
-        console.log('   Email: owner@sosab.com');
-        console.log('   Password: owner123');
+        console.log('\n📧 Account created:');
+        console.log(`   Email: ${ownerUser.email}`);
         console.log('   Role (DB):', ownerUser.role);
-        console.log('\nUse these credentials in the login page. You will be automatically redirected to the new /owner portal.');
 
         process.exit(0);
     } catch (error) {

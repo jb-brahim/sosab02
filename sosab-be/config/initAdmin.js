@@ -27,18 +27,21 @@ const initAdmin = async () => {
     const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL || 'admin@sosab.com' });
 
     if (!adminExists) {
+      if (!process.env.ADMIN_PASSWORD) {
+        console.warn('⚠ Warning: ADMIN_PASSWORD not set in environment. Skipping default admin user creation.');
+        return;
+      }
+
       await User.create({
         name: 'Admin',
         email: process.env.ADMIN_EMAIL || 'admin@sosab.com',
-        password: process.env.ADMIN_PASSWORD || 'Admin123!',
+        password: process.env.ADMIN_PASSWORD,
         role: 'Admin',
         active: true
       });
 
-      console.log('Default admin user created successfully');
-      console.log(`Email: ${process.env.ADMIN_EMAIL || 'admin@sosab.com'}`);
-      console.log(`Password: ${process.env.ADMIN_PASSWORD || 'Admin123!'}`);
-      console.log('⚠️  Please change the default password after first login!');
+      console.log('✓ Default admin user created successfully');
+      console.log(`  Email: ${process.env.ADMIN_EMAIL || 'admin@sosab.com'}`);
     } else {
       console.log('Admin user already exists');
     }

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const Worker = require('../models/Worker');
 const asyncHandler = require('../middleware/asyncHandler');
+const { sendNotificationToRoles } = require('./notificationController');
 
 // @desc    Create project
 // @route   POST /api/projects

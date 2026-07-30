@@ -11,7 +11,9 @@
     "test:pdf": "node scripts/test-pdf-generation.js",
     "test:cleanup": "node scripts/test-pdf-cleanup.js",
     "check:env": "node scripts/check-env.js",
-    "migrate:contacts": "node scripts/migrateWorkerContacts.js"
+    "migrate:contacts": "node scripts/migrateWorkerContacts.js",
+    "backup": "node scripts/backup-db.js",
+    "restore": "node scripts/restore-db.js"
   },
   "keywords": [
     "construction",

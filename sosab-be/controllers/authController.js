@@ -145,3 +145,16 @@ exports.updatePassword = asyncHandler(async (req, res) => {
     message: 'Password updated successfully'
   });
 });
+
+// @desc    Request 2-Step OTP Code for Deletion
+// @route   POST /api/auth/request-delete-otp
+// @access  Private
+exports.requestDeleteOtp = asyncHandler(async (req, res) => {
+  const { sendDeleteOtp } = require('../services/deleteOtpService');
+  const result = await sendDeleteOtp(req.user);
+
+  res.status(200).json({
+    success: true,
+    message: `Un code de sécurité à 6 chiffres a été envoyé à ${req.user.email}`
+  });
+});

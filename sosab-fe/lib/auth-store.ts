@@ -32,26 +32,18 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email: string, password: string) => {
         set({ isLoading: true })
-
-        // Simulate API call - replace with actual API
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        // Demo users for different roles
-        const demoUsers: Record<string, User> = {
-          "admin@sosab.com": { id: "1", email: "admin@sosab.com", name: "Admin User", role: "admin" },
-          "pm@sosab.com": { id: "2", email: "pm@sosab.com", name: "Project Manager", role: "pm" },
-          "worker@sosab.com": { id: "3", email: "worker@sosab.com", name: "Field Worker", role: "worker" },
-          "gerant@sosab.com": { id: "4", email: "gerant@sosab.com", name: "Gerant", role: "gerant" },
-          "accountant@sosab.com": { id: "5", email: "accountant@sosab.com", name: "Accountant", role: "accountant" },
-        }
-
-        const user = demoUsers[email]
-        if (user && password === "demo123") {
-          const token = `demo-token-${Date.now()}`
-          set({ token, user, isAuthenticated: true, isLoading: false })
-        } else {
+        try {
+          const { default: api } = await import("@/lib/api")
+          const res = await api.post("/auth/login", { email, password })
+          if (res.data.success) {
+            set({ token: res.data.token, user: res.data.user, isAuthenticated: true, isLoading: false })
+          } else {
+            set({ isLoading: false })
+            throw new Error(res.data.message || "Invalid credentials")
+          }
+        } catch (error: any) {
           set({ isLoading: false })
-          throw new Error("Invalid credentials")
+          throw new Error(error.response?.data?.message || error.message || "Invalid credentials")
         }
       },
 
