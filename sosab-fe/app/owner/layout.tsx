@@ -16,7 +16,12 @@ export default function OwnerLayout({
 
     useEffect(() => {
         if (!isLoading && user) {
-            if (user.role !== "admin" || (user.email !== "owner@company.com" && !user.email.startsWith("owner@"))) {
+            const isOwner = user.email === "owner@company.com" || 
+                            user.email.startsWith("owner@") || 
+                            user.email === "brahimjaballi0@gmail.com" ||
+                            user.name?.toLowerCase().includes("propriétaire") ||
+                            user.name?.toLowerCase().includes("owner");
+            if (user.role !== "admin" || !isOwner) {
                 router.push("/")
             }
         }
