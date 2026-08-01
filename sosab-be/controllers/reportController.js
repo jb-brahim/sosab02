@@ -417,12 +417,15 @@ exports.generateReport = asyncHandler(async (req, res) => {
     for (const proj of projects) {
       const projDirectWorkers = directWorkers.filter(w => w.projectId.toString() === proj._id.toString());
       if (projDirectWorkers.length > 0) {
-        groups.push({
-          subcontractor: null,
-          project: { _id: proj._id, name: proj.name },
-          projectName: proj.name,
-          workers: await processWorkers(projDirectWorkers)
-        });
+        const processed = await processWorkers(projDirectWorkers);
+        if (processed.length > 0) {
+          groups.push({
+            subcontractor: null,
+            project: { _id: proj._id, name: proj.name },
+            projectName: proj.name,
+            workers: processed
+          });
+        }
       }
     }
 
@@ -432,12 +435,15 @@ exports.generateReport = asyncHandler(async (req, res) => {
       // Process subcontractor himself + his team
       const allSubWorkers = [sub, ...subTeam];
       const subProj = projects.find(p => p._id.toString() === sub.projectId.toString()) || primaryProject;
-      groups.push({
-        subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
-        project: { _id: subProj._id, name: subProj.name },
-        projectName: subProj.name,
-        workers: await processWorkers(allSubWorkers)
-      });
+      const processed = await processWorkers(allSubWorkers);
+      if (processed.length > 0) {
+        groups.push({
+          subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+          project: { _id: subProj._id, name: subProj.name },
+          projectName: subProj.name,
+          workers: processed
+        });
+      }
     }
 
     reportData = { project: primaryProject, projects, headerLabel: dateLabel, groups, rangeLabels };
@@ -532,28 +538,32 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
       if (directWorkers.length > 0) {
         const { payments, groupTotal } = await processPayments(directWorkers);
-        groups.push({
-          subcontractor: null,
-          workers: payments,
-          totalPayment: groupTotal,
-          projectName: project.name
-        });
-        projectTotal += groupTotal;
-        projectGroups.push({ name: 'Équipe Directe', total: groupTotal });
+        if (payments.length > 0) {
+          groups.push({
+            subcontractor: null,
+            workers: payments,
+            totalPayment: groupTotal,
+            projectName: project.name
+          });
+          projectTotal += groupTotal;
+          projectGroups.push({ name: 'Équipe Directe', total: groupTotal });
+        }
       }
 
       for (const sub of subcontractors) {
         const subTeam = projectWorkers.filter(w => w.supervisorId && w.supervisorId.toString() === sub._id.toString());
         const allSubWorkers = [sub, ...subTeam];
         const { payments, groupTotal } = await processPayments(allSubWorkers);
-        groups.push({
-          subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
-          workers: payments,
-          totalPayment: groupTotal,
-          projectName: project.name
-        });
-        projectTotal += groupTotal;
-        projectGroups.push({ name: sub.name, total: groupTotal });
+        if (payments.length > 0) {
+          groups.push({
+            subcontractor: { _id: sub._id, name: sub.name, trade: sub.trade },
+            workers: payments,
+            totalPayment: groupTotal,
+            projectName: project.name
+          });
+          projectTotal += groupTotal;
+          projectGroups.push({ name: sub.name, total: groupTotal });
+        }
       }
 
       projectSummaries.push({

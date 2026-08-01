@@ -812,9 +812,20 @@ export default function MobileProjectDetails() {
 
                         {/* Recursive Worker Renderer Logic (Simplified for cleaner UI) */}
                         <div className="space-y-4 pb-12" style={{ contentVisibility: 'auto' } as any}>
-                            {team.filter(w => !w.masked && !w.supervisorId).map((worker) => {
+                            {team.filter(w => {
+                                const hasAttendance = attendanceMap[w._id] && (attendanceMap[w._id].present || (attendanceMap[w._id].dayValue && attendanceMap[w._id].dayValue > 0));
+                                const shouldShow = !w.masked || hasAttendance;
+                                if (w.supervisorId) return false;
+                                const isSousTraitant = w.isSubcontractor || w.trade === 'Sous Traitant';
+                                if (isSousTraitant) {
+                                    const subWorkers = team.filter(sw => sw.supervisorId === w._id && (!sw.masked || (attendanceMap[sw._id] && (attendanceMap[sw._id].present || (attendanceMap[sw._id].dayValue && attendanceMap[sw._id].dayValue > 0)))));
+                                    return shouldShow || subWorkers.length > 0;
+                                }
+                                return shouldShow;
+                            }).map((worker) => {
                                 const isSousTraitant = worker.isSubcontractor || worker.trade === 'Sous Traitant';
-                                const subWorkers = team.filter(sw => !sw.masked && sw.supervisorId === worker._id);
+                                const subWorkers = team.filter(sw => sw.supervisorId === worker._id && (!sw.masked || (attendanceMap[sw._id] && (attendanceMap[sw._id].present || (attendanceMap[sw._id].dayValue && attendanceMap[sw._id].dayValue > 0)))));
+                                const shouldShowLeader = !worker.masked || (attendanceMap[worker._id] && (attendanceMap[worker._id].present || (attendanceMap[worker._id].dayValue && attendanceMap[worker._id].dayValue > 0)));
 
                                 return (
                                     <div key={worker._id}>
@@ -852,17 +863,19 @@ export default function MobileProjectDetails() {
                                                 {expandedSub === worker._id && (
                                                     <div className="px-3 pb-2 pt-1 bg-accent/5 border-t border-border/30">
                                                         <div className="space-y-2">
-                                                            {/* Render Subcontractor himself first */}
-                                                            <div className="pt-1">
-                                                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("projects.team_leader")}</span>
-                                                                <WorkerAttendanceItem
-                                                                    worker={worker}
-                                                                    status={attendanceMap[worker._id]}
-                                                                    onMark={handleMarkAttendance}
-                                                                    setMap={setAttendanceMap}
-                                                                    isLeader
-                                                                />
-                                                            </div>
+                                                            {/* Render Subcontractor himself first if not masked or has attendance */}
+                                                            {shouldShowLeader && (
+                                                                <div className="pt-1">
+                                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("projects.team_leader")}</span>
+                                                                    <WorkerAttendanceItem
+                                                                        worker={worker}
+                                                                        status={attendanceMap[worker._id]}
+                                                                        onMark={handleMarkAttendance}
+                                                                        setMap={setAttendanceMap}
+                                                                        isLeader
+                                                                    />
+                                                                </div>
+                                                            )}
 
                                                             {subWorkers.length > 0 && (
                                                                 <div className="pt-1">

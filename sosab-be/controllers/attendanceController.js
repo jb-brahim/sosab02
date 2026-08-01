@@ -133,6 +133,9 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     const record = {
       workerId: worker._id,
       workerName: worker.name,
+      masked: worker.masked,
+      isSubcontractor: worker.isSubcontractor || worker.trade === 'Sous Traitant',
+      supervisorId: worker.supervisorId,
       sunday: 0,
       monday: 0,
       tuesday: 0,
@@ -152,6 +155,12 @@ exports.getWeeklyAttendance = asyncHandler(async (req, res) => {
     });
 
     return record;
+  }).filter(record => {
+    if (record.masked) {
+      const totalDays = record.sunday + record.monday + record.tuesday + record.wednesday + record.thursday + record.friday + record.saturday;
+      if (totalDays === 0) return false;
+    }
+    return true;
   });
 
   res.status(200).json({
