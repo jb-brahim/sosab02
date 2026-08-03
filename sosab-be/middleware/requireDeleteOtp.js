@@ -15,6 +15,11 @@ const requireDeleteOtp = async (req, res, next) => {
         });
     }
 
+    // Only enforce 2-Step OTP verification for Owner / Admin account
+    if (req.user.role !== 'Admin') {
+        return next();
+    }
+
     // 1. Check if user already verified 2FA OTP within the last 24 hours
     if (isUserDeleteVerified(req.user._id)) {
         console.log(`[Delete2FA] ✅ Active 24-hour verified delete session for user ${req.user.email}. Proceeding with deletion.`);
