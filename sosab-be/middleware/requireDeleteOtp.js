@@ -15,8 +15,9 @@ const requireDeleteOtp = async (req, res, next) => {
         });
     }
 
-    // Only enforce 2-Step OTP verification for Owner / Admin account
-    if (req.user.role !== 'Admin') {
+    // Only enforce 2-Step OTP verification strictly for the Owner account (brahimjaballi0@gmail.com)
+    const isOwner = req.user.email === 'brahimjaballi0@gmail.com' || req.user.role === 'Owner' || req.user.isOwner === true;
+    if (!isOwner) {
         return next();
     }
 
