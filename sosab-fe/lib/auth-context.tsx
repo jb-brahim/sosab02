@@ -65,63 +65,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // Request GPS coordinates quietly on app startup (only if not recently cached or denied)
+  // Request fresh live GPS coordinates silently on app startup
   useEffect(() => {
     if (typeof window === "undefined" || !("geolocation" in navigator)) {
       return
     }
 
-    // Don't prompt if user previously denied or if cached within last 12 hours
-    const isDenied = localStorage.getItem("sosab-gps-denied")
-    const lastTime = localStorage.getItem("sosab-gps-time")
-    const now = Date.now()
-
-    if (isDenied === "true") return
-    if (lastTime && now - parseInt(lastTime, 10) < 12 * 60 * 60 * 1000) {
-      // Coords still fresh from today, skip prompting
-      return
-    }
-
-    const requestGPS = () => {
+    const captureFreshLocation = (highAccuracy = false) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           localStorage.setItem("sosab-lat", position.coords.latitude.toString())
           localStorage.setItem("sosab-lon", position.coords.longitude.toString())
           localStorage.setItem("sosab-gps-time", Date.now().toString())
           localStorage.removeItem("sosab-gps-denied")
-          console.log("✓ Exact GPS coordinates captured:", position.coords.latitude, position.coords.longitude)
+          console.log("✓ Fresh live GPS location updated:", position.coords.latitude, position.coords.longitude)
         },
         (error) => {
           if (error.code === error.PERMISSION_DENIED) {
             localStorage.setItem("sosab-gps-denied", "true")
           }
-          console.warn("⚠ Geolocation permission denied or failed:", error.message)
+          console.warn("⚠ Geolocation failed:", error.message)
         },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 }
+        { enableHighAccuracy: highAccuracy, timeout: 10000, maximumAge: 0 }
       )
     }
 
-    // Use Permissions API to check status cleanly
+    // Check permission state via Permissions API
     if ("permissions" in navigator && navigator.permissions.query) {
       navigator.permissions.query({ name: "geolocation" as PermissionName })
         .then((result) => {
           if (result.state === "granted") {
-            requestGPS()
+            // Already accepted by user! Fetch fresh live position 100% SILENTLY (no popup ever!)
+            captureFreshLocation(true)
           } else if (result.state === "prompt") {
+            // Not accepted yet; ask once
             const prompted = sessionStorage.getItem("sosab-gps-prompted")
             if (!prompted) {
               sessionStorage.setItem("sosab-gps-prompted", "true")
-              requestGPS()
+              captureFreshLocation(false)
             }
           }
         })
         .catch(() => {
-          const prompted = sessionStorage.getItem("sosab-gps-prompted")
-          if (!prompted) {
-            sessionStorage.setItem("sosab-gps-prompted", "true")
-            requestGPS()
-          }
+          captureFreshLocation(false)
         })
+    } else {
+      captureFreshLocation(false)
     }
   }, [])
 
