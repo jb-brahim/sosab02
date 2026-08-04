@@ -64,12 +64,35 @@ export function PushSubscriptionManager() {
         registerPush()
 
         // Listen for sound and vibration triggers from Service Worker or push messages
+        let activeAudio: HTMLAudioElement | null = null
+
+        const stopActiveAudio = () => {
+            if (activeAudio) {
+                try {
+                    activeAudio.pause()
+                    activeAudio.currentTime = 0
+                } catch (e) {
+                    // ignore
+                }
+                activeAudio = null
+            }
+            if ("vibrate" in navigator) {
+                try {
+                    navigator.vibrate(0)
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+
         if ("serviceWorker" in navigator) {
             const handleMessage = (event: MessageEvent) => {
                 if (event.data && event.data.type === "PLAY_NOTIFICATION_SOUND") {
+                    stopActiveAudio()
                     const soundPath = event.data.sound || "/sounds/default.wav"
                     try {
                         const audio = new Audio(soundPath)
+                        activeAudio = audio
                         audio.play().catch(e => console.warn("Autoplay notification audio blocked:", e))
                     } catch (e) {
                         console.error("Audio playback error:", e)
@@ -85,8 +108,15 @@ export function PushSubscriptionManager() {
                 }
             }
 
+            // User interaction listener to stop sound immediately upon tapping/clicking
+            window.addEventListener("pointerdown", stopActiveAudio, { once: true })
+            window.addEventListener("keydown", stopActiveAudio, { once: true })
+
             navigator.serviceWorker.addEventListener("message", handleMessage)
             return () => {
+                stopActiveAudio()
+                window.removeEventListener("pointerdown", stopActiveAudio)
+                window.removeEventListener("keydown", stopActiveAudio)
                 navigator.serviceWorker.removeEventListener("message", handleMessage)
             }
         }

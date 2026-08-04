@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { AlertTriangle, Clock, ChevronRight, X, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,26 @@ export function AttendanceReminderPopup() {
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
     const [pendingProjects, setPendingProjects] = useState<any[]>([])
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+
+    const stopMedia = () => {
+        if (audioRef.current) {
+            try {
+                audioRef.current.pause()
+                audioRef.current.currentTime = 0
+            } catch (e) {
+                // ignore
+            }
+            audioRef.current = null
+        }
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+            try {
+                navigator.vibrate(0) // Cancel any active vibration
+            } catch (e) {
+                // ignore
+            }
+        }
+    }
 
     useEffect(() => {
         // Only run for PM and Gérant roles who manage attendance
@@ -36,6 +56,7 @@ export function AttendanceReminderPopup() {
                             const vibe = settingRes.data.data.vibration !== false
 
                             const audio = new Audio(`/sounds/${sound}.wav`)
+                            audioRef.current = audio
                             audio.play().catch(e => console.warn("Audio play blocked by browser policy:", e))
 
                             if ("vibrate" in navigator && vibe) {
@@ -52,14 +73,20 @@ export function AttendanceReminderPopup() {
         }
 
         checkStatus()
+
+        return () => {
+            stopMedia()
+        }
     }, [user])
 
     const handleDismiss = () => {
+        stopMedia()
         sessionStorage.setItem("dismissed-attendance-reminder", "true")
         setIsOpen(false)
     }
 
     const handleActionClick = (projectId: string) => {
+        stopMedia()
         handleDismiss()
         if (user?.role === "gerant") {
             router.push(`/gerant/projects/${projectId}?tab=attendance`)
