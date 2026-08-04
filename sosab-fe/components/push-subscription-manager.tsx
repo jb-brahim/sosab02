@@ -43,27 +43,19 @@ export function PushSubscriptionManager() {
                 return
             }
 
-            const subscription = await registration.pushManager.getSubscription()
-            const SUB_VERSION = "v5"
-            const currentVersion = localStorage.getItem("sosab-push-version")
-
-            if (subscription && currentVersion !== SUB_VERSION) {
-                await subscription.unsubscribe()
-                localStorage.removeItem("sosab-push-version")
-            }
-
             let activeSub = await registration.pushManager.getSubscription()
-            if (!activeSub || currentVersion !== SUB_VERSION) {
+            if (!activeSub) {
                 activeSub = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                 })
             }
 
-            await api.post("/notifications/subscribe", activeSub)
-            localStorage.setItem("sosab-push-version", SUB_VERSION)
-            setShowBanner(false)
-            console.log("✓ Push subscription registered successfully in DB")
+            if (activeSub) {
+                await api.post("/notifications/subscribe", activeSub)
+                setShowBanner(false)
+                console.log("✓ Push subscription synced to backend DB for user:", user?.email)
+            }
         } catch (error) {
             console.error("Failed to register push subscription:", error)
         }
