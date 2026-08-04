@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { Bell } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 
 const VAPID_PUBLIC_KEY = "BASf2LIQZqR3HZ4B02FzS0TcqHGwvYlSY-_32Nrl6nMFzd8ftRfPU8Vk4oB2BtoviGCrptgwFO0HtlxT8tmU-D0"
@@ -21,56 +23,62 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export function PushSubscriptionManager() {
     const { user } = useAuth()
+    const [showBanner, setShowBanner] = useState(false)
+
+    const subscribeUser = async () => {
+        try {
+            if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+                return
+            }
+
+            const registration = await navigator.serviceWorker.register("/sw.js")
+            
+            let permission = Notification.permission
+            if (permission === "default") {
+                permission = await Notification.requestPermission()
+            }
+
+            if (permission !== "granted") {
+                console.warn("Notification permission not granted:", permission)
+                return
+            }
+
+            const subscription = await registration.pushManager.getSubscription()
+            const SUB_VERSION = "v5"
+            const currentVersion = localStorage.getItem("sosab-push-version")
+
+            if (subscription && currentVersion !== SUB_VERSION) {
+                await subscription.unsubscribe()
+                localStorage.removeItem("sosab-push-version")
+            }
+
+            let activeSub = await registration.pushManager.getSubscription()
+            if (!activeSub || currentVersion !== SUB_VERSION) {
+                activeSub = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                })
+            }
+
+            await api.post("/notifications/subscribe", activeSub)
+            localStorage.setItem("sosab-push-version", SUB_VERSION)
+            setShowBanner(false)
+            console.log("✓ Push subscription registered successfully in DB")
+        } catch (error) {
+            console.error("Failed to register push subscription:", error)
+        }
+    }
 
     useEffect(() => {
         if (!user) return
 
-        async function registerPush() {
-            try {
-                if (!("serviceWorker" in navigator)) {
-                    console.warn("Service workers are not supported in this browser.")
-                    return
-                }
-
-                const registration = await navigator.serviceWorker.register("/sw.js")
-                console.log("Service Worker registered with scope:", registration.scope)
-
-                // Request Notification permission explicitly if not yet granted
-                if ("Notification" in window && Notification.permission !== "granted") {
-                    const permission = await Notification.requestPermission()
-                    if (permission !== "granted") {
-                        console.warn("Notification permission denied by user.")
-                        return
-                    }
-                }
-
-                const subscription = await registration.pushManager.getSubscription()
-                const SUB_VERSION = "v4" // Increment version to force fresh subscription
-                const currentVersion = localStorage.getItem("sosab-push-version")
-
-                // If old subscription exists but version doesn't match, unsubscribe first
-                if (subscription && currentVersion !== SUB_VERSION) {
-                    console.log("Unsubscribing old push subscription due to VAPID key change...")
-                    await subscription.unsubscribe()
-                    localStorage.removeItem("sosab-push-version")
-                }
-
-                if (!subscription || currentVersion !== SUB_VERSION) {
-                    const newSubscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-                    })
-
-                    await api.post("/notifications/subscribe", newSubscription)
-                    localStorage.setItem("sosab-push-version", SUB_VERSION)
-                    console.log("Push subscription successful (version " + SUB_VERSION + ")")
-                }
-            } catch (error) {
-                console.error("Failed to register push subscription:", error)
+        if (typeof window !== "undefined" && "Notification" in window) {
+            if (Notification.permission === "granted") {
+                subscribeUser()
+            } else if (Notification.permission === "default") {
+                setShowBanner(true)
             }
         }
-
-        registerPush()
 
         // Listen for sound and vibration triggers from Service Worker or push messages
         let activeAudio: HTMLAudioElement | null = null
@@ -117,7 +125,6 @@ export function PushSubscriptionManager() {
                 }
             }
 
-            // User interaction listener to stop sound immediately upon tapping/clicking
             window.addEventListener("pointerdown", stopActiveAudio, { once: true })
             window.addEventListener("keydown", stopActiveAudio, { once: true })
 
@@ -131,5 +138,23 @@ export function PushSubscriptionManager() {
         }
     }, [user])
 
-    return null
+    if (!user || !showBanner) return null
+
+    return (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-amber-500 text-slate-950 p-3 rounded-2xl shadow-2xl border border-amber-400 flex items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2.5">
+                <Bell className="w-5 h-5 shrink-0 animate-bounce text-slate-950" />
+                <p className="text-xs font-bold leading-snug text-slate-950">
+                    Activer les notifications mobile pour recevoir les rappels avec son & vibration.
+                </p>
+            </div>
+            <Button
+                size="sm"
+                onClick={subscribeUser}
+                className="bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs h-8 px-3 rounded-xl shrink-0"
+            >
+                Activer
+            </Button>
+        </div>
+    )
 }
