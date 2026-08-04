@@ -182,9 +182,10 @@ cron.schedule('* * * * *', async () => {
                         });
 
                         const options = {
-                            TTL: 86400,
+                            TTL: 60,
                             headers: {
-                                Urgency: 'high'
+                                Urgency: 'high',
+                                Topic: 'sosab-attendance'
                             }
                         };
 

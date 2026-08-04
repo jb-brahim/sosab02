@@ -363,9 +363,10 @@ exports.triggerTestReminder = asyncHandler(async (req, res) => {
         });
 
         const options = {
-          TTL: 86400,
+          TTL: 60,
           headers: {
-            Urgency: 'high'
+            Urgency: 'high',
+            Topic: 'sosab-attendance'
           }
         };
 
