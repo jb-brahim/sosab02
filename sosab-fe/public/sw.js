@@ -63,7 +63,7 @@ self.addEventListener('push', function (event) {
             body: data.body,
             icon: iconUrl,
             badge: '/badge.png',
-            vibrate: data.vibrate || [3000, 100, 3000, 100, 3000],
+            vibrate: data.vibrate || [90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 300, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15],
             sound: data.sound || '/sounds/default.wav',
             color: data.color || '#FF0000',
             tag: 'sosab-attendance-alert', // Standardized tag allows renotify: true to re-trigger sound & vibration on every push

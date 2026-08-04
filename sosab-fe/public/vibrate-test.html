@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔔 Testeur de Son & Alarme SOSAB (Infinix & Android)</title>
+    <title>📳 Testeur de Vibration Jackhammer (Puissance Max)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -40,9 +40,9 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
-        .btn-alarm { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
-        .btn-bell { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-jackhammer { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .btn-rapid { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+        .btn-long { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
         .btn-stop { background: #334155; color: #94a3b8; }
         .btn:active { transform: scale(0.96); }
         .status {
@@ -55,85 +55,91 @@
             border: 1px solid #334155;
             color: #10b981;
         }
-        .note {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: #f59e0b;
-            font-size: 11px;
-            line-height: 1.5;
-            text-align: left;
-        }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🚨 Testeur de Son & Alarme SOSAB</h1>
-        <p>Sur les téléphones Android (Infinix), le vibreur Web est bridé par le système. Utilisez une alarme sonore forte !</p>
+        <h1>🔨 Testeur Jackhammer (Vibration FORTE)</h1>
+        <p>Utilise la modulation d'impulsions haute fréquence (PWM) pour faire résonner le châssis de votre téléphone à puissance maximale.</p>
 
-        <button class="btn btn-red" onclick="playSound('/sounds/red_alert.wav')">
-            🚨 Alerte Rouge (Sirène Forte)
+        <button class="btn btn-jackhammer" onclick="testJackhammer()">
+            🔨 EFFET MARTEAU-PIQUEUR (Puissance Max)
         </button>
 
-        <button class="btn btn-alarm" onclick="playSound('/sounds/alarm.wav')">
-            ⏰ Alarme Numérique High-Pitch
+        <button class="btn btn-rapid" onclick="testRapidStaccato()">
+            ⚡ VIBRATION STACCATO RAPIDE (Haute Résonance)
         </button>
 
-        <button class="btn btn-bell" onclick="playSound('/sounds/bell.wav')">
-            🔔 Cloche de Rappel (Ringing)
+        <button class="btn btn-long" onclick="testLongPulse()">
+            📳 IMPULSION MAX 5 SECONDES
         </button>
 
-        <button class="btn btn-stop" onclick="stopSound()">
-            🛑 Arrêter le Son
+        <button class="btn btn-stop" onclick="stopVibrate()">
+            🛑 Arrêter la Vibration
         </button>
 
-        <div id="status" class="status">Appuyez sur un bouton pour tester la sonnerie</div>
-
-        <div class="note">
-            💡 <b>Note Technique Android (Infinix) :</b><br>
-            Le système Android XOS limite la puissance électrique du vibreur pour les sites web (`navigator.vibrate`). Pour un rappel immanquable sur votre Infinix, sélectionnez le son <b>Alerte Rouge (Sirène)</b> dans les paramètres du Propriétaire SOSAB !
-        </div>
+        <div id="status" class="status">Appuyez sur un bouton pour tester la puissance</div>
     </div>
 
     <script>
-        let currentAudio = null;
-
-        function playSound(path) {
-            stopSound();
+        function testJackhammer() {
+            stopVibrate();
             const status = document.getElementById('status');
-            try {
-                // Also trigger vibration
-                if ("vibrate" in navigator) {
-                    navigator.vibrate([2000, 200, 2000]);
+            if ("vibrate" in navigator) {
+                // Generate 50 rapid 90ms/15ms PWM pulses (Excites ERM motor resonance)
+                const pattern = [];
+                for (let i = 0; i < 40; i++) {
+                    pattern.push(90, 15);
                 }
-                currentAudio = new Audio(path);
-                currentAudio.play().then(() => {
-                    status.innerText = "🔊 Son en cours de lecture à volume maximal !";
-                    status.style.color = "#10b981";
-                }).catch(e => {
-                    status.innerText = "⚠️ Cliquez sur la page d'abord pour autoriser l'audio.";
-                    status.style.color = "#f59e0b";
-                });
-            } catch(e) {
-                status.innerText = "❌ Erreur: " + e.message;
-                status.style.color = "#ef4444";
+                pattern.push(300);
+                for (let i = 0; i < 40; i++) {
+                    pattern.push(90, 15);
+                }
+
+                try {
+                    navigator.vibrate(0);
+                    const res = navigator.vibrate(pattern);
+                    status.innerText = res ? "🔨 Vibration Jackhammer lancée à puissance max !" : "⚠️ Refusé par le système";
+                    status.style.color = res ? "#10b981" : "#f59e0b";
+                } catch(e) {
+                    status.innerText = "❌ Erreur: " + e.message;
+                    status.style.color = "#ef4444";
+                }
             }
         }
 
-        function stopSound() {
-            if (currentAudio) {
+        function testRapidStaccato() {
+            stopVibrate();
+            const status = document.getElementById('status');
+            if ("vibrate" in navigator) {
+                const pattern = [];
+                for (let i = 0; i < 60; i++) {
+                    pattern.push(120, 20);
+                }
                 try {
-                    currentAudio.pause();
-                    currentAudio.currentTime = 0;
+                    navigator.vibrate(0);
+                    navigator.vibrate(pattern);
+                    status.innerText = "⚡ Staccato rapide actif !";
+                    status.style.color = "#f59e0b";
                 } catch(e) {}
-                currentAudio = null;
             }
+        }
+
+        function testLongPulse() {
+            stopVibrate();
+            if ("vibrate" in navigator) {
+                navigator.vibrate(0);
+                navigator.vibrate([5000]);
+                document.getElementById('status').innerText = "📳 Impulsion 5 secondes active";
+                document.getElementById('status').style.color = "#3b82f6";
+            }
+        }
+
+        function stopVibrate() {
             if ("vibrate" in navigator) {
                 navigator.vibrate(0);
             }
-            document.getElementById('status').innerText = "🛑 Son arrêté";
+            document.getElementById('status').innerText = "🛑 Vibration arrêtée";
             document.getElementById('status').style.color = "#94a3b8";
         }
     </script>

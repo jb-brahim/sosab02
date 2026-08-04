@@ -356,7 +356,7 @@ exports.triggerTestReminder = asyncHandler(async (req, res) => {
           icon: '/logo.png',
           badge: '/badge.png',
           sound: `/sounds/${setting ? setting.sound : 'default'}.wav`,
-          vibrate: setting && setting.vibration ? [3000, 100, 3000, 100, 3000] : [200],
+          vibrate: setting && setting.vibration ? [90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 300, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15, 90, 15] : [200],
           color: '#FF0000',
           renotify: true,
           requireInteraction: true
