@@ -72,7 +72,7 @@ export function AttendanceReminderPopup() {
                                         badge: "/badge.png",
                                         vibrate: vibe ? [300, 100, 300, 100, 400] : [100],
                                         tag: "sosab-attendance-popup"
-                                    })
+                                    } as any)
                                 } catch (nErr) {
                                     // ignore fallback
                                 }
