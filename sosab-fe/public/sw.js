@@ -65,9 +65,11 @@ self.addEventListener('push', function (event) {
             badge: '/badge.png',
             vibrate: data.vibrate || vibrationPattern,
             sound: data.sound || undefined,
-            color: data.color || undefined,
+            color: data.color || '#FF0000',
             tag: data.tag || 'sosab-notification',
             renotify: data.renotify !== undefined ? data.renotify : true,
+            requireInteraction: true, // Stays on phone lock screen until manager taps it!
+            silent: false, // Ensures phone system sound plays when closed
             data: {
                 url: data.link || '/'
             },
