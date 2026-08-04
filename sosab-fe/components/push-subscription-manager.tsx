@@ -62,6 +62,34 @@ export function PushSubscriptionManager() {
         }
 
         registerPush()
+
+        // Listen for sound and vibration triggers from Service Worker or push messages
+        if ("serviceWorker" in navigator) {
+            const handleMessage = (event: MessageEvent) => {
+                if (event.data && event.data.type === "PLAY_NOTIFICATION_SOUND") {
+                    const soundPath = event.data.sound || "/sounds/default.wav"
+                    try {
+                        const audio = new Audio(soundPath)
+                        audio.play().catch(e => console.warn("Autoplay notification audio blocked:", e))
+                    } catch (e) {
+                        console.error("Audio playback error:", e)
+                    }
+
+                    if ("vibrate" in navigator && event.data.vibrate) {
+                        try {
+                            navigator.vibrate(event.data.vibrate)
+                        } catch (e) {
+                            console.warn("Vibration error:", e)
+                        }
+                    }
+                }
+            }
+
+            navigator.serviceWorker.addEventListener("message", handleMessage)
+            return () => {
+                navigator.serviceWorker.removeEventListener("message", handleMessage)
+            }
+        }
     }, [user])
 
     return null

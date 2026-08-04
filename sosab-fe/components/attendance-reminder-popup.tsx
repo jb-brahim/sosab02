@@ -27,6 +27,24 @@ export function AttendanceReminderPopup() {
                 if (res.data.success && res.data.attendanceRequired && res.data.projects.length > 0) {
                     setPendingProjects(res.data.projects)
                     setIsOpen(true)
+
+                    // Fetch custom sound and vibration settings configured by Owner
+                    try {
+                        const settingRes = await api.get('/notifications/reminder-setting')
+                        if (settingRes.data.success && settingRes.data.data) {
+                            const sound = settingRes.data.data.sound || 'default'
+                            const vibe = settingRes.data.data.vibration !== false
+
+                            const audio = new Audio(`/sounds/${sound}.wav`)
+                            audio.play().catch(e => console.warn("Audio play blocked by browser policy:", e))
+
+                            if ("vibrate" in navigator && vibe) {
+                                navigator.vibrate([300, 100, 300, 100, 400])
+                            }
+                        }
+                    } catch (sErr) {
+                        console.warn("Could not fetch reminder audio settings:", sErr)
+                    }
                 }
             } catch (err) {
                 console.error("Failed to check daily attendance status", err)

@@ -79,6 +79,17 @@ self.addEventListener('push', function (event) {
             ]
         };
 
+        // Broadcast sound and vibration to any active client window
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            clientList.forEach(function (client) {
+                client.postMessage({
+                    type: 'PLAY_NOTIFICATION_SOUND',
+                    sound: data.sound || '/sounds/default.wav',
+                    vibrate: data.vibrate || [300, 100, 300, 100, 400]
+                });
+            });
+        });
+
         event.waitUntil(
             self.registration.showNotification(data.title, options)
         );
