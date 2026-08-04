@@ -65,9 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // Request GPS coordinates on app startup to track actions precisely
+  // Request GPS coordinates quietly on app startup (only if not recently cached or denied)
   useEffect(() => {
     if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      return
+    }
+
+    // Don't prompt if user previously denied or if cached within last 12 hours
+    const isDenied = localStorage.getItem("sosab-gps-denied")
+    const lastTime = localStorage.getItem("sosab-gps-time")
+    const now = Date.now()
+
+    if (isDenied === "true") return
+    if (lastTime && now - parseInt(lastTime, 10) < 12 * 60 * 60 * 1000) {
+      // Coords still fresh from today, skip prompting
       return
     }
 
@@ -76,50 +87,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (position) => {
           localStorage.setItem("sosab-lat", position.coords.latitude.toString())
           localStorage.setItem("sosab-lon", position.coords.longitude.toString())
+          localStorage.setItem("sosab-gps-time", Date.now().toString())
+          localStorage.removeItem("sosab-gps-denied")
           console.log("✓ Exact GPS coordinates captured:", position.coords.latitude, position.coords.longitude)
         },
         (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            localStorage.setItem("sosab-gps-denied", "true")
+          }
           console.warn("⚠ Geolocation permission denied or failed:", error.message)
         },
-        { enableHighAccuracy: true, timeout: 15000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 }
       )
     }
 
-    // Try to use the Permissions API to check if permission is already granted, prompt, or denied.
-    // If it's already granted, we can call it silently. If it is 'prompt', we only prompt once per session.
+    // Use Permissions API to check status cleanly
     if ("permissions" in navigator && navigator.permissions.query) {
       navigator.permissions.query({ name: "geolocation" as PermissionName })
         .then((result) => {
           if (result.state === "granted") {
-            // Already granted, query silently in background to keep coords fresh
             requestGPS()
           } else if (result.state === "prompt") {
-            // Not granted yet; only prompt once per session
             const prompted = sessionStorage.getItem("sosab-gps-prompted")
             if (!prompted) {
               sessionStorage.setItem("sosab-gps-prompted", "true")
               requestGPS()
             }
           }
-          // If 'denied', do not call requestGPS to avoid spamming or warnings
         })
         .catch(() => {
-          // Fallback if query fails
           const prompted = sessionStorage.getItem("sosab-gps-prompted")
           if (!prompted) {
             sessionStorage.setItem("sosab-gps-prompted", "true")
             requestGPS()
           }
         })
-    } else {
-      // Fallback for browsers without permissions.query support
-      const prompted = sessionStorage.getItem("sosab-gps-prompted")
-      if (!prompted) {
-        sessionStorage.setItem("sosab-gps-prompted", "true")
-        requestGPS()
-      }
     }
-  }, [user])
+  }, [])
 
   const login = async (email: string, password: string) => {
     try {
