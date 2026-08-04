@@ -3,6 +3,7 @@ const User = require('../models/User');
 const ReminderSetting = require('../models/ReminderSetting');
 const asyncHandler = require('../middleware/asyncHandler');
 const webpush = require('web-push');
+const mongoose = require('mongoose');
 
 // Configure VAPID keys
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -18,7 +19,6 @@ const sendPushToAdmin = async (userId, title, message, link, type = 'system') =>
   try {
     const user = await User.findById(userId);
     if (user && user.role === 'Admin' && user.pushSubscriptions && user.pushSubscriptions.length > 0) {
-      // Emoji map based on notification type
       const emojiMap = {
         'low_stock': '⚠️',
         'stock': '⚠️',
@@ -32,7 +32,7 @@ const sendPushToAdmin = async (userId, title, message, link, type = 'system') =>
       };
 
       let emojiTitle = title;
-      const emoji = emojiMap[type] || emojiMap[type.toLowerCase()] || '';
+      const emoji = emojiMap[type] || emojiMap[type?.toLowerCase()] || '';
       if (emoji && !title.startsWith(emoji)) {
         emojiTitle = `${emoji} ${title}`;
       }
@@ -67,7 +67,6 @@ const sendPushToAdmin = async (userId, title, message, link, type = 'system') =>
 exports.getNotifications = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  // Check if user is accessing their own notifications or is Admin
   if (req.user._id.toString() !== userId && req.user.role !== 'Admin') {
     return res.status(403).json({
       success: false,
@@ -106,7 +105,6 @@ exports.markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user owns this notification or is Admin
   if (notification.userId.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
     return res.status(403).json({
       success: false,
@@ -123,14 +121,13 @@ exports.markAsRead = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Create notification (helper function for other controllers)
+// @desc    Create notification
 // @route   POST /api/notifications
 // @access  Private/Admin
 exports.createNotification = asyncHandler(async (req, res) => {
   const { userId, type, message, link } = req.body;
   const title = req.body.title || 'Notification';
 
-  // Emoji map based on notification type
   const emojiMap = {
     'low_stock': '⚠️',
     'stock': '⚠️',
@@ -157,7 +154,6 @@ exports.createNotification = asyncHandler(async (req, res) => {
     title: emojiTitle
   });
 
-  // Send push
   await sendPushToAdmin(userId, emojiTitle, message, link, type);
 
   res.status(201).json({
@@ -173,7 +169,6 @@ exports.sendNotificationToRoles = async (roles, type, message, link, title = 'Al
     const users = await User.find({ role: { $in: roles }, active: true });
     if (users.length === 0) return;
 
-    // Emoji map based on notification type
     const emojiMap = {
       'low_stock': '⚠️',
       'stock': '⚠️',
@@ -202,7 +197,6 @@ exports.sendNotificationToRoles = async (roles, type, message, link, title = 'Al
 
     await Notification.insertMany(notifications);
 
-    // Send push to each user if they are Admin (Owner)
     for (const user of users) {
       if (user.role === 'Admin') {
         await sendPushToAdmin(user._id, emojiTitle, message, link, type);
@@ -218,25 +212,33 @@ exports.sendNotificationToRoles = async (roles, type, message, link, title = 'Al
 // @access  Private
 exports.subscribe = asyncHandler(async (req, res) => {
   const subscription = req.body;
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ success: false, message: 'Subscription payload is required' });
+  }
 
-  // Find user and update subscriptions
   const user = await User.findById(req.user._id);
-
   if (!user) {
     return res.status(404).json({ success: false, message: 'User not found' });
   }
 
-  // Check if subscription already exists
-  const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
-
-  if (!exists) {
-    user.pushSubscriptions.push(subscription);
-    await user.save();
+  if (!user.pushSubscriptions) {
+    user.pushSubscriptions = [];
   }
+
+  user.pushSubscriptions = user.pushSubscriptions.filter(sub => sub.endpoint !== subscription.endpoint);
+  user.pushSubscriptions.push(subscription);
+
+  if (user.pushSubscriptions.length > 3) {
+    user.pushSubscriptions = user.pushSubscriptions.slice(-3);
+  }
+
+  await user.save();
+  console.log(`[PushSubscribe] Registered fresh push token for ${user.name} (${user.pushSubscriptions.length} active device tokens)`);
 
   res.status(200).json({
     success: true,
-    message: 'Push subscription registered'
+    message: 'Push subscription registered',
+    activeCount: user.pushSubscriptions.length
   });
 });
 
@@ -265,6 +267,7 @@ exports.getReminderSetting = asyncHandler(async (req, res) => {
 
 // @desc    Update attendance reminder settings
 // @route   POST /api/notifications/reminder-setting
+// @access  Private/Admin
 exports.updateReminderSetting = asyncHandler(async (req, res) => {
   const { enabled, time, managers, projects, sound, vibration, requireGps, gpsTargetType, gpsManagers } = req.body;
 
