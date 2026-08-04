@@ -6,7 +6,8 @@ const {
   createNotification,
   subscribe,
   getReminderSetting,
-  updateReminderSetting
+  updateReminderSetting,
+  triggerTestReminder
 } = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -14,6 +15,10 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 // Specific routes first
+router
+  .route('/test-reminder')
+  .post(authorize('Admin'), triggerTestReminder);
+
 router
   .route('/reminder-setting')
   .get(authorize('Admin'), getReminderSetting)

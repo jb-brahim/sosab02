@@ -18,6 +18,7 @@ export default function OwnerSettingsPage() {
     const { user } = useAuth()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [testingReminder, setTestingReminder] = useState(false)
     const [managers, setManagers] = useState<any[]>([])
     
     // Setting Form State
@@ -152,6 +153,22 @@ export default function OwnerSettingsPage() {
             toast.error("Échec de l'enregistrement des paramètres")
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleTestReminderNow = async () => {
+        try {
+            setTestingReminder(true)
+            await handleSaveSettings()
+            const res = await api.post('/notifications/test-reminder')
+            if (res.data.success) {
+                toast.success(res.data.message || "Rappel de test envoyé sur le mobile !")
+            }
+        } catch (err: any) {
+            console.error("Failed to send test reminder:", err)
+            toast.error(err.response?.data?.message || "Échec de l'envoi du test de rappel")
+        } finally {
+            setTestingReminder(false)
         }
     }
 
@@ -620,11 +637,21 @@ export default function OwnerSettingsPage() {
                             )}
 
                             {/* Action bar */}
-                            <div className="flex justify-end pt-4 border-t">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleTestReminderNow}
+                                    disabled={testingReminder || saving}
+                                    className="w-full sm:w-auto h-11 px-5 font-semibold text-amber-500 border-amber-500/30 hover:bg-amber-500/10 active:scale-95 transition-transform"
+                                >
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    {testingReminder ? "Envoi du test en cours..." : "🚀 Envoyer un Rappel de Test Instantané"}
+                                </Button>
                                 <Button
                                     onClick={handleSaveSettings}
-                                    disabled={saving}
-                                    className="px-6 h-11 font-medium bg-primary hover:bg-primary/95 shadow-lg active:scale-95 transition-transform"
+                                    disabled={saving || testingReminder}
+                                    className="w-full sm:w-auto px-6 h-11 font-medium bg-primary hover:bg-primary/95 shadow-lg active:scale-95 transition-transform"
                                 >
                                     {saving ? "Enregistrement..." : "Enregistrer les modifications"}
                                 </Button>

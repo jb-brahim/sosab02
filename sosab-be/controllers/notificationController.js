@@ -293,3 +293,92 @@ exports.updateReminderSetting = asyncHandler(async (req, res) => {
     message: 'Paramètres mis à jour avec succès'
   });
 });
+
+// @desc    Trigger instant test attendance reminder to selected managers
+// @route   POST /api/notifications/test-reminder
+// @access  Private/Admin
+exports.triggerTestReminder = asyncHandler(async (req, res) => {
+  const setting = await ReminderSetting.findOne();
+  if (!setting) {
+    return res.status(404).json({ success: false, message: 'Aucun paramètre de rappel configuré' });
+  }
+
+  // Find target managers
+  let targetManagers = [];
+  if (setting.managers && setting.managers.length > 0) {
+    targetManagers = await User.find({ _id: { $in: setting.managers }, active: true });
+  } else {
+    targetManagers = await User.find({ role: { $in: ['Project Manager', 'Gérant'] }, active: true });
+  }
+
+  if (targetManagers.length === 0) {
+    return res.status(400).json({ success: false, message: 'Aucun gestionnaire actif ciblé' });
+  }
+
+  let pushSentCount = 0;
+
+  for (const manager of targetManagers) {
+    try {
+      // In-app notification
+      await Notification.create({
+        user: manager._id,
+        type: 'attendance',
+        title: '🚨 Rappel Présence (TEST INSTANTANÉ)',
+        message: `Veuillez enregistrer les présences pour vos chantiers d'aujourd'hui.`,
+        data: { customSound: setting.sound, customVibration: setting.vibration },
+        link: manager.role === 'Gérant' ? '/gerant' : '/app',
+        priority: 'high'
+      });
+
+      // Web Push notification
+      if (manager.pushSubscriptions && manager.pushSubscriptions.length > 0) {
+        const payload = JSON.stringify({
+          title: '🚨 Rappel Présence (TEST INSTANTANÉ)',
+          body: `Veuillez enregistrer les présences pour vos chantiers d'aujourd'hui.`,
+          link: manager.role === 'Gérant' ? '/gerant' : '/app',
+          type: 'attendance',
+          icon: '/logo.png',
+          badge: '/badge.png',
+          sound: `/sounds/${setting.sound}.wav`,
+          vibrate: setting.vibration ? [300, 100, 300, 100, 400] : [100],
+          color: '#FF0000',
+          renotify: true,
+          requireInteraction: true
+        });
+
+        const options = {
+          TTL: 86400,
+          headers: {
+            Urgency: 'high'
+          }
+        };
+
+        for (const sub of manager.pushSubscriptions) {
+          try {
+            await webpush.sendNotification(sub, payload, options);
+            pushSentCount++;
+          } catch (pushErr) {
+            console.error(`Push failed for ${manager.name}:`, pushErr.statusCode || pushErr.message);
+            if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+              manager.pushSubscriptions = manager.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+              await manager.save();
+            }
+          }
+        }
+      }
+    } catch (mErr) {
+      console.error(`Error sending test reminder to ${manager.name}:`, mErr);
+    }
+  }
+
+  // Reset lastSentDate so automatic cron is not blocked
+  setting.lastSentDate = '';
+  await setting.save();
+
+  res.status(200).json({
+    success: true,
+    message: `Rappel de test envoyé avec succès (${pushSentCount} notification(s) push envoyée(s))!`,
+    sentCount: pushSentCount,
+    managerCount: targetManagers.length
+  });
+});

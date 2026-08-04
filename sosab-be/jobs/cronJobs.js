@@ -181,9 +181,16 @@ cron.schedule('* * * * *', async () => {
                             color: '#FF0000' // Phone notification tint (red)
                         });
 
+                        const options = {
+                            TTL: 86400,
+                            headers: {
+                                Urgency: 'high'
+                            }
+                        };
+
                         for (const sub of manager.pushSubscriptions) {
                             try {
-                                await webpush.sendNotification(sub, payload);
+                                await webpush.sendNotification(sub, payload, options);
                             } catch (pushErr) {
                                 console.error(`Error sending push to ${manager.name}:`, pushErr);
                                 if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
