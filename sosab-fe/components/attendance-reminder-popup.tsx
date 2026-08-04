@@ -66,12 +66,12 @@ export function AttendanceReminderPopup() {
 
                             if ("vibrate" in navigator && vibe) {
                                 try {
-                                    navigator.vibrate([1000, 200, 1000, 200, 1000])
+                                    navigator.vibrate([3000, 100, 3000, 100, 3000])
                                     vibeIntervalRef.current = setInterval(() => {
                                         if ("vibrate" in navigator) {
-                                            navigator.vibrate([1000, 200, 1000, 200, 1000])
+                                            navigator.vibrate([3000, 100, 3000, 100, 3000])
                                         }
-                                    }, 1800)
+                                    }, 6100)
                                 } catch (vErr) {
                                     console.warn("Vibration error:", vErr)
                                 }
@@ -84,7 +84,7 @@ export function AttendanceReminderPopup() {
                                         body: "Vous n'avez pas encore enregistré les présences d'aujourd'hui pour vos chantiers.",
                                         icon: "/logo.png",
                                         badge: "/badge.png",
-                                        vibrate: vibe ? [1000, 200, 1000, 200, 1000] : [200],
+                                        vibrate: vibe ? [3000, 100, 3000, 100, 3000] : [200],
                                         tag: "sosab-attendance-popup"
                                     } as any)
                                 } catch (nErr) {
