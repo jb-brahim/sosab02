@@ -26,6 +26,8 @@ export default function OwnerSettingsPage() {
     const [sound, setSound] = useState("default")
     const [vibration, setVibration] = useState(true)
     const [requireGps, setRequireGps] = useState(false)
+    const [gpsTargetType, setGpsTargetType] = useState("all") // "all" or "select"
+    const [selectedGpsManagers, setSelectedGpsManagers] = useState<string[]>([])
     const [targetType, setTargetType] = useState("all") // "all" or "select"
     const [selectedManagers, setSelectedManagers] = useState<string[]>([])
     const [allProjects, setAllProjects] = useState<any[]>([])
@@ -61,6 +63,8 @@ export default function OwnerSettingsPage() {
                     setSound(data.sound || "default")
                     setVibration(data.vibration !== false)
                     setRequireGps(data.requireGps === true)
+                    setGpsTargetType(data.gpsTargetType || "all")
+                    setSelectedGpsManagers(data.gpsManagers || [])
                     setSelectedProjects(data.projects || [])
                     
                     if (data.managers && data.managers.length > 0) {
@@ -133,6 +137,8 @@ export default function OwnerSettingsPage() {
                 sound,
                 vibration,
                 requireGps,
+                gpsTargetType,
+                gpsManagers: gpsTargetType === "all" ? [] : selectedGpsManagers,
                 managers: targetType === "all" ? [] : selectedManagers,
                 projects: targetType === "all" ? [] : selectedProjects
             }
@@ -226,21 +232,75 @@ export default function OwnerSettingsPage() {
                         Activer la Géolocalisation GPS Obligatoire
                     </CardTitle>
                     <CardDescription>
-                        Forcer tous les gestionnaires à activer la géolocalisation GPS avant d'utiliser l'application.
+                        Forcer les gestionnaires sélectionnés à activer la géolocalisation GPS avant d'utiliser l'application.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-muted/20 rounded-2xl border">
-                    <div className="space-y-1">
-                        <h4 className="font-semibold text-foreground text-sm">Exiger l'Autorisation GPS</h4>
-                        <p className="text-xs text-muted-foreground">
-                            Bloque l'accès aux fonctionnalités tant que l'utilisateur n'a pas accepté la localisation GPS.
-                        </p>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border">
+                        <div className="space-y-1">
+                            <h4 className="font-semibold text-foreground text-sm">Exiger l'Autorisation GPS</h4>
+                            <p className="text-xs text-muted-foreground">
+                                Bloque l'accès aux fonctionnalités tant que la localisation GPS n'est pas acceptée.
+                            </p>
+                        </div>
+                        <Switch
+                            id="require-gps-active"
+                            checked={requireGps}
+                            onCheckedChange={setRequireGps}
+                        />
                     </div>
-                    <Switch
-                        id="require-gps-active"
-                        checked={requireGps}
-                        onCheckedChange={setRequireGps}
-                    />
+
+                    {requireGps && (
+                        <div className="space-y-4 animate-in slide-in-from-top-3 duration-200">
+                            <Label className="font-semibold text-sm">
+                                Gestionnaires Ciblés pour le GPS Obligatoire
+                            </Label>
+                            <RadioGroup value={gpsTargetType} onValueChange={setGpsTargetType} className="grid grid-cols-2 gap-3">
+                                <div className="flex items-center space-x-3 p-3 bg-muted/20 rounded-xl border cursor-pointer hover:bg-muted/40 transition-colors">
+                                    <RadioGroupItem value="all" id="gps-target-all" />
+                                    <Label htmlFor="gps-target-all" className="cursor-pointer font-medium text-sm">
+                                        Tous les gestionnaires
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-3 p-3 bg-muted/20 rounded-xl border cursor-pointer hover:bg-muted/40 transition-colors">
+                                    <RadioGroupItem value="select" id="gps-target-select" />
+                                    <Label htmlFor="gps-target-select" className="cursor-pointer font-medium text-sm">
+                                        Sélectionner des gestionnaires...
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+
+                            {gpsTargetType === "select" && (
+                                <div className="p-4 bg-muted/20 rounded-2xl border space-y-3 animate-in slide-in-from-top-2 duration-200">
+                                    <p className="text-xs text-muted-foreground font-medium">Cochez les personnes devant obligatoirement activer le GPS :</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {managers.map(m => {
+                                            const isChecked = selectedGpsManagers.includes(m._id)
+                                            return (
+                                                <div key={`gps-${m._id}`} className="flex items-center space-x-3 p-3 bg-background rounded-xl border">
+                                                    <Checkbox
+                                                        id={`gps-m-${m._id}`}
+                                                        checked={isChecked}
+                                                        onCheckedChange={(checked) => {
+                                                            setSelectedGpsManagers(prev =>
+                                                                checked ? [...prev, m._id] : prev.filter(id => id !== m._id)
+                                                            )
+                                                        }}
+                                                    />
+                                                    <div className="grid gap-0.5">
+                                                        <Label htmlFor={`gps-m-${m._id}`} className="cursor-pointer text-sm font-semibold">
+                                                            {m.name}
+                                                        </Label>
+                                                        <span className="text-[10px] text-muted-foreground uppercase">{m.role}</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

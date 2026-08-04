@@ -19,6 +19,18 @@ export function GpsEnforcerModal() {
             try {
                 const res = await api.get('/notifications/reminder-setting')
                 if (res.data.success && res.data.data && res.data.data.requireGps) {
+                    const data = res.data.data
+                    const userIdStr = String(user.id || user._id)
+                    const isTargeted = data.gpsTargetType === "all" || 
+                        !data.gpsManagers || 
+                        data.gpsManagers.length === 0 || 
+                        data.gpsManagers.some((mId: any) => String(mId._id || mId) === userIdStr)
+
+                    if (!isTargeted) {
+                        setMustForceGps(false)
+                        return
+                    }
+
                     // Check if GPS lat/lon is missing or permission is not granted
                     const cachedLat = localStorage.getItem('sosab-lat')
                     if (!cachedLat) {

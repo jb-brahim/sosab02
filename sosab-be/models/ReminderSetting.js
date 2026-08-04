@@ -29,6 +29,15 @@ const reminderSettingSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  gpsTargetType: {
+    type: String,
+    enum: ['all', 'select'],
+    default: 'all'
+  },
+  gpsManagers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   lastSentDate: {
     type: String,
     default: ''
