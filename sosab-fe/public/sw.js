@@ -63,13 +63,13 @@ self.addEventListener('push', function (event) {
             body: data.body,
             icon: iconUrl,
             badge: '/badge.png',
-            vibrate: data.vibrate || vibrationPattern,
-            sound: data.sound || undefined,
+            vibrate: data.vibrate || [500, 200, 500, 200, 500, 200, 1000],
+            sound: data.sound || '/sounds/default.wav',
             color: data.color || '#FF0000',
-            tag: data.tag || 'sosab-notification',
-            renotify: data.renotify !== undefined ? data.renotify : true,
-            requireInteraction: true, // Stays on phone lock screen until manager taps it!
-            silent: false, // Ensures phone system sound plays when closed
+            tag: 'sosab-attendance-' + Date.now(), // Unique tag forces phone to ring & vibrate on every new push
+            renotify: true,
+            requireInteraction: true, // Stays on lock screen until manager opens it
+            silent: false, // Ensures phone system sound plays when app is closed
             data: {
                 url: data.link || '/'
             },
@@ -87,7 +87,7 @@ self.addEventListener('push', function (event) {
                 client.postMessage({
                     type: 'PLAY_NOTIFICATION_SOUND',
                     sound: data.sound || '/sounds/default.wav',
-                    vibrate: data.vibrate || [300, 100, 300, 100, 400]
+                    vibrate: data.vibrate || [500, 200, 500, 200, 500, 200, 1000]
                 });
             });
         });
