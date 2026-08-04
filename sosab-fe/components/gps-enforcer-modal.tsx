@@ -20,7 +20,7 @@ export function GpsEnforcerModal() {
                 const res = await api.get('/notifications/reminder-setting')
                 if (res.data.success && res.data.data && res.data.data.requireGps) {
                     const data = res.data.data
-                    const userIdStr = String(user.id || user._id)
+                    const userIdStr = String(user.id || (user as any)._id)
                     const isTargeted = data.gpsTargetType === "all" || 
                         !data.gpsManagers || 
                         data.gpsManagers.length === 0 || 

@@ -6,6 +6,7 @@ export type UserRole = "admin" | "pm" | "gerant" | "worker" | "accountant"
 
 export interface User {
   id: string
+  _id?: string
   email: string
   name: string
   role: UserRole
