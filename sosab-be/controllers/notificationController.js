@@ -299,16 +299,26 @@ exports.updateReminderSetting = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 exports.triggerTestReminder = asyncHandler(async (req, res) => {
   const setting = await ReminderSetting.findOne();
-  if (!setting) {
-    return res.status(404).json({ success: false, message: 'Aucun paramètre de rappel configuré' });
+
+  let targetManagers = [];
+  if (setting && setting.managers && setting.managers.length > 0) {
+    const objectIds = setting.managers.map(id => {
+      try {
+        return new mongoose.Types.ObjectId(id);
+      } catch (e) {
+        return id;
+      }
+    });
+    targetManagers = await User.find({
+      $or: [
+        { _id: { $in: objectIds } },
+        { _id: { $in: setting.managers } }
+      ]
+    });
   }
 
-  // Find target managers
-  let targetManagers = [];
-  if (setting.managers && setting.managers.length > 0) {
-    targetManagers = await User.find({ _id: { $in: setting.managers }, active: true });
-  } else {
-    targetManagers = await User.find({ role: { $in: ['Project Manager', 'Gérant'] }, active: true });
+  if (!targetManagers || targetManagers.length === 0) {
+    targetManagers = await User.find({ role: { $in: ['Project Manager', 'Gérant'] } });
   }
 
   if (targetManagers.length === 0) {
@@ -316,16 +326,19 @@ exports.triggerTestReminder = asyncHandler(async (req, res) => {
   }
 
   let pushSentCount = 0;
+  const notifiedNames = [];
 
   for (const manager of targetManagers) {
     try {
+      notifiedNames.push(manager.name);
+
       // In-app notification
       await Notification.create({
         user: manager._id,
         type: 'attendance',
         title: '🚨 Rappel Présence (TEST INSTANTANÉ)',
         message: `Veuillez enregistrer les présences pour vos chantiers d'aujourd'hui.`,
-        data: { customSound: setting.sound, customVibration: setting.vibration },
+        data: { customSound: setting ? setting.sound : 'default', customVibration: setting ? setting.vibration : true },
         link: manager.role === 'Gérant' ? '/gerant' : '/app',
         priority: 'high'
       });
@@ -339,8 +352,8 @@ exports.triggerTestReminder = asyncHandler(async (req, res) => {
           type: 'attendance',
           icon: '/logo.png',
           badge: '/badge.png',
-          sound: `/sounds/${setting.sound}.wav`,
-          vibrate: setting.vibration ? [500, 200, 500, 200, 500, 200, 1000] : [200],
+          sound: `/sounds/${setting ? setting.sound : 'default'}.wav`,
+          vibrate: setting && setting.vibration ? [500, 200, 500, 200, 500, 200, 1000] : [200],
           color: '#FF0000',
           renotify: true,
           requireInteraction: true
@@ -371,14 +384,15 @@ exports.triggerTestReminder = asyncHandler(async (req, res) => {
     }
   }
 
-  // Reset lastSentDate so automatic cron is not blocked
-  setting.lastSentDate = '';
-  await setting.save();
+  if (setting) {
+    setting.lastSentDate = '';
+    await setting.save();
+  }
 
   res.status(200).json({
     success: true,
-    message: `Rappel de test envoyé avec succès (${pushSentCount} notification(s) push envoyée(s))!`,
+    message: `Rappel de test envoyé à ${notifiedNames.join(', ')} (${pushSentCount} push envoyée(s))!`,
     sentCount: pushSentCount,
-    managerCount: targetManagers.length
+    managers: notifiedNames
   });
 });
