@@ -23,26 +23,20 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 // DEMO_USERS removed - using real API
 
+const STORAGE_VERSION = 'v2.5-owner-superadmin'
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  // Version key to force session refresh when significant changes happen
-  const STORAGE_VERSION = 'v2.5-owner-superadmin';
 
   useEffect(() => {
     // Check for stored session
     const stored = localStorage.getItem("sosab-user")
     const storedVersion = localStorage.getItem("sosab-version")
 
-    // Force clear if version mismatch (fixes "old design" persistence issues)
-    if (stored && storedVersion !== STORAGE_VERSION) {
-      console.log("Clearing stale session data...")
-      localStorage.removeItem("sosab-user")
-      localStorage.removeItem("sosab-version")
-      setUser(null)
-      setIsLoading(false)
-      return
+    // Ensure session version is set
+    if (stored && !storedVersion) {
+      localStorage.setItem("sosab-version", STORAGE_VERSION)
     }
 
     if (stored) {
@@ -137,10 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setUser(userData)
         localStorage.setItem("sosab-user", JSON.stringify(userData))
-        localStorage.setItem("sosab-version", "v2.1-refresh") // Use constant in real usage, but string literal is fine here for consistency with previous step context if scope allows. 
-        // Better: I should use the constant if I can access it or just string match it.
-        // Since STORAGE_VERSION is inside the component, I can't access it here easily in a dirty replacement without moving the constant up.
-        // I will move the constant up in the next step or just duplicate the string for now.
+        localStorage.setItem("sosab-version", STORAGE_VERSION)
         return // Success
       } else {
         throw new Error(res.data.message || "Login failed")
