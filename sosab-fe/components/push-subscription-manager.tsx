@@ -35,8 +35,17 @@ export function PushSubscriptionManager() {
                 const registration = await navigator.serviceWorker.register("/sw.js")
                 console.log("Service Worker registered with scope:", registration.scope)
 
+                // Request Notification permission explicitly if not yet granted
+                if ("Notification" in window && Notification.permission !== "granted") {
+                    const permission = await Notification.requestPermission()
+                    if (permission !== "granted") {
+                        console.warn("Notification permission denied by user.")
+                        return
+                    }
+                }
+
                 const subscription = await registration.pushManager.getSubscription()
-                const SUB_VERSION = "v3" // Increment to force resubscription
+                const SUB_VERSION = "v4" // Increment version to force fresh subscription
                 const currentVersion = localStorage.getItem("sosab-push-version")
 
                 // If old subscription exists but version doesn't match, unsubscribe first

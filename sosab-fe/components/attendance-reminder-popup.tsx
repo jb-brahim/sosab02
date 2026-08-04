@@ -62,6 +62,21 @@ export function AttendanceReminderPopup() {
                             if ("vibrate" in navigator && vibe) {
                                 navigator.vibrate([300, 100, 300, 100, 400])
                             }
+
+                            // Also fire a native phone notification with system sound & vibration
+                            if ("Notification" in window && Notification.permission === "granted") {
+                                try {
+                                    new Notification("🚨 Rappel: Pointage Requis", {
+                                        body: "Vous n'avez pas encore enregistré les présences d'aujourd'hui pour vos chantiers.",
+                                        icon: "/logo.png",
+                                        badge: "/badge.png",
+                                        vibrate: vibe ? [300, 100, 300, 100, 400] : [100],
+                                        tag: "sosab-attendance-popup"
+                                    })
+                                } catch (nErr) {
+                                    // ignore fallback
+                                }
+                            }
                         }
                     } catch (sErr) {
                         console.warn("Could not fetch reminder audio settings:", sErr)
