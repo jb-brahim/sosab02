@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📳 Testeur de Vibration Mobile (Infinix & Android)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        h1 { font-size: 20px; margin-bottom: 10px; color: #f59e0b; }
+        p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-primary { background: #f59e0b; color: #0f172a; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn:active { transform: scale(0.96); }
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #10b981;
+        }
+        .guide {
+            margin-top: 20px;
+            text-align: left;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+        }
+        .guide h3 { font-size: 13px; color: #f59e0b; margin-bottom: 8px; }
+        .guide ol { font-size: 11px; color: #cbd5e1; padding-left: 18px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📳 Testeur de Vibration Mobile</h1>
+        <p>Testez le moteur vibreur de votre Infinix Hot 8 & smartphones Android directement.</p>
+
+        <button class="btn btn-primary" onclick="testVibrate([1000, 200, 1000])">
+            ⚡ Test 1: Impulsion Standard (1 sec)
+        </button>
+
+        <button class="btn btn-blue" onclick="testVibrate([1000, 200, 1000, 200, 1000, 200, 1500])">
+            🚨 Test 2: Alerte SOSAB Intense (3 Pulsations)
+        </button>
+
+        <button class="btn btn-primary" onclick="testVibrate([2000])">
+            📳 Test 3: Vibration Continue (2 secondes)
+        </button>
+
+        <button class="btn btn-danger" onclick="stopVibrate()">
+            🛑 Arrêter la Vibration
+        </button>
+
+        <div id="status" class="status">Appuyez sur un bouton ci-dessus pour tester</div>
+
+        <div class="guide">
+            <h3>⚙️ Paramètres Infinix Hot 8 (XOS) :</h3>
+            <ol>
+                <li>Allez dans <b>Paramètres ⚙️</b> -> <b>Sons et Vibration</b>.</li>
+                <li>Activer <b>Vibrer pour les appels / notifications</b>.</li>
+                <li>Activer <b>Retour Haptique / Vibration au toucher</b>.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function testVibrate(pattern) {
+            const status = document.getElementById('status');
+            if ("vibrate" in navigator) {
+                try {
+                    navigator.vibrate(0);
+                    const success = navigator.vibrate(pattern);
+                    status.innerText = success ? "✓ Vibration envoyée au vibreur !" : "⚠️ Le navigateur refuse la vibration.";
+                    status.style.color = success ? "#10b981" : "#f59e0b";
+                } catch(e) {
+                    status.innerText = "❌ Erreur: " + e.message;
+                    status.style.color = "#ef4444";
+                }
+            } else {
+                status.innerText = "❌ L'API Vibration n'est pas supportée par ce navigateur.";
+                status.style.color = "#ef4444";
+            }
+        }
+
+        function stopVibrate() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(0);
+                document.getElementById('status').innerText = "🛑 Vibration arrêtée";
+            }
+        }
+    </script>
+</body>
+</html>

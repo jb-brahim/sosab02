@@ -13,8 +13,13 @@ export function AttendanceReminderPopup() {
     const [isOpen, setIsOpen] = useState(false)
     const [pendingProjects, setPendingProjects] = useState<any[]>([])
     const audioRef = useRef<HTMLAudioElement | null>(null)
+    const vibeIntervalRef = useRef<any>(null)
 
     const stopMedia = () => {
+        if (vibeIntervalRef.current) {
+            clearInterval(vibeIntervalRef.current)
+            vibeIntervalRef.current = null
+        }
         if (audioRef.current) {
             try {
                 audioRef.current.pause()
@@ -60,7 +65,16 @@ export function AttendanceReminderPopup() {
                             audio.play().catch(e => console.warn("Audio play blocked by browser policy:", e))
 
                             if ("vibrate" in navigator && vibe) {
-                                navigator.vibrate([300, 100, 300, 100, 400])
+                                try {
+                                    navigator.vibrate([1000, 200, 1000, 200, 1000])
+                                    vibeIntervalRef.current = setInterval(() => {
+                                        if ("vibrate" in navigator) {
+                                            navigator.vibrate([1000, 200, 1000, 200, 1000])
+                                        }
+                                    }, 1800)
+                                } catch (vErr) {
+                                    console.warn("Vibration error:", vErr)
+                                }
                             }
 
                             // Also fire a native phone notification with system sound & vibration
@@ -70,7 +84,7 @@ export function AttendanceReminderPopup() {
                                         body: "Vous n'avez pas encore enregistré les présences d'aujourd'hui pour vos chantiers.",
                                         icon: "/logo.png",
                                         badge: "/badge.png",
-                                        vibrate: vibe ? [500, 200, 500, 200, 500, 200, 1000] : [200],
+                                        vibrate: vibe ? [1000, 200, 1000, 200, 1000] : [200],
                                         tag: "sosab-attendance-popup"
                                     } as any)
                                 } catch (nErr) {
