@@ -70,7 +70,7 @@ export function AttendanceReminderPopup() {
                                         body: "Vous n'avez pas encore enregistré les présences d'aujourd'hui pour vos chantiers.",
                                         icon: "/logo.png",
                                         badge: "/badge.png",
-                                        vibrate: vibe ? [300, 100, 300, 100, 400] : [100],
+                                        vibrate: vibe ? [500, 200, 500, 200, 500, 200, 1000] : [200],
                                         tag: "sosab-attendance-popup"
                                     } as any)
                                 } catch (nErr) {

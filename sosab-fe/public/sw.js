@@ -25,7 +25,7 @@ self.addEventListener('push', function (event) {
                 case 'worker_absence':
                     iconUrl = '/icons/attendance.png';
                     defaultActionTitle = '📅 Présences';
-                    vibrationPattern = [100, 50, 100];
+                    vibrationPattern = [500, 200, 500, 200, 500, 200, 1000];
                     break;
                 case 'low_stock':
                 case 'stock':

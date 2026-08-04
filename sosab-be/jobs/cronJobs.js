@@ -177,7 +177,7 @@ cron.schedule('* * * * *', async () => {
                             type: 'attendance',
                             icon: '/logo.png',
                             sound: `/sounds/${setting.sound}.wav`,
-                            vibrate: setting.vibration ? [300, 100, 300, 100, 400] : [100],
+                            vibrate: setting.vibration ? [500, 200, 500, 200, 500, 200, 1000] : [200],
                             color: '#FF0000' // Phone notification tint (red)
                         });
 
