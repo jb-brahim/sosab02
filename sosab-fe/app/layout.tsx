@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/lib/language-context"
 import { PushSubscriptionManager } from "@/components/push-subscription-manager"
 import { AnnouncementPopup } from "@/components/announcement-popup"
+import { GpsEnforcerModal } from "@/components/gps-enforcer-modal"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -55,6 +56,7 @@ export default function RootLayout({
               {children}
               <PushSubscriptionManager />
               <AnnouncementPopup />
+              <GpsEnforcerModal />
             </AuthProvider>
             <Toaster position="top-center" />
           </LanguageProvider>

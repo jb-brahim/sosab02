@@ -265,9 +265,8 @@ exports.getReminderSetting = asyncHandler(async (req, res) => {
 
 // @desc    Update attendance reminder settings
 // @route   POST /api/notifications/reminder-setting
-// @access  Private/Admin
 exports.updateReminderSetting = asyncHandler(async (req, res) => {
-  const { enabled, time, managers, projects, sound, vibration } = req.body;
+  const { enabled, time, managers, projects, sound, vibration, requireGps } = req.body;
 
   let setting = await ReminderSetting.findOne();
 
@@ -281,6 +280,7 @@ exports.updateReminderSetting = asyncHandler(async (req, res) => {
   if (projects !== undefined) setting.projects = projects;
   if (sound !== undefined) setting.sound = sound;
   if (vibration !== undefined) setting.vibration = vibration;
+  if (requireGps !== undefined) setting.requireGps = requireGps;
   setting.updatedAt = Date.now();
 
   await setting.save();

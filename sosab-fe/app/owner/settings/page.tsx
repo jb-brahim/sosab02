@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Bell, Volume2, ShieldAlert, Sparkles, HardHat, Check, Play, Settings, RefreshCw, Database } from "lucide-react"
+import { Bell, Volume2, ShieldAlert, Sparkles, HardHat, Check, Play, Settings, RefreshCw, Database, Compass } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
@@ -25,6 +25,7 @@ export default function OwnerSettingsPage() {
     const [time, setTime] = useState("10:00")
     const [sound, setSound] = useState("default")
     const [vibration, setVibration] = useState(true)
+    const [requireGps, setRequireGps] = useState(false)
     const [targetType, setTargetType] = useState("all") // "all" or "select"
     const [selectedManagers, setSelectedManagers] = useState<string[]>([])
     const [allProjects, setAllProjects] = useState<any[]>([])
@@ -59,6 +60,7 @@ export default function OwnerSettingsPage() {
                     setTime(data.time || "10:00")
                     setSound(data.sound || "default")
                     setVibration(data.vibration !== false)
+                    setRequireGps(data.requireGps === true)
                     setSelectedProjects(data.projects || [])
                     
                     if (data.managers && data.managers.length > 0) {
@@ -130,6 +132,7 @@ export default function OwnerSettingsPage() {
                 time,
                 sound,
                 vibration,
+                requireGps,
                 managers: targetType === "all" ? [] : selectedManagers,
                 projects: targetType === "all" ? [] : selectedProjects
             }
@@ -212,6 +215,32 @@ export default function OwnerSettingsPage() {
                         <Database className="w-4 h-4 mr-2" />
                         {saving ? "Sauvegarde en cours..." : "Déclencher une sauvegarde"}
                     </Button>
+                </CardContent>
+            </Card>
+
+            {/* Force GPS Requirement Section */}
+            <Card className="glass-card shadow-xl border-blue-500/20 bg-blue-500/5">
+                <CardHeader>
+                    <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                        <Compass className="w-5 h-5 text-blue-500" />
+                        Activer la Géolocalisation GPS Obligatoire
+                    </CardTitle>
+                    <CardDescription>
+                        Forcer tous les gestionnaires à activer la géolocalisation GPS avant d'utiliser l'application.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-muted/20 rounded-2xl border">
+                    <div className="space-y-1">
+                        <h4 className="font-semibold text-foreground text-sm">Exiger l'Autorisation GPS</h4>
+                        <p className="text-xs text-muted-foreground">
+                            Bloque l'accès aux fonctionnalités tant que l'utilisateur n'a pas accepté la localisation GPS.
+                        </p>
+                    </div>
+                    <Switch
+                        id="require-gps-active"
+                        checked={requireGps}
+                        onCheckedChange={setRequireGps}
+                    />
                 </CardContent>
             </Card>
 

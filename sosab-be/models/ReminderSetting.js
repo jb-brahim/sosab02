@@ -25,6 +25,10 @@ const reminderSettingSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  requireGps: {
+    type: Boolean,
+    default: false
+  },
   lastSentDate: {
     type: String,
     default: ''
