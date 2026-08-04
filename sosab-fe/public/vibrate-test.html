@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📳 Testeur de Vibration MAX (Infinix & Android)</title>
+    <title>🔔 Testeur de Son & Alarme SOSAB (Infinix & Android)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -40,9 +40,9 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .btn-max { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        .btn-heavy { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
-        .btn-pulse { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .btn-alarm { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+        .btn-bell { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
         .btn-stop { background: #334155; color: #94a3b8; }
         .btn:active { transform: scale(0.96); }
         .status {
@@ -55,95 +55,85 @@
             border: 1px solid #334155;
             color: #10b981;
         }
-        .guide {
-            margin-top: 20px;
+        .note {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+            font-size: 11px;
+            line-height: 1.5;
             text-align: left;
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 16px;
-            border: 1px solid #334155;
         }
-        .guide h3 { font-size: 13px; color: #f59e0b; margin-bottom: 8px; }
-        .guide ol { font-size: 11px; color: #cbd5e1; padding-left: 18px; line-height: 1.6; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>📳 Testeur de Vibration MAX</h1>
-        <p>Impulsions ultra-longues (3 à 5 sec) pour forcer le moteur vibreur Infinix à 100% de puissance.</p>
+        <h1>🚨 Testeur de Son & Alarme SOSAB</h1>
+        <p>Sur les téléphones Android (Infinix), le vibreur Web est bridé par le système. Utilisez une alarme sonore forte !</p>
 
-        <button class="btn btn-max" onclick="testVibrate([5000])">
-            💥 VIBREUR MAX (5 secondes continu)
+        <button class="btn btn-red" onclick="playSound('/sounds/red_alert.wav')">
+            🚨 Alerte Rouge (Sirène Forte)
         </button>
 
-        <button class="btn btn-heavy" onclick="testVibrate([3000, 100, 3000, 100, 3000])">
-            🚨 TRIPLE IMPULSION LOURDE (3x3 sec)
+        <button class="btn btn-alarm" onclick="playSound('/sounds/alarm.wav')">
+            ⏰ Alarme Numérique High-Pitch
         </button>
 
-        <button class="btn btn-pulse" onclick="startLoop()">
-            🔄 BOUCLE DE VIBRATION CONTINUE (Répétition)
+        <button class="btn btn-bell" onclick="playSound('/sounds/bell.wav')">
+            🔔 Cloche de Rappel (Ringing)
         </button>
 
-        <button class="btn btn-stop" onclick="stopVibrate()">
-            🛑 Arrêter la Vibration
+        <button class="btn btn-stop" onclick="stopSound()">
+            🛑 Arrêter le Son
         </button>
 
-        <div id="status" class="status">Appuyez sur un bouton ci-dessus pour tester</div>
+        <div id="status" class="status">Appuyez sur un bouton pour tester la sonnerie</div>
 
-        <div class="guide">
-            <h3>⚙️ Infinix Hot 8 - Augmenter l'intensité :</h3>
-            <ol>
-                <li>Allez dans <b>Paramètres ⚙️</b> -> <b>Sons et Vibration</b>.</li>
-                <li>Cherchez <b>Intensité de la vibration</b> -> Régler sur <b>MAX / Fort</b>.</li>
-                <li>Désactiver le <b>Mode Économie d'énergie</b> pour libérer la puissance du vibreur.</li>
-            </ol>
+        <div class="note">
+            💡 <b>Note Technique Android (Infinix) :</b><br>
+            Le système Android XOS limite la puissance électrique du vibreur pour les sites web (`navigator.vibrate`). Pour un rappel immanquable sur votre Infinix, sélectionnez le son <b>Alerte Rouge (Sirène)</b> dans les paramètres du Propriétaire SOSAB !
         </div>
     </div>
 
     <script>
-        let loopInterval = null;
+        let currentAudio = null;
 
-        function testVibrate(pattern) {
-            stopVibrate();
+        function playSound(path) {
+            stopSound();
             const status = document.getElementById('status');
-            if ("vibrate" in navigator) {
-                try {
-                    navigator.vibrate(0);
-                    const success = navigator.vibrate(pattern);
-                    status.innerText = success ? "✓ Vibration MAX envoyée !" : "⚠️ Refusé par le système.";
-                    status.style.color = success ? "#10b981" : "#f59e0b";
-                } catch(e) {
-                    status.innerText = "❌ Erreur: " + e.message;
-                    status.style.color = "#ef4444";
+            try {
+                // Also trigger vibration
+                if ("vibrate" in navigator) {
+                    navigator.vibrate([2000, 200, 2000]);
                 }
-            } else {
-                status.innerText = "❌ API Vibration non supportée.";
+                currentAudio = new Audio(path);
+                currentAudio.play().then(() => {
+                    status.innerText = "🔊 Son en cours de lecture à volume maximal !";
+                    status.style.color = "#10b981";
+                }).catch(e => {
+                    status.innerText = "⚠️ Cliquez sur la page d'abord pour autoriser l'audio.";
+                    status.style.color = "#f59e0b";
+                });
+            } catch(e) {
+                status.innerText = "❌ Erreur: " + e.message;
                 status.style.color = "#ef4444";
             }
         }
 
-        function startLoop() {
-            stopVibrate();
-            const status = document.getElementById('status');
-            if ("vibrate" in navigator) {
-                navigator.vibrate([3000, 100, 3000]);
-                loopInterval = setInterval(() => {
-                    navigator.vibrate([3000, 100, 3000]);
-                }, 6100);
-                status.innerText = "🔄 Boucle de vibration active (Répétition toutes les 6 sec)";
-                status.style.color = "#3b82f6";
-            }
-        }
-
-        function stopVibrate() {
-            if (loopInterval) {
-                clearInterval(loopInterval);
-                loopInterval = null;
+        function stopSound() {
+            if (currentAudio) {
+                try {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                } catch(e) {}
+                currentAudio = null;
             }
             if ("vibrate" in navigator) {
                 navigator.vibrate(0);
             }
-            document.getElementById('status').innerText = "🛑 Vibration arrêtée";
+            document.getElementById('status').innerText = "🛑 Son arrêté";
             document.getElementById('status').style.color = "#94a3b8";
         }
     </script>
