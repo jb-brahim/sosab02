@@ -252,13 +252,18 @@ exports.checkDailyAttendanceStatus = asyncHandler(async (req, res) => {
 
   // Filter based on selected projects in settings if provided
   const setting = await ReminderSetting.findOne();
-  if (setting && setting.enabled && setting.projects && setting.projects.length > 0) {
-    const selectedProjects = projects.filter(p =>
-      setting.projects.some(sp => sp.toString() === p._id.toString())
-    );
-    // Only narrow down if at least one of this manager's projects was explicitly checked
-    if (selectedProjects.length > 0) {
-      projects = selectedProjects;
+  if (setting) {
+    if (!setting.enabled) {
+      return res.status(200).json({ success: true, attendanceRequired: false, projects: [] });
+    }
+
+    if (setting.projects && setting.projects.length > 0) {
+      const selectedProjects = projects.filter(p =>
+        setting.projects.some(sp => sp.toString() === p._id.toString())
+      );
+      if (selectedProjects.length > 0) {
+        projects = selectedProjects;
+      }
     }
   }
 
