@@ -1106,46 +1106,121 @@ export default function MobileProjectDetails() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-2" style={{ contentVisibility: 'auto' } as any}>
-                                    {team.map(w => (
-                                        <div key={w._id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary/20 transition-colors group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                                    {w.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-sm text-foreground flex items-center gap-2">
-                                                        {w.name}
-                                                        {w.masked && <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[9px] px-1.5 py-0 h-4">Masqué</Badge>}
+                                <div className="space-y-4" style={{ contentVisibility: 'auto' } as any}>
+                                    {(() => {
+                                        const subLeaders = team.filter(w => w.trade === 'Sous Traitant' || w.isSubcontractor);
+                                        const subLeaderIds = new Set(subLeaders.map(s => s._id.toString()));
+                                        
+                                        const directWorkers = team.filter(w => {
+                                            const isSub = w.trade === 'Sous Traitant' || w.isSubcontractor;
+                                            if (isSub) return false;
+                                            const supId = w.supervisorId ? w.supervisorId.toString() : (w.supervisor?._id ? w.supervisor._id.toString() : '');
+                                            return !supId || !subLeaderIds.has(supId);
+                                        });
+
+                                        const renderWorkerItem = (w: any, isSubWorker = false) => (
+                                            <div key={w._id} className={`flex justify-between items-center p-3 rounded-xl transition-colors group ${
+                                                isSubWorker 
+                                                    ? 'bg-white/[0.03] border border-white/5 hover:border-amber-500/30' 
+                                                    : 'bg-white/5 border border-white/5 hover:border-primary/20'
+                                            }`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                                        (w.isSubcontractor || w.trade === 'Sous Traitant')
+                                                            ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                                                            : 'bg-primary/10 text-primary'
+                                                    }`}>
+                                                        {w.name.charAt(0)}
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{w.trade}</div>
+                                                    <div>
+                                                        <div className="font-bold text-sm text-foreground flex items-center gap-2">
+                                                            {w.name}
+                                                            {w.masked && <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[9px] px-1.5 py-0 h-4">Masqué</Badge>}
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                                            <span>{w.trade}</span>
+                                                            {w.dailySalary > 0 && <span className="text-emerald-500/80 font-mono">({w.dailySalary} DT/j)</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-1 items-center">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        title={w.masked ? "Démasquer l'ouvrier" : "Masquer l'ouvrier"}
+                                                        className={`h-8 w-8 rounded-lg transition-colors ${
+                                                            w.masked
+                                                                ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
+                                                                : 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10'
+                                                        }`}
+                                                        onClick={() => handleToggleMask(w._id, w.masked)}
+                                                    >
+                                                        {w.masked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg" onClick={() => setEditingWorker({ ...w, phone: w.contact?.phone })}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => setDeleteWorkerId(w._id)}>
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1 items-center">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    title={w.masked ? "Démasquer l'ouvrier" : "Masquer l'ouvrier"}
-                                                    className={`h-8 w-8 rounded-lg transition-colors ${
-                                                        w.masked
-                                                            ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
-                                                            : 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10'
-                                                    }`}
-                                                    onClick={() => handleToggleMask(w._id, w.masked)}
-                                                >
-                                                    {w.masked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg" onClick={() => setEditingWorker({ ...w, phone: w.contact?.phone })}>
-                                                    {/* Pencil Icon */}
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity" onClick={() => setDeleteWorkerId(w._id)}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                        );
+
+                                        return (
+                                            <div className="space-y-4">
+                                                {/* Direct SOSAB Workers */}
+                                                {directWorkers.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+                                                            <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+                                                            Ouvriers Directs SOSAB ({directWorkers.length})
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            {directWorkers.map(w => renderWorkerItem(w))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Sous-Traitants & Their Supervised Workers */}
+                                                {subLeaders.map(sub => {
+                                                    const mySubWorkers = team.filter(w => {
+                                                        if (w._id === sub._id) return false;
+                                                        const supId = w.supervisorId ? w.supervisorId.toString() : (w.supervisor?._id ? w.supervisor._id.toString() : '');
+                                                        return supId === sub._id.toString();
+                                                    });
+
+                                                    return (
+                                                        <div key={sub._id} className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-2">
+                                                            <div className="flex items-center justify-between px-1 pb-1 border-b border-amber-500/10">
+                                                                <span className="text-xs font-bold text-amber-500 flex items-center gap-1.5 uppercase tracking-wider">
+                                                                    🏗️ Sous-Traitant : {sub.name}
+                                                                </span>
+                                                                <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">
+                                                                    {mySubWorkers.length} ouvrier{mySubWorkers.length !== 1 ? 's' : ''}
+                                                                </Badge>
+                                                            </div>
+
+                                                            {/* Sous-Traitant Header Card */}
+                                                            {renderWorkerItem(sub)}
+
+                                                            {/* Supervised Sub-workers */}
+                                                            {mySubWorkers.length > 0 && (
+                                                                <div className="pl-3 space-y-1.5 border-l-2 border-amber-500/30 ml-2 pt-1">
+                                                                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                                                                        Membres de l'équipe :
+                                                                    </div>
+                                                                    {mySubWorkers.map(sw => renderWorkerItem(sw, true))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+
+                                                {team.length === 0 && <p className="text-center text-muted-foreground text-xs py-10">Aucun ouvrier dans l'équipe.</p>}
                                             </div>
-                                        </div>
-                                    ))}
-                                    {team.length === 0 && <p className="text-center text-muted-foreground text-xs py-10">No workers in team.</p>}
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </CardContent>
