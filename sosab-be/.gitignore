@@ -10,5 +10,6 @@ coverage/
 uploads/
 temp/
 backups/
+scripts/
 *.csv
 

@@ -39,6 +39,8 @@ sosab-be/build/
 sosab-be/coverage/
 sosab-be/.nyc_output/
 sosab-be/temp/
+sosab-be/backups/
+sosab-be/scripts/
 *.pdf
 
 # Local build artifacts
