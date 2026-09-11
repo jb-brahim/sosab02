@@ -242,7 +242,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
 
   } else if (type === 'material') {
     // Generate material report - ACCURATE for any range
-    const materials = await Material.find({ projectId: { $in: selectedProjectIds } }).sort({ createdAt: 1 });
+    const materials = await Material.find({ projectId: { $in: selectedProjectIds } }).sort({ name: 1 });
     const materialData = [];
     const movementLogs = [];
 
@@ -250,7 +250,9 @@ exports.generateReport = asyncHandler(async (req, res) => {
       const logs = await MaterialLog.find({
         materialId: material._id,
         date: { $gte: start, $lte: end }
-      }).sort({ date: 1 });
+      })
+        .populate('loggedBy', 'name email role')
+        .sort({ date: 1 });
 
       const inTotal = logs.filter(l => l.type === 'IN').reduce((sum, l) => sum + l.quantity, 0);
       const outTotal = logs.filter(l => l.type === 'OUT').reduce((sum, l) => sum + l.quantity, 0);
@@ -270,6 +272,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
       logs.forEach(log => {
         movementLogs.push({
           date: log.date,
+          createdAt: log.createdAt || log.date,
           name: material.name,
           unit: material.unit,
           type: log.type,
@@ -278,10 +281,13 @@ exports.generateReport = asyncHandler(async (req, res) => {
           bonLivraison: log.bonLivraison || '',
           notes: log.notes,
           cost: log.cost || (log.quantity * (material.price || 0)),
-          supplier: log.supplier || material.supplier || 'N/A'
+          supplier: log.supplier || material.supplier || 'N/A',
+          addedBy: log.loggedBy ? (log.loggedBy.name || log.loggedBy.email) : 'N/A'
         });
       });
     }
+
+    materialData.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
     reportData = { project: primaryProject, projects, headerLabel: dateLabel, materials: materialData, movements: movementLogs.sort((a, b) => a.date - b.date) };
 

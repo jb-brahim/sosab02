@@ -295,10 +295,14 @@ exports.generateMaterialReportHTML = (data) => {
           
           ${matMovements.length > 0 ? matMovements.map(m => `
             <tr class="move-row">
-              <td class="num" style="color: #64748b;">${new Date(m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+              <td class="num" style="color: #1e293b;">
+                <div>${new Date(m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                <div style="font-size: 10px; color: #64748b; font-weight: 400; margin-top: 2px;">Saisi le: ${new Date(m.createdAt || m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+              </td>
               <td>
-                <div style="font-weight: 600;">${m.deliveredBy !== 'N/A' ? 'Chauffeur: ' + m.deliveredBy : 'Sortie Chantier'}</div>
-                <div style="font-size: 10px; color: #94a3b8;">Fournisseur: ${m.supplier || 'N/A'}</div>
+                <div style="font-weight: 600;">${m.deliveredBy && m.deliveredBy !== 'N/A' ? 'Chauffeur: ' + m.deliveredBy : 'Sortie Chantier'}</div>
+                <div style="font-size: 10px; color: #64748b;">Fournisseur: ${m.supplier || 'N/A'}</div>
+                <div style="font-size: 10px; color: #1e40af; font-weight: 600;">Ajouté par: ${m.addedBy || 'N/A'}</div>
                 ${m.notes ? `<div style="font-size: 10px; color: #334155; font-style: italic;">Note: ${m.notes}</div>` : ''}
               </td>
               <td style="text-align: center;">

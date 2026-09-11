@@ -300,7 +300,7 @@ async function generateMaterialExcel(data, outputPath) {
     });
 
     let sRow = 6;
-    materials.forEach(mat => {
+    [...materials].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })).forEach(mat => {
         const row = summarySheet.getRow(sRow);
         row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance];
         row.eachCell((cell, col) => {
@@ -323,11 +323,13 @@ async function generateMaterialExcel(data, outputPath) {
     });
 
     movSheet.columns = [
-        { width: 12 },  // DATE
+        { width: 14 },  // DATE MOUVEMENT
+        { width: 20 },  // DATE SAISIE (SYSTÈME)
+        { width: 22 },  // AJOUTÉ PAR (COMPTE)
         { width: 22 },  // DÉSIGNATION
-        { width: 8 },  // TYPE
+        { width: 8 },   // TYPE
         { width: 10 },  // QTÉ
-        { width: 8 },  // UNITÉ
+        { width: 8 },   // UNITÉ
         { width: 20 },  // FOURNISSEUR
         { width: 18 },  // LIVREUR
         { width: 18 },  // N° BON LIVRAISON
@@ -335,7 +337,7 @@ async function generateMaterialExcel(data, outputPath) {
     ];
 
     // Title
-    movSheet.mergeCells('A1:I1');
+    movSheet.mergeCells('A1:K1');
     const mTitleCell = movSheet.getCell('A1');
     mTitleCell.value = `Rapport Matériel: ${project.name}`;
     mTitleCell.font = { bold: true, size: 14 };
@@ -343,7 +345,7 @@ async function generateMaterialExcel(data, outputPath) {
     mTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
 
     // Date range
-    movSheet.mergeCells('A2:I2');
+    movSheet.mergeCells('A2:K2');
     const mDateCell = movSheet.getCell('A2');
     mDateCell.value = `Période: ${headerLabel}`;
     mDateCell.font = { bold: true, size: 12 };
@@ -356,7 +358,9 @@ async function generateMaterialExcel(data, outputPath) {
     // Header
     const mHeaderRow = movSheet.getRow(5);
     mHeaderRow.values = [
-        'DATE',
+        'DATE MOUVEMENT',
+        'DATE SAISIE (SYSTÈME)',
+        'AJOUTÉ PAR (COMPTE)',
         'DÉSIGNATION',
         'TYPE',
         'QTÉ',
@@ -378,6 +382,8 @@ async function generateMaterialExcel(data, outputPath) {
         const row = movSheet.getRow(mRow);
         row.values = [
             new Date(log.date).toLocaleDateString('fr-FR'),
+            new Date(log.createdAt || log.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            log.addedBy || 'N/A',
             log.name,
             log.type,
             log.quantity,
@@ -388,8 +394,8 @@ async function generateMaterialExcel(data, outputPath) {
             log.notes || ''
         ];
 
-        // Style the TYPE column (col 3)
-        const typeCell = row.getCell(3);
+        // Style the TYPE column (col 5)
+        const typeCell = row.getCell(5);
         if (log.type === 'IN') {
             typeCell.font = { color: { argb: 'FF00B050' }, bold: true };
         } else {

@@ -122,7 +122,7 @@ const generateWeeklyMaterialReport = async (project, week) => {
     }
 
     const { startDate, endDate } = getWeekDates(week);
-    const materials = await Material.find({ projectId: project._id });
+    const materials = await Material.find({ projectId: project._id }).sort({ name: 1 });
     const materialData = [];
     const movementLogs = [];
 
@@ -130,7 +130,7 @@ const generateWeeklyMaterialReport = async (project, week) => {
       const logs = await MaterialLog.find({
         materialId: material._id,
         date: { $gte: startDate, $lte: endDate }
-      });
+      }).populate('loggedBy', 'name email role');
 
       const inTotal = logs.filter(l => l.type === 'IN').reduce((sum, l) => sum + l.quantity, 0);
       const outTotal = logs.filter(l => l.type === 'OUT').reduce((sum, l) => sum + l.quantity, 0);
@@ -149,13 +149,17 @@ const generateWeeklyMaterialReport = async (project, week) => {
           _id: log._id,
           name: material.name,
           date: log.date,
+          createdAt: log.createdAt || log.date,
           type: log.type,
           quantity: log.quantity,
           deliveredBy: log.deliveredBy,
-          notes: log.notes
+          notes: log.notes,
+          addedBy: log.loggedBy ? (log.loggedBy.name || log.loggedBy.email) : 'N/A'
         });
       });
     }
+
+    materialData.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
     if (materialData.length === 0) {
       console.log(`No material data for project ${project.name}, week ${week}`);
