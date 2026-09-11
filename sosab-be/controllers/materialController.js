@@ -1,5 +1,6 @@
 const Material = require('../models/Material');
 const MaterialLog = require('../models/MaterialLog');
+const MaterialCategory = require('../models/MaterialCategory');
 const Project = require('../models/Project');
 const { sendNotificationToRoles } = require('./notificationController');
 const asyncHandler = require('../middleware/asyncHandler');
@@ -596,6 +597,70 @@ exports.quickLog = asyncHandler(async (req, res) => {
       unit: material.unit,
       stockQuantity: material.stockQuantity
     }
+  });
+});
+
+// @desc    Get all material categories / families
+// @route   GET /api/materials/categories
+// @access  Private
+exports.getCategories = asyncHandler(async (req, res) => {
+  const defaultCategories = [
+    'Ciments & Liants',
+    'Fers & Armatures',
+    'Bois & Coffrage',
+    'Maçonnerie & Gros Œuvre',
+    'Quincaillerie & Fixation',
+    'Électricité',
+    'Étanchéité & Chimie de Chantier',
+    'Outillage & Équipement de Chantier',
+    'Divers'
+  ];
+
+  const dbCategories = await MaterialCategory.find().select('name');
+  const dbCategoryNames = dbCategories.map(c => c.name);
+
+  const usedCategories = await Material.distinct('category');
+
+  const combined = new Set([...defaultCategories, ...dbCategoryNames, ...usedCategories.filter(Boolean)]);
+  const sorted = Array.from(combined).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+  res.status(200).json({
+    success: true,
+    count: sorted.length,
+    data: sorted
+  });
+});
+
+// @desc    Create new material category / family
+// @route   POST /api/materials/categories
+// @access  Private (Admin, Project Manager, Accountant)
+exports.createCategory = asyncHandler(async (req, res) => {
+  const { name, description } = req.body;
+
+  if (!name || name.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      message: 'Category name is required'
+    });
+  }
+
+  const categoryName = name.trim();
+
+  let category = await MaterialCategory.findOne({
+    name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
+  });
+
+  if (!category) {
+    category = await MaterialCategory.create({
+      name: categoryName,
+      description,
+      createdBy: req.user._id
+    });
+  }
+
+  res.status(201).json({
+    success: true,
+    data: category
   });
 });
 

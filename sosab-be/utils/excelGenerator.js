@@ -248,6 +248,38 @@ async function generatePaymentExcel(data, outputPath) {
     await workbook.xlsx.writeFile(outputPath);
 }
 
+function getMaterialFamily(mat) {
+    if (mat.category && mat.category !== 'N/A' && mat.category !== 'Standard' && mat.category.trim() !== '') {
+        return mat.category.trim();
+    }
+    const n = (mat.name || '').toLowerCase();
+    if (n.includes('ciment') || n.includes('chaux') || n.includes('beton')) {
+        return 'Ciments & Liants';
+    }
+    if (n.includes('fer') || n.includes('treillis') || n.includes('attache') || n.includes('armature') || n.includes('acier')) {
+        return 'Fers & Armatures';
+    }
+    if (n.includes('bois') || n.includes('planche') || n.includes('panello') || n.includes('panelo') || n.includes('madrier') || n.includes('besting') || n.includes('plancher') || n.includes('sapine') || n.includes('isorere')) {
+        return 'Bois & Coffrage';
+    }
+    if (n.includes('brique') || n.includes('agglo') || n.includes('parpaing') || n.includes('bloc')) {
+        return 'Maçonnerie & Gros Œuvre';
+    }
+    if (n.includes('clou') || n.includes('point') || n.includes('boulon') || n.includes('clovette') || n.includes('rachklou') || n.includes('vis') || n.includes('ecrou')) {
+        return 'Quincaillerie & Fixation';
+    }
+    if (n.includes('cable') || n.includes('electrique') || n.includes('dimino') || n.includes('gaine') || n.includes('prise') || n.includes('interrupteur')) {
+        return 'Électricité';
+    }
+    if (n.includes('derbigume') || n.includes('flintcote') || n.includes('sika') || n.includes('etancheite') || n.includes('résine') || n.includes('peinture')) {
+        return 'Étanchéité & Chimie de Chantier';
+    }
+    if (n.includes('bros') || n.includes('eprouvette') || n.includes('grillage') || n.includes('hbal') || n.includes('pioche') || n.includes('vibreur') || n.includes('outil') || n.includes('pelle')) {
+        return 'Outillage & Équipement de Chantier';
+    }
+    return 'Divers';
+}
+
 /**
  * Generate Material Report in Excel format
  */
@@ -263,7 +295,7 @@ async function generateMaterialExcel(data, outputPath) {
     });
 
     summarySheet.columns = [
-        { width: 22 },  // Matériau
+        { width: 28 },  // Matériau
         { width: 10 },  // Unité
         { width: 15 },  // Total IN
         { width: 15 },  // Total OUT
@@ -286,8 +318,8 @@ async function generateMaterialExcel(data, outputPath) {
     sDateCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
     // Section label
-    summarySheet.getCell('A4').value = 'RÉSUMÉ DES STOCKS';
-    summarySheet.getCell('A4').font = { bold: true };
+    summarySheet.getCell('A4').value = 'RÉSUMÉ DES STOCKS PAR FAMILLE';
+    summarySheet.getCell('A4').font = { bold: true, size: 12 };
 
     // Header
     const sHeaderRow = summarySheet.getRow(5);
@@ -299,20 +331,46 @@ async function generateMaterialExcel(data, outputPath) {
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
 
+    // Group materials by family
+    const familyMap = {};
+    materials.forEach(mat => {
+        const family = getMaterialFamily(mat);
+        if (!familyMap[family]) familyMap[family] = [];
+        familyMap[family].push(mat);
+    });
+
+    const sortedFamilies = Object.keys(familyMap).sort((a, b) => a.localeCompare(b, 'fr'));
+
     let sRow = 6;
-    [...materials].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })).forEach(mat => {
-        const row = summarySheet.getRow(sRow);
-        row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance];
-        row.eachCell((cell, col) => {
-            if (col <= 5) {
-                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-            }
-            if (col === 5) {
-                cell.font = { bold: true };
-                if (mat.balance === 0) cell.font = { bold: true, color: { argb: 'FFFF0000' } };
-            }
-        });
+    sortedFamilies.forEach(family => {
+        const familyMaterials = familyMap[family].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+
+        // Family Section Banner Row
+        summarySheet.mergeCells(`A${sRow}:E${sRow}`);
+        const fCell = summarySheet.getCell(`A${sRow}`);
+        fCell.value = `📂 FAMILLE: ${family.toUpperCase()} (${familyMaterials.length})`;
+        fCell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        fCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+        fCell.alignment = { horizontal: 'left', vertical: 'middle' };
+        summarySheet.getRow(sRow).height = 24;
         sRow++;
+
+        familyMaterials.forEach(mat => {
+            const row = summarySheet.getRow(sRow);
+            row.values = [mat.name, mat.unit, mat.in, mat.out, mat.balance];
+            row.eachCell((cell, col) => {
+                if (col <= 5) {
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                }
+                if (col === 5) {
+                    cell.font = { bold: true };
+                    if (mat.balance === 0) cell.font = { bold: true, color: { argb: 'FFFF0000' } };
+                }
+            });
+            sRow++;
+        });
+
+        sRow++; // spacing row
     });
 
     // ─────────────────────────────────────────────────────────────────────

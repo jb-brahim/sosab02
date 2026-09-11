@@ -174,7 +174,29 @@ exports.generateMaterialReportHTML = (data) => {
     return new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(num);
   };
 
-  const totalPeriodCost = (movements || []).reduce((sum, m) => sum + (m.cost || 0), 0);
+  const getMaterialFamily = (mat) => {
+    if (mat.category && mat.category !== 'N/A' && mat.category !== 'Standard' && mat.category.trim() !== '') {
+      return mat.category.trim();
+    }
+    const n = (mat.name || '').toLowerCase();
+    if (n.includes('ciment') || n.includes('chaux') || n.includes('beton')) return 'Ciments & Liants';
+    if (n.includes('fer') || n.includes('treillis') || n.includes('attache') || n.includes('armature') || n.includes('acier')) return 'Fers & Armatures';
+    if (n.includes('bois') || n.includes('planche') || n.includes('panello') || n.includes('panelo') || n.includes('madrier') || n.includes('besting') || n.includes('plancher') || n.includes('sapine') || n.includes('isorere')) return 'Bois & Coffrage';
+    if (n.includes('brique') || n.includes('agglo') || n.includes('parpaing') || n.includes('bloc')) return 'Maçonnerie & Gros Œuvre';
+    if (n.includes('clou') || n.includes('point') || n.includes('boulon') || n.includes('clovette') || n.includes('rachklou') || n.includes('vis') || n.includes('ecrou')) return 'Quincaillerie & Fixation';
+    if (n.includes('cable') || n.includes('electrique') || n.includes('dimino') || n.includes('gaine') || n.includes('prise') || n.includes('interrupteur')) return 'Électricité';
+    if (n.includes('derbigume') || n.includes('flintcote') || n.includes('sika') || n.includes('etancheite') || n.includes('résine') || n.includes('peinture')) return 'Étanchéité & Chimie de Chantier';
+    if (n.includes('bros') || n.includes('eprouvette') || n.includes('grillage') || n.includes('hbal') || n.includes('pioche') || n.includes('vibreur') || n.includes('outil') || n.includes('pelle')) return 'Outillage & Équipement de Chantier';
+    return 'Divers';
+  };
+
+  const familyMap = {};
+  materials.forEach(mat => {
+    const family = getMaterialFamily(mat);
+    if (!familyMap[family]) familyMap[family] = [];
+    familyMap[family].push(mat);
+  });
+  const sortedFamilies = Object.keys(familyMap).sort((a, b) => a.localeCompare(b, 'fr'));
 
   return `
 <!DOCTYPE html>
@@ -275,48 +297,57 @@ exports.generateMaterialReportHTML = (data) => {
       </tr>
     </thead>
     <tbody>
-      ${materials.map(mat => {
-    const matMovements = (movements || []).filter(m => m.name === mat.name);
+      ${sortedFamilies.map(fam => {
+    const famMaterials = familyMap[fam].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
     return `
-          <tr class="mat-header">
-            <td colspan="2">
-              <span style="font-size: 14px;">📦 ${mat.name}</span> 
-              <span style="font-weight: 400; color: #64748b; font-size: 11px; margin-left:10px;">[${mat.category || 'Standard'}]</span>
+          <tr style="background: #1e293b; color: #ffffff; font-weight: 700;">
+            <td colspan="7" style="padding: 10px 14px; font-size: 13px; letter-spacing: 0.5px;">
+              📂 FAMILLE: ${fam.toUpperCase()} (${famMaterials.length})
             </td>
-            <td style="text-align: center;">${mat.unit}</td>
-            <td style="text-align: center;">
-              <div style="color: #059669; font-size: 10px;">IN: ${formatNumber(mat.in)}</div>
-              <div style="color: #dc2626; font-size: 10px;">OUT: ${formatNumber(mat.out)}</div>
-            </td>
-            <td class="num price-col" style="text-align: center;">${formatPrice(mat.price || 0)}</td>
-            <td class="num total-col" style="text-align: right; background: #e2e8f0;">${formatPrice((mat.in - mat.out) * (mat.price || 0))} DT</td>
-            <td class="num" style="text-align: center; color: #1e40af;">${formatNumber(mat.balance)}</td>
           </tr>
-          
-          ${matMovements.length > 0 ? matMovements.map(m => `
-            <tr class="move-row">
-              <td class="num" style="color: #1e293b;">
-                <div>${new Date(m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
-                <div style="font-size: 10px; color: #64748b; font-weight: 400; margin-top: 2px;">Saisi le: ${new Date(m.createdAt || m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+          ${famMaterials.map(mat => {
+      const matMovements = (movements || []).filter(m => m.name === mat.name);
+      return `
+            <tr class="mat-header">
+              <td colspan="2">
+                <span style="font-size: 13px;">📦 ${mat.name}</span> 
               </td>
-              <td>
-                <div style="font-weight: 600;">${m.deliveredBy && m.deliveredBy !== 'N/A' ? 'Chauffeur: ' + m.deliveredBy : 'Sortie Chantier'}</div>
-                <div style="font-size: 10px; color: #64748b;">Fournisseur: ${m.supplier || 'N/A'}</div>
-                <div style="font-size: 10px; color: #1e40af; font-weight: 600;">Ajouté par: ${m.addedBy || 'N/A'}</div>
-                ${m.notes ? `<div style="font-size: 10px; color: #334155; font-style: italic;">Note: ${m.notes}</div>` : ''}
-              </td>
+              <td style="text-align: center;">${mat.unit}</td>
               <td style="text-align: center;">
-                <span class="type-badge ${m.type === 'IN' ? 'type-in' : 'type-out'}">${m.type}</span>
+                <div style="color: #059669; font-size: 10px;">IN: ${formatNumber(mat.in)}</div>
+                <div style="color: #dc2626; font-size: 10px;">OUT: ${formatNumber(mat.out)}</div>
               </td>
-              <td class="num" style="text-align: center; font-weight: 700;">${m.type === 'IN' ? '+' : '-'}${formatNumber(m.quantity)}</td>
               <td class="num price-col" style="text-align: center;">${formatPrice(mat.price || 0)}</td>
-              <td class="num total-col" style="text-align: right;">${formatPrice(m.cost || 0)} DT</td>
-              <td class="num" style="text-align: center; color: #94a3b8; font-size: 11px;">-</td>
+              <td class="num total-col" style="text-align: right; background: #e2e8f0;">${formatPrice((mat.in - mat.out) * (mat.price || 0))} DT</td>
+              <td class="num" style="text-align: center; color: #1e40af;">${formatNumber(mat.balance)}</td>
             </tr>
-          `).join('') : `
-            <tr><td colspan="7" style="text-align: center; color: #94a3b8; font-style: italic; font-size: 11px; padding: 15px;">Aucun mouvement pour cette période</td></tr>
-          `}
-          <tr style="height: 5px;"><td colspan="7" style="border: none;"></td></tr>
+            
+            ${matMovements.length > 0 ? matMovements.map(m => `
+              <tr class="move-row">
+                <td class="num" style="color: #1e293b;">
+                  <div>${new Date(m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                  <div style="font-size: 10px; color: #64748b; font-weight: 400; margin-top: 2px;">Saisi le: ${new Date(m.createdAt || m.date).toLocaleDateString('fr-TN', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">${m.deliveredBy && m.deliveredBy !== 'N/A' ? 'Chauffeur: ' + m.deliveredBy : 'Sortie Chantier'}</div>
+                  <div style="font-size: 10px; color: #64748b;">Fournisseur: ${m.supplier || 'N/A'}</div>
+                  <div style="font-size: 10px; color: #1e40af; font-weight: 600;">Ajouté par: ${m.addedBy || 'N/A'}</div>
+                  ${m.notes ? `<div style="font-size: 10px; color: #334155; font-style: italic;">Note: ${m.notes}</div>` : ''}
+                </td>
+                <td style="text-align: center;">
+                  <span class="type-badge ${m.type === 'IN' ? 'type-in' : 'type-out'}">${m.type}</span>
+                </td>
+                <td class="num" style="text-align: center; font-weight: 700;">${m.type === 'IN' ? '+' : '-'}${formatNumber(m.quantity)}</td>
+                <td class="num price-col" style="text-align: center;">${formatPrice(mat.price || 0)}</td>
+                <td class="num total-col" style="text-align: right;">${formatPrice(m.cost || 0)} DT</td>
+                <td class="num" style="text-align: center; color: #94a3b8; font-size: 11px;">-</td>
+              </tr>
+            `).join('') : `
+              <tr><td colspan="7" style="text-align: center; color: #94a3b8; font-style: italic; font-size: 11px; padding: 10px;">Aucun mouvement pour cette période</td></tr>
+            `}
+            <tr style="height: 4px;"><td colspan="7" style="border: none;"></td></tr>
+          `;
+    }).join('')}
         `;
   }).join('')}
     </tbody>

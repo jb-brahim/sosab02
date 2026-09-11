@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Loader2, ChevronRight, Search, ArrowLeft, LayoutGrid, Package } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -21,7 +22,7 @@ interface CreateMaterialDialogProps {
 
 type Step = "classification" | "material-pick" | "form"
 
-const UNITS = ['kg', 'T', 'm', 'ml', 'm²', 'm³', 'U', 'L', 'box', 'bag', 'liter']
+const UNITS = ['kg', 'T', 'm', 'ml', 'm²', 'm³', 'U', 'L', 'box', 'bag', 'liter', 'unité', 'sac']
 
 const LOCALIZED_TEXT = {
     en: {
@@ -35,7 +36,7 @@ const LOCALIZED_TEXT = {
         fillDetails: "Fill in the remaining details",
         autre: "Autre (custom material)",
         materialName: "Material Name",
-        classification: "Classification",
+        classification: "Family / Category",
         unit: "Unit",
         selectUnit: "Select unit",
         unitPrice: "Unit Price (TND)",
@@ -57,10 +58,10 @@ const LOCALIZED_TEXT = {
         fillDetails: "Remplissez les détails restants",
         autre: "Autre (matériau personnalisé)",
         materialName: "Nom du matériau",
-        classification: "Catégorie",
+        classification: "Famille / Catégorie",
         unit: "Unité",
         selectUnit: "Sélectionner l'unité",
-        unitPrice: "Prix unitaire (DA)",
+        unitPrice: "Prix unitaire (DT)",
         initialStock: "Quantité initiale",
         supplier: "Fournisseur",
         supplierOptional: "Nom du fournisseur (optionnel)",
@@ -74,6 +75,9 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [step, setStep] = useState<Step>("classification")
+    const [categories, setCategories] = useState<string[]>([])
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+    const [newCategoryName, setNewCategoryName] = useState("")
 
     const t = LOCALIZED_TEXT[locale]
 
@@ -95,6 +99,23 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
     })
 
     const inputRef = useRef<HTMLInputElement>(null)
+
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/materials/categories')
+            if (res.data.success) {
+                setCategories(res.data.data)
+            }
+        } catch (error) {
+            console.error("Failed to fetch categories", error)
+        }
+    }
+
+    useEffect(() => {
+        if (open) {
+            fetchCategories()
+        }
+    }, [open])
 
     // Filter classification suggestions
     const suggestions = classQuery.trim() === ""
@@ -152,9 +173,29 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
             ...prev,
             name: "",
             unit: "",
-            category: selectedClassification,
+            category: selectedClassification || "Divers",
         }))
         setStep("form")
+    }
+
+    const handleCreateNewCategory = async () => {
+        if (!newCategoryName.trim()) {
+            toast.error("Please enter a category/family name")
+            return
+        }
+        try {
+            const res = await api.post('/materials/categories', { name: newCategoryName.trim() })
+            if (res.data.success) {
+                const createdName = res.data.data.name
+                setCategories(prev => Array.from(new Set([...prev, createdName])).sort())
+                setFormData(prev => ({ ...prev, category: createdName }))
+                setIsCreatingCategory(false)
+                setNewCategoryName("")
+                toast.success(`Family "${createdName}" created successfully!`)
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to create category")
+        }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,12 +229,13 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
 
     const handleClose = () => {
         setOpen(false)
-        // Reset on next tick to avoid flicker
         setTimeout(() => {
             setStep("classification")
             setClassQuery("")
             setSelectedClassification("")
             setIsAutre(false)
+            setIsCreatingCategory(false)
+            setNewCategoryName("")
             setFormData({ name: "", category: "", unit: "", price: "", stockQuantity: "", supplier: "" })
         }, 300)
     }
@@ -301,6 +343,15 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                                 )}
                             </div>
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={handleAutre}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border border-dashed border-white/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all mt-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            {t.autre}
+                        </button>
                     </div>
                 )}
 
@@ -352,19 +403,75 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Category — always locked to chosen classification */}
-                            <div className="space-y-2">
+                        {/* Category / Family */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
                                 <Label htmlFor="category">{t.classification}</Label>
-                                <Input
-                                    id="category"
-                                    name="category"
-                                    value={formData.category}
-                                    readOnly
-                                    className="opacity-70 cursor-default"
-                                />
+                                {!isCreatingCategory && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreatingCategory(true)}
+                                        className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                        Nouvelle famille
+                                    </button>
+                                )}
                             </div>
-                            {/* Unit — editable only if Autre */}
+
+                            {isCreatingCategory ? (
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        placeholder="Nom de la nouvelle famille..."
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                        className="h-10 text-sm"
+                                    />
+                                    <Button type="button" size="sm" onClick={handleCreateNewCategory}>
+                                        Ajouter
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setIsCreatingCategory(false)
+                                            setNewCategoryName("")
+                                        }}
+                                    >
+                                        Annuler
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Select
+                                    value={formData.category}
+                                    onValueChange={(val) => {
+                                        if (val === "__new__") {
+                                            setIsCreatingCategory(true)
+                                        } else {
+                                            setFormData({ ...formData, category: val })
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className="h-10">
+                                        <SelectValue placeholder="Sélectionner une famille" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat} value={cat}>
+                                                📂 {cat}
+                                            </SelectItem>
+                                        ))}
+                                        <SelectItem value="__new__" className="text-primary font-bold">
+                                            + Créer une nouvelle famille...
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Unit */}
                             <div className="space-y-2">
                                 <Label htmlFor="unit">{t.unit}</Label>
                                 {isAutre ? (
@@ -389,9 +496,7 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                                     />
                                 )}
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
+                            {/* Price */}
                             <div className="space-y-2">
                                 <Label htmlFor="price">{t.unitPrice}</Label>
                                 <Input
@@ -406,6 +511,9 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                                     required
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="stockQuantity">{t.initialStock}</Label>
                                 <Input
@@ -417,17 +525,16 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
                                     onChange={handleChange}
                                 />
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="supplier">{t.supplier}</Label>
-                            <Input
-                                id="supplier"
-                                name="supplier"
-                                placeholder={t.supplierOptional}
-                                value={formData.supplier}
-                                onChange={handleChange}
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="supplier">{t.supplier}</Label>
+                                <Input
+                                    id="supplier"
+                                    name="supplier"
+                                    placeholder={t.supplierOptional}
+                                    value={formData.supplier}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
 
                         <DialogFooter>

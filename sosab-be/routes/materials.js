@@ -12,7 +12,9 @@ const {
   getAllMaterialLogs,
   transferMaterial,
   directReception,
-  quickLog
+  quickLog,
+  getCategories,
+  createCategory
 } = require('../controllers/materialController');
 
 const {
@@ -28,16 +30,19 @@ const { uploadMaterialPhoto, uploadReceptionPhotos, handleUploadError } = requir
 // All routes require authentication
 router.use(protect);
 
+router.get('/categories', getCategories);
+router.post('/categories', authorize('Admin', 'Project Manager', 'Gérant', 'Accountant'), logAction('create', 'MaterialCategory'), createCategory);
+
 router.get('/depot/all', getDepotMaterials);
 router.get('/manager/summary', getAllMaterialsSummary);
 router.get('/manager/logs', getAllMaterialLogs);
 router.post('/transfer', authorize('Admin'), logAction('transfer', 'Material'), transferMaterial);
-router.post('/direct-reception', authorize('Admin', 'Project Manager'), uploadReceptionPhotos, handleUploadError, logAction('arrival', 'Material'), directReception);
-router.post('/quick-log', authorize('Admin', 'Project Manager', 'Accountant'), logAction('quick-log', 'Material'), quickLog);
+router.post('/direct-reception', authorize('Admin', 'Project Manager', 'Gérant'), uploadReceptionPhotos, handleUploadError, logAction('arrival', 'Material'), directReception);
+router.post('/quick-log', authorize('Admin', 'Project Manager', 'Gérant', 'Accountant'), logAction('quick-log', 'Material'), quickLog);
 
 router
   .route('/')
-  .post(authorize('Admin', 'Accountant'), logAction('create', 'Material'), addMaterial);
+  .post(authorize('Admin', 'Project Manager', 'Gérant', 'Accountant'), logAction('create', 'Material'), addMaterial);
 
 router
   .route('/:projectId')

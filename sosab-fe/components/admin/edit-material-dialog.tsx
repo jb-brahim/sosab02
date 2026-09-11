@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
@@ -27,10 +27,13 @@ interface EditMaterialDialogProps {
     onMaterialUpdated: () => void
 }
 
-const UNITS = ['kg', 'ton', 'm', 'm²', 'm³', 'piece', 'box', 'bag', 'liter']
+const UNITS = ['kg', 'ton', 'm', 'm²', 'm³', 'piece', 'box', 'bag', 'liter', 'unité', 'sac']
 
 export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpdated }: EditMaterialDialogProps) {
     const [isLoading, setIsLoading] = useState(false)
+    const [categories, setCategories] = useState<string[]>([])
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+    const [newCategoryName, setNewCategoryName] = useState("")
 
     const [formData, setFormData] = useState({
         name: "",
@@ -42,6 +45,22 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
     })
 
     useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/materials/categories')
+                if (res.data.success) {
+                    setCategories(res.data.data)
+                }
+            } catch (error) {
+                console.error("Failed to load categories", error)
+            }
+        }
+        if (open) {
+            fetchCategories()
+        }
+    }, [open])
+
+    useEffect(() => {
         if (material) {
             setFormData({
                 name: material.name,
@@ -51,6 +70,8 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
                 stockQuantity: material.stockQuantity.toString(),
                 supplier: material.supplier || ""
             })
+            setIsCreatingCategory(false)
+            setNewCategoryName("")
         }
     }, [material])
 
@@ -59,7 +80,31 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
     }
 
     const handleSelectChange = (name: string, value: string) => {
+        if (name === "category" && value === "__new__") {
+            setIsCreatingCategory(true)
+            return
+        }
         setFormData({ ...formData, [name]: value })
+    }
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) {
+            toast.error("Please enter a category/family name")
+            return
+        }
+        try {
+            const res = await api.post('/materials/categories', { name: newCategoryName.trim() })
+            if (res.data.success) {
+                const createdName = res.data.data.name
+                setCategories(prev => Array.from(new Set([...prev, createdName])).sort())
+                setFormData(prev => ({ ...prev, category: createdName }))
+                setIsCreatingCategory(false)
+                setNewCategoryName("")
+                toast.success(`Family "${createdName}" created successfully!`)
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to create category")
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -93,14 +138,14 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Edit Material</DialogTitle>
+                    <DialogTitle>Modifier le Matériau</DialogTitle>
                     <DialogDescription>
-                        Update material details.
+                        Modifier les détails ou changer la famille du matériau.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Material Name</Label>
+                        <Label htmlFor="name">Nom du Matériau</Label>
                         <Input
                             id="name"
                             name="name"
@@ -110,18 +155,70 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
                         />
                     </div>
 
+                    {/* Category / Family Selection */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="category">Famille / Catégorie</Label>
+                            {!isCreatingCategory && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreatingCategory(true)}
+                                    className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Nouvelle famille
+                                </button>
+                            )}
+                        </div>
+
+                        {isCreatingCategory ? (
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="Nom de la nouvelle famille..."
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    className="h-10 text-sm"
+                                />
+                                <Button type="button" size="sm" onClick={handleCreateCategory}>
+                                    Ajouter
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setIsCreatingCategory(false)
+                                        setNewCategoryName("")
+                                    }}
+                                >
+                                    Annuler
+                                </Button>
+                            </div>
+                        ) : (
+                            <Select
+                                value={formData.category}
+                                onValueChange={(val) => handleSelectChange("category", val)}
+                            >
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Sélectionner une famille" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat} value={cat}>
+                                            📂 {cat}
+                                        </SelectItem>
+                                    ))}
+                                    <SelectItem value="__new__" className="text-primary font-bold">
+                                        + Créer une nouvelle famille...
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
-                            <Input
-                                id="category"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="unit">Unit</Label>
+                            <Label htmlFor="unit">Unité</Label>
                             <Select onValueChange={(val) => handleSelectChange("unit", val)} value={formData.unit}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select unit" />
@@ -133,11 +230,8 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="price">Unit Price (TND)</Label>
+                            <Label htmlFor="price">Prix unitaire (DT)</Label>
                             <Input
                                 id="price"
                                 name="price"
@@ -149,8 +243,11 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
                                 required
                             />
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="stockQuantity">Stock Quantity</Label>
+                            <Label htmlFor="stockQuantity">Quantité en Stock</Label>
                             <Input
                                 id="stockQuantity"
                                 name="stockQuantity"
@@ -160,26 +257,25 @@ export function EditMaterialDialog({ material, open, onOpenChange, onMaterialUpd
                                 onChange={handleChange}
                             />
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="supplier">Supplier</Label>
-                        <Input
-                            id="supplier"
-                            name="supplier"
-                            placeholder="Supplier name (optional)"
-                            value={formData.supplier}
-                            onChange={handleChange}
-                        />
+                        <div className="space-y-2">
+                            <Label htmlFor="supplier">Fournisseur</Label>
+                            <Input
+                                id="supplier"
+                                name="supplier"
+                                placeholder="Nom du fournisseur (optionnel)"
+                                value={formData.supplier}
+                                onChange={handleChange}
+                            />
+                        </div>
                     </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            Annuler
                         </Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
+                            Enregistrer
                         </Button>
                     </DialogFooter>
                 </form>
