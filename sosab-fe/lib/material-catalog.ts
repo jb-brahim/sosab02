@@ -12,6 +12,12 @@ export const MATERIAL_CATALOG: MaterialClassification[] = [
     {
         classification: "BÉTON",
         items: [
+            { name: "gros Beton HRS dose 150kg/m³", unit: "m³" },
+            { name: "gros Beton HRS dosé 200kg/m³", unit: "m³" },
+            { name: "gros Beton HRS dose 250kg/m³", unit: "m³" },
+            { name: "gros Beton HRS dosé 300kg/m³", unit: "m³" },
+            { name: "gros Beton HRS dose 350kg/m³", unit: "m³" },
+            { name: "gros Beton HRS dose 400kg/m³", unit: "m³" },
             { name: "Béton HRS dosé 150kg/m³ Pompé", unit: "m³" },
             { name: "Béton HRS dosé 200kg/m³ Pompé", unit: "m³" },
             { name: "Béton HRS dosé 250kg/m³ Pompé", unit: "m³" },
