@@ -362,7 +362,7 @@ export function StockMovementDialog({ projectId, type, onSuccess, locale = "fr" 
                                         onChange={e => setCustomCategory(e.target.value)}
                                         className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                                     >
-                                        {["Standard", "BÉTON", "LIANTS", "PRODUITS DE CARRIERE", "PRODUITS ROUGES", "ARMATURES", "Sable", "Agglos", "Divers"].map(c => (
+                                        {["Standard", "BETON", "LIANTS", "PRODUITS DE CARRIERE", "PRODUITS ROUGES", "ARMATURES", "Sable", "Agglos", "Divers"].map(c => (
                                             <option key={c} value={c}>{c}</option>
                                         ))}
                                     </select>
