@@ -88,12 +88,15 @@ export default function MaterialsPage() {
 
     // Filtered Materials
     const filteredMaterials = useMemo(() => {
+        const normalizeStr = (str: string) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const normSearch = normalizeStr(searchTerm);
+
         return materials.filter(m => {
             const matchesSearch = searchTerm === "" ||
-                m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (m.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (m.supplier || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (m.projectName || "").toLowerCase().includes(searchTerm.toLowerCase());
+                normalizeStr(m.name).includes(normSearch) ||
+                normalizeStr(m.category || "").includes(normSearch) ||
+                normalizeStr(m.supplier || "").includes(normSearch) ||
+                normalizeStr(m.projectName || "").includes(normSearch);
 
             const projIdStr = (typeof m.projectId === 'object' && m.projectId !== null) ? ((m.projectId as any)._id || (m.projectId as any).id) : m.projectId;
             const matchesProject = filterProject === "all" || 

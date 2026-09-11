@@ -117,11 +117,14 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
         }
     }, [open])
 
+    const normalizeStr = (str: string) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    const normClassQuery = normalizeStr(classQuery)
+
     // Filter classification suggestions
     const suggestions = classQuery.trim() === ""
         ? ALL_CLASSIFICATION_NAMES
         : ALL_CLASSIFICATION_NAMES.filter(c =>
-            c.toLowerCase().includes(classQuery.toLowerCase())
+            normalizeStr(c).includes(normClassQuery)
         )
 
     // Filter matching materials inside the catalog directly
@@ -130,7 +133,8 @@ export function CreateMaterialDialog({ projectId, onMaterialCreated, disabled, l
         : MATERIAL_CATALOG.flatMap(cat =>
             cat.items.map(item => ({ ...item, classification: cat.classification }))
         ).filter(item =>
-            item.name.toLowerCase().includes(classQuery.toLowerCase())
+            normalizeStr(item.name).includes(normClassQuery) ||
+            normalizeStr(item.classification).includes(normClassQuery)
         ).slice(0, 8)
 
     // Items under selected classification

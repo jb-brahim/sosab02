@@ -34,12 +34,17 @@ export default function MaterialsPage() {
         fetchSummary()
     }, [])
 
+    const normalizeStr = (str: string) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    const normQuery = normalizeStr(searchQuery)
+
     const filteredMaterials = materials
         .filter(item => {
             const supplierName = item.supplier || ''
             const materialName = item.materialId?.name || ''
-            const query = searchQuery.toLowerCase()
-            return supplierName.toLowerCase().includes(query) || materialName.toLowerCase().includes(query)
+            const categoryName = (item as any).category || ''
+            return normalizeStr(supplierName).includes(normQuery) ||
+                normalizeStr(materialName).includes(normQuery) ||
+                normalizeStr(categoryName).includes(normQuery)
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 

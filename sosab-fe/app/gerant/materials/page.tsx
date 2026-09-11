@@ -50,9 +50,13 @@ export default function GerantMaterialsPage() {
         }
     }, [user])
 
+    const normalizeStr = (str: string) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    const normSearch = normalizeStr(searchQuery)
+
     const filteredMaterials = materials.filter(m =>
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+        normalizeStr(m.name).includes(normSearch) ||
+        normalizeStr(m.category || "").includes(normSearch) ||
+        normalizeStr(m.projectName || "").includes(normSearch)
     )
 
     if (loading) {
