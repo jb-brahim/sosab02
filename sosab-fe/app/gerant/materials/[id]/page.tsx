@@ -41,6 +41,9 @@ export default function MaterialDetailsPage() {
     const [showEdit, setShowEdit] = useState(false)
     const [editForm, setEditForm] = useState({ name: '', unit: '', category: '', supplier: '' })
     const [savingEdit, setSavingEdit] = useState(false)
+    const [categories, setCategories] = useState<string[]>([])
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+    const [newCategoryName, setNewCategoryName] = useState('')
 
     // Material delete state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -56,6 +59,17 @@ export default function MaterialDetailsPage() {
         notes: ''
     })
     const [savingLog, setSavingLog] = useState(false)
+
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/materials/categories')
+            if (res.data.success) {
+                setCategories(res.data.data)
+            }
+        } catch (error) {
+            console.error("Failed to load categories", error)
+        }
+    }
 
     const fetchDetails = async () => {
         try {
@@ -78,6 +92,7 @@ export default function MaterialDetailsPage() {
 
     useEffect(() => {
         fetchDetails()
+        fetchCategories()
     }, [params.id])
 
     // ── Material edit/delete ──────────────────────────────────────────────────
@@ -88,7 +103,26 @@ export default function MaterialDetailsPage() {
             category: material?.category || '',
             supplier: material?.supplier || ''
         })
+        setIsCreatingCategory(false)
+        setNewCategoryName('')
         setShowEdit(true)
+    }
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return toast.error("Veuillez saisir un nom de famille")
+        try {
+            const res = await api.post('/materials/categories', { name: newCategoryName.trim() })
+            if (res.data.success) {
+                const createdName = res.data.data.name
+                setCategories(prev => Array.from(new Set([...prev, createdName])).sort())
+                setEditForm(prev => ({ ...prev, category: createdName }))
+                setIsCreatingCategory(false)
+                setNewCategoryName("")
+                toast.success(`Famille "${createdName}" créée avec succès !`)
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Échec de création de la famille")
+        }
     }
 
     const handleSaveEdit = async () => {
@@ -346,15 +380,57 @@ export default function MaterialDetailsPage() {
                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Name</Label>
                                 <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="bg-background/50 border-white/10" />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unit</Label>
-                                    <Input value={editForm.unit} onChange={e => setEditForm({ ...editForm, unit: e.target.value })} className="bg-background/50 border-white/10" />
+                            <div className="space-y-1">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unit</Label>
+                                <Input value={editForm.unit} onChange={e => setEditForm({ ...editForm, unit: e.target.value })} className="bg-background/50 border-white/10" />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Famille</Label>
+                                    {!isCreatingCategory && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsCreatingCategory(true)}
+                                            className="text-[10px] text-primary font-bold hover:underline"
+                                        >
+                                            + Nouvelle
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Category</Label>
-                                    <Input value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="bg-background/50 border-white/10" />
-                                </div>
+                                {isCreatingCategory ? (
+                                    <div className="flex items-center gap-1 pt-0.5">
+                                        <Input
+                                            placeholder="Nom..."
+                                            value={newCategoryName}
+                                            onChange={e => setNewCategoryName(e.target.value)}
+                                            className="h-8 text-xs bg-background/50 border-white/10 px-2"
+                                        />
+                                        <Button type="button" size="sm" className="h-8 text-xs px-2" onClick={handleCreateCategory}>
+                                            Créer
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="sm" className="h-8 text-xs px-1" onClick={() => setIsCreatingCategory(false)}>
+                                            <X className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={editForm.category}
+                                        onChange={e => {
+                                            if (e.target.value === '__new__') {
+                                                setIsCreatingCategory(true)
+                                            } else {
+                                                setEditForm({ ...editForm, category: e.target.value })
+                                            }
+                                        }}
+                                        className="flex h-9 w-full rounded-md border border-white/10 bg-background/50 px-2 py-1 text-xs shadow-sm focus-visible:outline-none"
+                                    >
+                                        <option value="">Sélectionner</option>
+                                        {categories.map(c => (
+                                            <option key={c} value={c}>📂 {c}</option>
+                                        ))}
+                                        <option value="__new__" className="text-primary font-bold">+ Nouvelle famille...</option>
+                                    </select>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Supplier</Label>
